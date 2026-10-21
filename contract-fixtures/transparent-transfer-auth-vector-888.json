@@ -1,0 +1,24 @@
+{
+  "address_encoding": "from and to are hashed as the exact submitted ASCII strings: 0x + 40 lowercase hex",
+  "amount_unit": "integer base units (1 WRF = 100000000)",
+  "case": {
+    "amount": 150000000,
+    "chain_id": "888",
+    "from": "0x3f995ceb27e8177077dbed8b1e4f696af74da492",
+    "network_id": "testnet",
+    "nonce": 7,
+    "preimage_hex": "777266636f696e5f7472616e73706172656e745f7472616e736665725f617574685f76320300000038383807000000746573746e65742a0000003078336639393563656232376538313737303737646265643862316534663639366166373464613439322a00000030783232323232323232323232323232323232323232323232323232323232323232323232323232323280d1f008000000000700000000000000",
+    "signature_hex": "ca335a81ca7c6226ec1be1621eac44d4097700b3c51cc3d14d92c374b3a5f451d3b24f24f2ce24f9f320afa74953844376d956d1fdf310733f3c357396b8f807",
+    "to": "0x2222222222222222222222222222222222222222"
+  },
+  "domain_tag": "wrfcoin_transparent_transfer_auth_v2",
+  "framing": "tag || u32le(len chain_id) || chain_id || u32le(len network_id) || network_id || u32le(len from) || from || u32le(len to) || to || u64le(amount) || u64le(nonce)",
+  "producer": "generate-888-vectors.py: Python struct and cryptography Ed25519, synthetic BIP39 mnemonic",
+  "schema": "wrfcoin.transparent-transfer-auth-vector.v1",
+  "signer": {
+    "ed25519_public_key_hex": "e96b1c6b8769fdb0b34fbecfdf85c33b053cecad9517e1ab88cba614335775c1",
+    "key_vector": "contract-fixtures/wallet-key-scheme-vector.json",
+    "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+  },
+  "verified_by": "frontend tests; no node acceptance claim"
+}

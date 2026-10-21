@@ -1,0 +1,21 @@
+{
+  "currentVersion": "1.0.0",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "createdAt": "2025-07-23T00:48:21.308Z",
+      "gitHash": "a23e949f0babae60b8cf825eba5d0bf40fb9a9c5",
+      "branch": "main",
+      "components": 328,
+      "documentation": {
+        "storybook": true,
+        "typedoc": true,
+        "mdx": true
+      },
+      "status": "current"
+    }
+  ],
+  "defaultVersion": "1.0.0",
+  "createdAt": "2025-07-23T00:48:21.307Z",
+  "lastUpdated": "2025-07-23T00:48:21.308Z"
+}

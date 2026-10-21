@@ -1,0 +1,110 @@
+/* Platform card wrapper styles for clickable interaction */
+.platform-card-wrapper {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 12px;
+  position: relative;
+}
+
+.platform-card-wrapper:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.platform-card-wrapper:active {
+  transform: translateY(0px);
+}
+
+.platform-card-wrapper::after {
+  content: 'Click to connect';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(var(--primary-color-rgb), 0.95);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.platform-card-wrapper:hover::after {
+  opacity: 1;
+}
+
+/* Enhance the platforms description */
+.platforms-description {
+  margin-bottom: 24px;
+  font-size: 16px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* Add some spacing and styling improvements */
+.weather-data-sharing-page {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 40px;
+}
+
+.sharing-overview {
+  margin-bottom: 40px;
+}
+
+.platforms-section {
+  margin-bottom: 40px;
+}
+
+.platforms-section h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.benefits-section {
+  margin-bottom: 40px;
+}
+
+.benefits-section h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.getting-started-section h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+/* Dark mode adjustments */
+body.dark-mode .platform-card-wrapper:hover {
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .weather-data-sharing-page {
+    padding: 16px;
+  }
+
+  .platform-card-wrapper::after {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+}

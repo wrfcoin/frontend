@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="WRFCoin public weather-data testnet">
+  <title>WRFCoin public weather-data testnet</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1220"/>
+      <stop offset="1" stop-color="#152238"/>
+    </linearGradient>
+    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6ee7f2"/>
+      <stop offset="1" stop-color="#6ee7f2" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Sparse station-grid motif: a coverage lattice, not decoration for its own sake. -->
+  <g stroke="#22d3ee" stroke-opacity="0.10" stroke-width="1">
+    <path d="M0 90H1200M0 210H1200M0 330H1200M0 450H1200M0 570H1200"/>
+    <path d="M120 0V630M300 0V630M480 0V630M660 0V630M840 0V630M1020 0V630"/>
+  </g>
+  <g fill="#6ee7f2" fill-opacity="0.55">
+    <circle cx="480" cy="90" r="5"/>
+    <circle cx="1020" cy="90" r="5"/>
+    <circle cx="1020" cy="330" r="5"/>
+    <circle cx="840" cy="450" r="5"/>
+    <circle cx="660" cy="570" r="5"/>
+  </g>
+  <g fill="#6ee7f2" fill-opacity="0.16">
+    <circle cx="480" cy="90" r="22"/>
+    <circle cx="1020" cy="90" r="22"/>
+    <circle cx="1020" cy="330" r="22"/>
+    <circle cx="840" cy="450" r="22"/>
+    <circle cx="660" cy="570" r="22"/>
+  </g>
+
+  <g font-family="DejaVu Sans, Helvetica, Arial, sans-serif">
+    <text x="88" y="152" fill="#6ee7f2" font-size="24" font-weight="bold" letter-spacing="6">WRFCOIN</text>
+    <text x="88" y="244" fill="#f1f5f9" font-size="58" font-weight="bold">Public weather-data testnet</text>
+
+    <rect x="88" y="280" width="620" height="3" fill="url(#rule)"/>
+
+    <text x="88" y="352" fill="#cbd5e1" font-size="31">Personal weather stations contribute observations.</text>
+    <text x="88" y="398" fill="#cbd5e1" font-size="31">Forecasts are published. The chain rewards</text>
+    <text x="88" y="444" fill="#cbd5e1" font-size="31">verified contribution.</text>
+
+    <text x="88" y="540" fill="#94a3b8" font-size="24">Testnet tokens have no monetary value.</text>
+  </g>
+</svg>

@@ -1,0 +1,221 @@
+/**
+ * PendingPayouts Styles
+ *
+ * Reward cards with claim buttons
+ * and countdown timers.
+ */
+
+.pending-payouts {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.payouts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.payouts-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-green, #22C55E);
+}
+
+.payouts-title h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+  margin: 0;
+}
+
+.claim-all-btn {
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  background: var(--accent-green, #22C55E);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.claim-all-btn:hover {
+  background: color-mix(in srgb, var(--accent-green) 85%, black);
+  transform: translateY(-1px);
+}
+
+/* Total Claimable */
+.total-claimable {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: var(--bg-tertiary, #334155);
+  border-radius: 10px;
+}
+
+.claimable-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-muted, #64748B);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.claimable-amount {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent-green, #22C55E);
+}
+
+.claimable-amount .currency {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted, #64748B);
+}
+
+/* Payouts List */
+.payouts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Payout Card */
+.payout-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-secondary, #1E293B);
+  border: 1px solid var(--border-default, rgba(51, 65, 85, 0.5));
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.payout-card:hover {
+  border-color: var(--border-hover, rgba(59, 130, 246, 0.5));
+}
+
+.payout-card.locked {
+  opacity: 0.7;
+}
+
+.payout-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--payout-color) 15%, transparent);
+  color: var(--payout-color);
+  flex-shrink: 0;
+}
+
+.payout-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.payout-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+}
+
+.payout-description {
+  font-size: 0.6875rem;
+  color: var(--text-muted, #64748B);
+}
+
+.payout-amount-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.payout-amount {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+}
+
+.claim-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: white;
+  background: var(--accent-green, #22C55E);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.claim-btn:hover {
+  background: color-mix(in srgb, var(--accent-green) 85%, black);
+}
+
+.locked-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--text-muted, #64748B);
+  background: rgba(51, 65, 85, 0.5);
+  border-radius: 4px;
+}
+
+/* Empty State */
+.no-payouts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  color: var(--text-muted, #64748B);
+}
+
+.no-payouts p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .payout-card {
+    flex-wrap: wrap;
+  }
+
+  .payout-amount-section {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-default, rgba(51, 65, 85, 0.5));
+    margin-top: 4px;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .claim-btn:hover,
+  .claim-all-btn:hover {
+    transform: none;
+  }
+}

@@ -1,0 +1,43 @@
+name: Fabrication Ratchet
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "scripts/check-ungated-fabrication.mjs"
+      - "scripts/ungated-fabrication-baseline.json"
+      - "scripts/__tests__/**"
+      - "package.json"
+      - ".github/workflows/fabrication-ratchet.yml"
+      - ".github/workflows/explorer-health-probe.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fabrication-ratchet-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fabrication-ratchet:
+    name: Reachable fabrication ratchet
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Prove the ratchet can fail closed
+        run: node --test scripts/__tests__/*.test.mjs
+
+      - name: Reject new reachable ungated fabrication
+        run: node scripts/check-ungated-fabrication.mjs

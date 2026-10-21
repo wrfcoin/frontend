@@ -1,0 +1,72 @@
+/* Compact testnet banner (#559): one line on desktop, two on phone. Amber on the dark shell,
+   text #FDE68A / link #FCD34D (both > 7:1 on the navy background). */
+.tn-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 16px;
+  background: rgba(245, 158, 11, 0.12);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.35);
+  color: #FDE68A;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+.tn-banner__icon { flex: none; width: 18px; height: 18px; color: #FBBF24; }
+.tn-banner__text { flex: 1; min-width: 0; margin: 0; }
+.tn-banner__text strong { color: #FEF3C7; font-weight: 600; }
+.tn-banner__text a { color: #FCD34D; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+.tn-banner__close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #FCD34D;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font: inherit;
+}
+.tn-banner__close:hover, .tn-banner__close:focus-visible { background: rgba(245, 158, 11, 0.18); outline: none; }
+.tn-banner__close svg { width: 16px; height: 16px; }
+.tn-banner__long { display: inline; }
+.tn-banner__short { display: none; }
+
+/* Taskbar chip shown once the banner is dismissed */
+.tn-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.1);
+  color: #FCD34D;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.tn-chip:hover, .tn-chip:focus-visible { background: rgba(245, 158, 11, 0.18); color: #FDE68A; }
+.tn-chip svg { width: 14px; height: 14px; }
+
+@media (max-width: 600px) {
+  .tn-banner { font-size: 0.75rem; padding: 6px 12px; }
+  .tn-banner__icon { display: none; }
+  .tn-banner__long { display: none; }
+  .tn-banner__short { display: inline; }
+  .tn-chip span { display: none; }
+  .tn-chip { height: 26px; padding: 0 6px; }
+}
+
+/* Light theme: amber-900 text on the pale amber band (> 7:1), same layout. */
+body.light-mode .tn-banner { background: rgba(245, 158, 11, 0.16); border-bottom-color: rgba(180, 83, 9, 0.35); color: #78350f; }
+body.light-mode .tn-banner__icon { color: #b45309; }
+body.light-mode .tn-banner__text strong { color: #78350f; }
+body.light-mode .tn-banner__text a { color: #92400e; }
+body.light-mode .tn-banner__close { color: #92400e; }
+body.light-mode .tn-banner__close:hover, body.light-mode .tn-banner__close:focus-visible { background: rgba(180, 83, 9, 0.14); }
+body.light-mode .tn-chip { color: #92400e; border-color: rgba(180, 83, 9, 0.45); background: rgba(245, 158, 11, 0.14); }
+body.light-mode .tn-chip:hover, body.light-mode .tn-chip:focus-visible { background: rgba(180, 83, 9, 0.16); color: #78350f; }

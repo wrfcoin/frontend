@@ -1,0 +1,179 @@
+.search-bar-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: var(--surface-color, #ffffff);
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  height: 32px; /* Match taskbar height */
+  display: flex;
+  align-items: center;
+  position: relative; /* Added for dropdown positioning */
+  overflow: visible; /* Allow dropdowns to be visible outside container */
+}
+
+.search-bar-container.expanded {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.search-form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.search-input-container {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  height: 32px;
+  width: 100%;
+}
+
+.search-icon-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #757575);
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  padding: 6px;
+  font-size: 14px;
+  background: transparent;
+  color: var(--text-primary, #212121);
+  height: 28px;
+}
+
+.search-input:focus {
+  outline: none;
+}
+
+.clear-search-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary, #757575);
+  padding: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+}
+
+.search-submit-btn {
+  background-color: var(--primary-color, #6200ea);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s;
+}
+
+.search-submit-btn:disabled {
+  background-color: var(--disabled-color, #bdbdbd);
+  cursor: not-allowed;
+}
+
+.search-submit-btn:not(:disabled):hover {
+  background-color: var(--primary-dark, #4a148c);
+}
+
+.search-categories {
+  position: absolute;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background-color: var(--surface-color, #ffffff);
+  border: 1px solid var(--divider-color, #eaeaea);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  z-index: 9999; /* Increased to ensure it appears above ALL other content */
+  max-height: 400px; /* Limit height and add scrolling */
+  overflow-y: auto;
+}
+
+/* Default downward menu */
+.search-categories.menu-downward {
+  top: 100%; /* Position right below the search bar */
+  border-radius: 0 0 4px 4px;
+}
+
+/* Upward menu style (like a start menu) */
+.search-categories.menu-upward {
+  bottom: 100%; /* Position right above the search bar */
+  border-radius: 4px 4px 0 0;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.category-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.category-control-btn {
+  background: none;
+  border: none;
+  color: var(--primary-color, #6200ea);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.category-control-btn:hover {
+  background-color: var(--surface-hover, #f5f5f5);
+}
+
+.category-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.category-option {
+  display: flex;
+  align-items: center;
+}
+
+.category-option label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.category-option label:hover {
+  background-color: var(--surface-hover, #f5f5f5);
+}
+
+.category-option input[type='checkbox'] {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+  .category-options {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  .search-input {
+    font-size: 14px;
+  }
+}

@@ -1,0 +1,224 @@
+{
+  "stationSole": {
+    "earnings": [
+      {
+        "commitId": "0000000000000000000000000000000000000000000000000000000000000004",
+        "rewarded": true,
+        "amountBaseUnits": "100000001",
+        "amountWrf": "1.00000001",
+        "blocker": null,
+        "finalized": true,
+        "height": 10800,
+        "blockTimestamp": "2026-09-21T17:13:20.000Z"
+      },
+      {
+        "commitId": "0000000000000000000000000000000000000000000000000000000000000003",
+        "rewarded": true,
+        "amountBaseUnits": "100000001",
+        "amountWrf": "1.00000001",
+        "blocker": null,
+        "finalized": true,
+        "height": 7200,
+        "blockTimestamp": "2026-09-21T16:13:20.000Z"
+      },
+      {
+        "commitId": "0000000000000000000000000000000000000000000000000000000000000002",
+        "rewarded": true,
+        "amountBaseUnits": "100000001",
+        "amountWrf": "1.00000001",
+        "blocker": null,
+        "finalized": true,
+        "height": 3600,
+        "blockTimestamp": "2026-09-21T15:13:20.000Z"
+      },
+      {
+        "commitId": "0000000000000000000000000000000000000000000000000000000000000001",
+        "rewarded": true,
+        "amountBaseUnits": "100000001",
+        "amountWrf": "1.00000001",
+        "blocker": null,
+        "finalized": true,
+        "height": 0,
+        "blockTimestamp": "2026-09-21T14:13:20.000Z"
+      }
+    ],
+    "source": "core4",
+    "amountUnits": {
+      "denomination": "WRF",
+      "baseUnitDecimals": 8,
+      "baseUnitsPerUnit": "100000000",
+      "available": true,
+      "fields": {
+        "earnings[].amountBaseUnits": "base_units",
+        "earnings[].amountWrf": "display_units",
+        "totals.rewardedBaseUnits": "base_units",
+        "totals.rewardedWrf": "display_units"
+      }
+    },
+    "window": {
+      "commits": 4,
+      "complete": true,
+      "scope": "recent-observations"
+    },
+    "totals": {
+      "rewardedCommits": 4,
+      "unknownCommits": 0,
+      "rewardedBaseUnits": "400000004",
+      "rewardedWrf": "4.00000004",
+      "note": "sum over the recent window only, not a lifetime total"
+    },
+    "lifetime": {
+      "scope": "station",
+      "baseUnits": "123456789012345678",
+      "wrf": "1234567890.12345678",
+      "denomination": "WRF",
+      "baseUnitDecimals": 8,
+      "source": "core4"
+    },
+    "rate": {
+      "baseUnitsPerDay": "2400000024",
+      "wrfPerDay": "24.00000024",
+      "windowCommits": 4,
+      "windowSeconds": 10800,
+      "complete": true,
+      "denomination": "WRF",
+      "baseUnitDecimals": 8,
+      "source": "core4"
+    },
+    "fieldsUnavailable": []
+  },
+  "addressShared": {
+    "earnings": [
+      {
+        "commitId": "0000000000000000000000000000000000000000000000000000000000000004",
+        "rewarded": true,
+        "amountBaseUnits": "100000001",
+        "amountWrf": "1.00000001",
+        "blocker": null,
+        "finalized": true,
+        "height": 10800,
+        "blockTimestamp": "2026-09-21T17:13:20.000Z"
+      },
+      {
+        "commitId": "0000000000000000000000000000000000000000000000000000000000000003",
+        "rewarded": true,
+        "amountBaseUnits": "100000001",
+        "amountWrf": "1.00000001",
+        "blocker": null,
+        "finalized": true,
+        "height": 7200,
+        "blockTimestamp": "2026-09-21T16:13:20.000Z"
+      },
+      {
+        "commitId": "0000000000000000000000000000000000000000000000000000000000000002",
+        "rewarded": true,
+        "amountBaseUnits": "100000001",
+        "amountWrf": "1.00000001",
+        "blocker": null,
+        "finalized": true,
+        "height": 3600,
+        "blockTimestamp": "2026-09-21T15:13:20.000Z"
+      },
+      {
+        "commitId": "0000000000000000000000000000000000000000000000000000000000000001",
+        "rewarded": true,
+        "amountBaseUnits": "100000001",
+        "amountWrf": "1.00000001",
+        "blocker": null,
+        "finalized": true,
+        "height": 0,
+        "blockTimestamp": "2026-09-21T14:13:20.000Z"
+      }
+    ],
+    "source": "core4",
+    "amountUnits": {
+      "denomination": "WRF",
+      "baseUnitDecimals": 8,
+      "baseUnitsPerUnit": "100000000",
+      "available": true,
+      "fields": {
+        "earnings[].amountBaseUnits": "base_units",
+        "earnings[].amountWrf": "display_units",
+        "totals.rewardedBaseUnits": "base_units",
+        "totals.rewardedWrf": "display_units"
+      }
+    },
+    "window": {
+      "commits": 4,
+      "complete": true,
+      "scope": "recent-observations"
+    },
+    "totals": {
+      "rewardedCommits": 4,
+      "unknownCommits": 0,
+      "rewardedBaseUnits": "400000004",
+      "rewardedWrf": "4.00000004",
+      "note": "sum over the recent window only, not a lifetime total"
+    },
+    "lifetime": {
+      "scope": "address",
+      "stationsSharingAddress": 3,
+      "baseUnits": "500000000",
+      "wrf": "5",
+      "denomination": "WRF",
+      "baseUnitDecimals": 8,
+      "source": "core4"
+    },
+    "rate": {
+      "baseUnitsPerDay": "2400000024",
+      "wrfPerDay": "24.00000024",
+      "windowCommits": 4,
+      "windowSeconds": 10800,
+      "complete": true,
+      "denomination": "WRF",
+      "baseUnitDecimals": 8,
+      "source": "core4"
+    },
+    "fieldsUnavailable": []
+  },
+  "lifetimeUnprovenRateNull": {
+    "earnings": [
+      {
+        "commitId": "0000000000000000000000000000000000000000000000000000000000000001",
+        "rewarded": null,
+        "amountBaseUnits": null,
+        "amountWrf": null,
+        "blocker": "evidence_unavailable",
+        "finalized": null,
+        "height": null,
+        "blockTimestamp": null
+      }
+    ],
+    "source": "core4",
+    "amountUnits": {
+      "denomination": "WRF",
+      "baseUnitDecimals": 8,
+      "baseUnitsPerUnit": "100000000",
+      "available": false,
+      "fields": {
+        "earnings[].amountBaseUnits": "base_units",
+        "earnings[].amountWrf": "display_units",
+        "totals.rewardedBaseUnits": "base_units",
+        "totals.rewardedWrf": "display_units"
+      }
+    },
+    "window": {
+      "commits": 1,
+      "complete": true,
+      "scope": "recent-observations"
+    },
+    "totals": {
+      "rewardedCommits": 0,
+      "unknownCommits": 1,
+      "rewardedBaseUnits": "0",
+      "rewardedWrf": "0",
+      "note": "sum over the recent window only, not a lifetime total"
+    },
+    "lifetime": null,
+    "rate": null,
+    "fieldsUnavailable": [
+      "lifetime",
+      "rate"
+    ]
+  }
+}

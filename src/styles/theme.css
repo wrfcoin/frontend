@@ -1,0 +1,551 @@
+/**
+ * Wrfcoin Core Unified Theme System
+ * This theme provides consistent styling variables for both light and dark modes
+ * across all components of the application.
+ *
+ * Dashboard Redesign v2.0 - January 2026
+ *
+ * CANONICAL PALETTE (v2): All color values here now match src/theme/tokens.ts.
+ * The v1 palette (#4361ee blue, #e63946 secondary) has been retired.
+ * Single source of truth for JS tokens: src/theme/tokens.ts
+ * For CSS variables specifically see the dashboard-v2 block below.
+ *
+ * @see src/theme/tokens.ts — JS token constants
+ * @see src/design-system/README.md — full token API reference
+ */
+
+/* Fonts (Inter, JetBrains Mono) are vendored locally via @fontsource and
+   imported in src/main.jsx (src/styles/fonts.js) — no external @import. */
+
+:root {
+  /* === Brand Colors (v2, matches tokens.ts) === */
+  --primary-color: #3B82F6;        /* Blue 500 — tokens.ts: primary */
+  --primary-color-rgb: 59, 130, 246;
+  --primary-dark: #2563EB;         /* Blue 600 — tokens.ts: primaryDark */
+  --primary-light: #60A5FA;        /* Blue 400 — tokens.ts: primaryLight */
+  --secondary-color: #8B5CF6;      /* Violet 500 — tokens.ts: accentPurple */
+  --secondary-color-rgb: 139, 92, 246;
+  --secondary-light: #A78BFA;      /* Violet 400 */
+
+  /* === Light-mode Backgrounds === */
+  --bg-color: #F8FAFC;             /* Slate 50  — tokens.ts: bgPrimaryLight */
+  --bg-lighter: #FFFFFF;           /* White     — tokens.ts: bgSecondaryLight */
+  --bg-darker: #F1F5F9;            /* Slate 100 — tokens.ts: bgTertiaryLight */
+
+  /* === Card and Container Colors (light) === */
+  --card-bg: #FFFFFF;
+  --card-header-bg: #F1F5F9;
+  --card-border: rgba(148, 163, 184, 0.3); /* tokens.ts: borders.defaultLight */
+
+  /* === Text Colors (light) === */
+  --text-color: #0F172A;           /* Slate 900 — tokens.ts: textPrimaryLight */
+  --text-secondary: #475569;       /* Slate 600 — tokens.ts: textSecondaryLight */
+  --text-muted: #64748B;           /* Slate 500 — tokens.ts: textMuted */
+
+  /* === Border Colors === */
+  --border-color: rgba(148, 163, 184, 0.3); /* tokens.ts: borders.defaultLight */
+  --border-light: rgba(148, 163, 184, 0.2);
+  --border-dark: rgba(148, 163, 184, 0.4);
+
+  /* === Status Colors (canonical v2) === */
+  --success-color: #10B981;        /* Emerald 500 — tokens.ts: success */
+  --warning-color: #F59E0B;        /* Amber 500   — tokens.ts: warning */
+  --danger-color: #EF4444;         /* Red 500     — tokens.ts: error */
+  --info-color: #0EA5E9;           /* Sky 500     — tokens.ts: info */
+
+  /* === Chart Colors (canonical v2) === */
+  --chart-color-1: rgba(59, 130, 246, 0.7);   /* primary blue */
+  --chart-color-2: rgba(139, 92, 246, 0.7);   /* accent purple */
+  --chart-color-3: rgba(16, 185, 129, 0.7);   /* success emerald */
+  --chart-color-4: rgba(245, 158, 11, 0.7);   /* warning amber */
+  --chart-color-5: rgba(14, 165, 233, 0.7);   /* sky/info */
+
+  /* === Shadows === */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --border-radius-sm: 0.25rem;   /* tokens.ts: radii.xs (4px) */
+  --border-radius-md: 0.5rem;    /* tokens.ts: radii.sm (8px) */
+  --border-radius-lg: 1rem;      /* tokens.ts: radii.xl (24px) */
+
+  /* === Typography === */
+  --font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+
+  /* === Spacing (8px grid, matches tokens.ts spacingUnit) === */
+  --spacing-xs: 0.25rem;  /* 4px  — tokens.ts: spacing.xxs */
+  --spacing-sm: 0.5rem;   /* 8px  — tokens.ts: spacing.xs */
+  --spacing-md: 1rem;     /* 16px — tokens.ts: spacing.md */
+  --spacing-lg: 1.5rem;   /* 24px — tokens.ts: spacing.lg */
+  --spacing-xl: 2rem;     /* 32px — tokens.ts: spacing.xl */
+
+  /* === Transitions (matches tokens.ts: transitions.normal) === */
+  --transition-speed: 0.25s;
+  --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ===========================================
+   * NEW DASHBOARD THEME SYSTEM (v2.0)
+   * Professional dark theme for WRFCoin Dashboard
+   * =========================================== */
+
+  /* Dashboard Typography */
+  --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+
+  /* Dashboard Hero Typography */
+  --font-size-hero: 3rem;
+  --font-size-2xl: 1.875rem;
+  --font-size-3xl: 2.25rem;
+
+  /* Dashboard Accent Colors (Category-specific) */
+  --color-weather: #0EA5E9;      /* Sky 500 */
+  --color-weather-rgb: 14, 165, 233;
+  --color-mining: #A855F7;       /* Purple 500 */
+  --color-mining-rgb: 168, 85, 247;
+  --color-staking: #22C55E;      /* Green 500 */
+  --color-staking-rgb: 34, 197, 94;
+  --color-governance: #14B8A6;   /* Teal 500 */
+  --color-governance-rgb: 20, 184, 166;
+  --color-environmental: #84CC16;/* Lime 500 */
+  --color-environmental-rgb: 132, 204, 22;
+  --color-bridge: #F97316;       /* Orange 500 */
+  --color-bridge-rgb: 249, 115, 22;
+
+  /* Dashboard Brand Colors */
+  --accent-primary: #3B82F6;     /* Blue 500 */
+  --accent-primary-rgb: 59, 130, 246;
+  --accent-purple: #8B5CF6;      /* Violet 500 */
+  --accent-purple-rgb: 139, 92, 246;
+  --accent-green: #22C55E;       /* Green 500 */
+  --accent-amber: #F59E0B;       /* Amber 500 */
+  --accent-red: #EF4444;         /* Red 500 */
+  --accent-pink: #EC4899;        /* Pink 500 */
+  --accent-cyan: #06B6D4;        /* Cyan 500 */
+  --accent-orange: #F97316;      /* Orange 500 */
+
+  /* Dashboard Grid */
+  --grid-gap: 1.5rem;
+  --grid-gap-mobile: 1rem;
+}
+
+/* === Dark Theme (canonical v2) === */
+body.dark-mode {
+  /* Brand — same blue, no purple shift in dark mode */
+  --primary-color: #3B82F6;        /* Blue 500   — tokens.ts: primary */
+  --primary-color-rgb: 59, 130, 246;
+  --primary-dark: #2563EB;
+  --primary-light: #60A5FA;
+  --secondary-color: #8B5CF6;      /* Violet 500 — tokens.ts: accentPurple */
+  --secondary-color-rgb: 139, 92, 246;
+  --secondary-light: #A78BFA;
+
+  /* Backgrounds */
+  --bg-color: #0F172A;             /* Slate 900 — tokens.ts: bgPrimary */
+  --bg-lighter: #1E293B;           /* Slate 800 — tokens.ts: bgSecondary */
+  --bg-darker: #0A0F1E;
+
+  /* Card and Container Colors */
+  --card-bg: #1E293B;              /* tokens.ts: bgSecondary */
+  --card-header-bg: #334155;       /* tokens.ts: bgTertiary */
+  --card-border: rgba(51, 65, 85, 0.5); /* tokens.ts: borders.default */
+
+  /* Text */
+  --text-color: #F8FAFC;           /* Slate 50  — tokens.ts: textPrimary */
+  --text-secondary: #94A3B8;       /* Slate 400 — tokens.ts: textSecondary */
+  --text-muted: #64748B;           /* Slate 500 — tokens.ts: textMuted */
+
+  /* Borders */
+  --border-color: rgba(51, 65, 85, 0.5);   /* tokens.ts: borders.default */
+  --border-light: rgba(51, 65, 85, 0.35);
+  --border-dark: rgba(71, 85, 105, 0.6);
+
+  /* Status — same canonical values in both modes */
+  --success-color: #10B981;        /* tokens.ts: success */
+  --warning-color: #F59E0B;        /* tokens.ts: warning */
+  --danger-color: #EF4444;         /* tokens.ts: error */
+  --info-color: #0EA5E9;           /* tokens.ts: info */
+
+  /* Chart Colors */
+  --chart-color-1: rgba(59, 130, 246, 0.8);
+  --chart-color-2: rgba(139, 92, 246, 0.8);
+  --chart-color-3: rgba(34, 197, 94, 0.8);
+  --chart-color-4: rgba(245, 158, 11, 0.8);
+  --chart-color-5: rgba(14, 165, 233, 0.8);
+
+  /* Shadows (dark mode — stronger) */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* ===========================================
+ * NEW DASHBOARD DARK THEME (v2.0)
+ * Professional slate-based dark palette
+ * =========================================== */
+
+body.dashboard-v2,
+body.dark-mode.dashboard-v2,
+body.wallet-v2,
+body.dark-mode.wallet-v2 {
+  /* Primary Backgrounds */
+  --bg-primary: #0F172A;        /* Slate 900 - Main background */
+  --bg-secondary: #1E293B;      /* Slate 800 - Card backgrounds */
+  --bg-tertiary: #334155;       /* Slate 700 - Elevated surfaces */
+  --bg-hover: #475569;          /* Slate 600 - Hover states */
+
+  /* Surface Colors */
+  --surface-card: rgba(30, 41, 59, 0.8);
+  --surface-card-hover: rgba(51, 65, 85, 0.9);
+  --surface-overlay: rgba(15, 23, 42, 0.95);
+
+  /* Text Colors (Slate scale) */
+  --text-primary: #F8FAFC;      /* Slate 50 */
+  --text-secondary: #94A3B8;    /* Slate 400 */
+  --text-muted: #64748B;        /* Slate 500 */
+  --text-disabled: #475569;     /* Slate 600 */
+
+  /* Border Colors */
+  --border-default: rgba(51, 65, 85, 0.5);
+  --border-hover: rgba(59, 130, 246, 0.5);
+  --border-focus: rgba(59, 130, 246, 0.8);
+
+  /* Glow Effects */
+  --glow-primary: 0 0 20px rgba(59, 130, 246, 0.15);
+  --glow-success: 0 0 20px rgba(34, 197, 94, 0.15);
+  --glow-warning: 0 0 20px rgba(245, 158, 11, 0.15);
+  --glow-error: 0 0 20px rgba(239, 68, 68, 0.15);
+
+  /* Dashboard Shadows */
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-card-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-elevated: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+
+  /* Gradient Backgrounds */
+  --gradient-hero: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #0F172A 100%);
+  --gradient-card: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-purple) 100%);
+
+  /* Status Colors (Refined) */
+  --status-online: #22C55E;
+  --status-offline: #EF4444;
+  --status-warning: #F59E0B;
+  --status-syncing: #3B82F6;
+  --status-idle: #64748B;
+
+  /* Chart Colors (Vibrant) */
+  --chart-blue: rgba(59, 130, 246, 0.8);
+  --chart-purple: rgba(139, 92, 246, 0.8);
+  --chart-green: rgba(34, 197, 94, 0.8);
+  --chart-amber: rgba(245, 158, 11, 0.8);
+  --chart-sky: rgba(14, 165, 233, 0.8);
+  --chart-teal: rgba(20, 184, 166, 0.8);
+}
+
+/* ===========================================
+ * WALLET LIGHT THEME (v2.0)
+ * Clean light palette for wallet page
+ * =========================================== */
+
+body.wallet-v2:not(.dark-mode) {
+  /* Light Mode Backgrounds */
+  --bg-primary: #F8FAFC;        /* Slate 50 - Main background */
+  --bg-secondary: #FFFFFF;      /* White - Card backgrounds */
+  --bg-tertiary: #F1F5F9;       /* Slate 100 - Elevated surfaces */
+  --bg-hover: #E2E8F0;          /* Slate 200 - Hover states */
+
+  /* Surface Colors */
+  --surface-card: rgba(255, 255, 255, 0.9);
+  --surface-card-hover: rgba(241, 245, 249, 0.95);
+  --surface-overlay: rgba(248, 250, 252, 0.98);
+
+  /* Text Colors (Slate scale - inverted) */
+  --text-primary: #0F172A;      /* Slate 900 */
+  --text-secondary: #475569;    /* Slate 600 */
+  --text-muted: #64748B;        /* Slate 500 */
+  --text-disabled: #94A3B8;     /* Slate 400 */
+
+  /* Border Colors */
+  --border-default: rgba(148, 163, 184, 0.3);
+  --border-hover: rgba(59, 130, 246, 0.4);
+  --border-focus: rgba(59, 130, 246, 0.6);
+
+  /* Glow Effects - softer for light mode */
+  --glow-primary: 0 0 20px rgba(59, 130, 246, 0.1);
+  --glow-success: 0 0 20px rgba(34, 197, 94, 0.1);
+  --glow-warning: 0 0 20px rgba(245, 158, 11, 0.1);
+  --glow-error: 0 0 20px rgba(239, 68, 68, 0.1);
+
+  /* Light Mode Shadows */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-elevated: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+
+  /* Gradient Backgrounds - light variants */
+  --gradient-hero: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 50%, #F8FAFC 100%);
+  --gradient-card: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(241, 245, 249, 0.95) 100%);
+}
+
+/* Global Element Styles */
+button,
+.button {
+  background-color: var(--bg-lighter);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: all var(--transition-speed) var(--transition-timing);
+}
+
+button:hover,
+.button:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+button.primary,
+.button.primary {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-dark);
+}
+
+button.primary:hover,
+.button.primary:hover {
+  background-color: var(--primary-dark);
+}
+
+button.secondary,
+.button.secondary {
+  background-color: var(--secondary-color);
+  color: white;
+  border-color: var(--secondary-color);
+}
+
+button.secondary:hover,
+.button.secondary:hover {
+  background-color: var(--secondary-light);
+}
+
+/* Card Styles */
+.card {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-speed) var(--transition-timing);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card-header {
+  background-color: var(--card-header-bg);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--card-border);
+  border-top-left-radius: var(--border-radius-md);
+  border-top-right-radius: var(--border-radius-md);
+}
+
+.card-body {
+  padding: var(--spacing-md);
+}
+
+/* Input Styles */
+input,
+select,
+textarea {
+  background-color: var(--bg-lighter);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  transition: border-color var(--transition-speed) var(--transition-timing);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.25);
+}
+
+/* Table Styles */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+}
+
+thead {
+  background-color: var(--card-header-bg);
+}
+
+th,
+td {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+}
+
+th {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+tbody tr:hover {
+  background-color: var(--bg-darker);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Badge and Status Styles */
+.badge {
+  display: inline-block;
+  padding: 0.25em 0.6em;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  border-radius: 2em;
+}
+
+.badge-success {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.badge-warning {
+  background-color: var(--warning-color);
+  color: #333;
+}
+
+.badge-danger {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.badge-info {
+  background-color: var(--info-color);
+  color: white;
+}
+
+.status-indicator {
+  display: inline-block;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  margin-right: var(--spacing-xs);
+}
+
+.status-indicator.online {
+  background-color: var(--success-color);
+}
+
+.status-indicator.offline {
+  background-color: var(--danger-color);
+}
+
+.status-indicator.warning {
+  background-color: var(--warning-color);
+}
+
+/* Chart Containers */
+.chart-container {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Loading Indicators */
+.loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  padding: var(--spacing-lg);
+}
+
+.spinner {
+  border: 3px solid var(--border-light);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  animation: spin 1s linear infinite;
+  margin-right: var(--spacing-sm);
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Code inherits the readable foreground on dark public surfaces. */
+body.dark-mode code { color: #f0abcf; }
+/* Bootstrap's pink code colour sits at 4.4:1 on white; pink-800 holds 7:1 in the light theme. */
+body.light-mode code { color: #9D174D; }
+body.dark-mode { --text-muted: #94A3B8; }
+
+/* ---------------------------------------------------------------------------
+ * Design-system palette (src/components/DesignSystem/tokens.ts `palette`).
+ * The palette's text, surface and "light" accent entries read these variables with
+ * the dark token as their fallback, so dark renders exactly the token values and
+ * the light theme gets the matching light tokens (tokens.ts `*Light`) plus 700-800
+ * accent shades that hold 4.5:1 on white and on the slate-100 row surface.
+ * ------------------------------------------------------------------------- */
+:root {
+  --wrf-ds-text-primary: #F8FAFC;
+  --wrf-ds-text-secondary: #94A3B8;
+  --wrf-ds-text-muted: #94A3B8;
+  --wrf-ds-text-disabled: #64748B;
+  --wrf-ds-text-link: #60A5FA;
+  --wrf-ds-bg-primary: #0F172A;
+  --wrf-ds-bg-secondary: #1E293B;
+  --wrf-ds-bg-tertiary: #334155;
+  --wrf-ds-bg-hover: #475569;
+  --wrf-ds-bg-row: rgba(51, 65, 85, 0.3);
+  --wrf-ds-bg-inset: rgba(15, 23, 42, 0.5647);
+  --wrf-ds-border: #334155;
+  --wrf-ds-border-soft: rgba(51, 65, 85, 0.4392);
+  --wrf-ds-success-light: #34D399;
+  --wrf-ds-warning-light: #FBBF24;
+  --wrf-ds-error-light: #F87171;
+  --wrf-ds-info-light: #38BDF8;
+  --wrf-ds-info-soft: #BAE6FD;
+}
+body.light-mode {
+  --wrf-ds-text-primary: #0F172A;
+  --wrf-ds-text-secondary: #475569;
+  --wrf-ds-text-muted: #64748B;
+  --wrf-ds-text-disabled: #94A3B8;
+  --wrf-ds-text-link: #1D4ED8;
+  --wrf-ds-bg-primary: #F8FAFC;
+  --wrf-ds-bg-secondary: #FFFFFF;
+  --wrf-ds-bg-tertiary: #F1F5F9;
+  --wrf-ds-bg-hover: #E2E8F0;
+  --wrf-ds-bg-row: #F1F5F9;
+  --wrf-ds-bg-inset: #F1F5F9;
+  --wrf-ds-border: rgba(148, 163, 184, 0.3);
+  --wrf-ds-border-soft: rgba(148, 163, 184, 0.2);
+  --wrf-ds-success-light: #047857;
+  --wrf-ds-warning-light: #B45309;
+  --wrf-ds-error-light: #B91C1C;
+  --wrf-ds-info-light: #075985;
+  --wrf-ds-info-soft: #0369A1;
+}

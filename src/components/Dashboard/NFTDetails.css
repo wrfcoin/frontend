@@ -1,0 +1,189 @@
+.nft-details-container {
+  padding: 1rem;
+}
+
+.nft-title {
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  margin-bottom: 1rem;
+}
+
+.nft-tabs {
+  margin-bottom: 2rem;
+}
+
+.nav-tabs {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-tabs .nav-link {
+  color: var(--text-secondary, #b5b5c3);
+  background: none;
+  border: none;
+  padding: 0.75rem 1rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  position: relative;
+}
+
+.nav-tabs .nav-link:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: transparent;
+  transition: background-color 0.2s ease;
+}
+
+.nav-tabs .nav-link.active {
+  color: var(--text-primary, #ffffff);
+  font-weight: 600;
+}
+
+.nav-tabs .nav-link.active:after {
+  background-color: var(--accent, #0066ff);
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-label {
+  font-weight: 600;
+  color: var(--text-secondary, #b5b5c3);
+}
+
+.detail-value {
+  text-align: right;
+  color: var(--text-primary, #ffffff);
+}
+
+.detail-value.address,
+.detail-value.hash {
+  font-family: monospace;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.detail-value.hash {
+  color: #10b981;
+}
+
+.code-block {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.timeline {
+  position: relative;
+  padding: 0 0 0 1.5rem;
+}
+
+.timeline:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 7px;
+  width: 2px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -1.5rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  border: 2px solid var(--bg-card, #1a1a2e);
+}
+
+.timeline-marker.processing {
+  background-color: #f59e0b;
+}
+
+.timeline-marker.completed {
+  background-color: #10b981;
+}
+
+.timeline-content {
+  padding-bottom: 0.5rem;
+}
+
+.timeline-content h6 {
+  margin-bottom: 0.2rem;
+}
+
+.timeline-content p {
+  color: var(--text-secondary, #b5b5c3);
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.verifiers-list,
+.signatures-list {
+  margin-top: 1rem;
+}
+
+.verifier-item,
+.signature-item {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.verifier-address,
+.signature-verifier {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--text-primary, #ffffff);
+  margin-bottom: 0.25rem;
+}
+
+.verifier-time,
+.signature-value {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #b5b5c3);
+}
+
+.blockchain-tx {
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.tx-link {
+  font-family: monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+  color: var(--accent, #0066ff);
+}
+
+@media (max-width: 768px) {
+  .detail-value.address,
+  .detail-value.hash {
+    max-width: 120px;
+  }
+}

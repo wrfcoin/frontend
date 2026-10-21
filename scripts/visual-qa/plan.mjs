@@ -1,0 +1,49 @@
+// What the visual QA captures. Pure data so a unit test can check it against the
+// public route policy without a browser.
+//
+// `routes`: every public route, loaded fresh (full navigation) at both widths.
+// `scenarios`: states that need interaction in the same SPA session (names only;
+// run.mjs implements them).
+
+export const ROUTES = [
+  { name: 'home', route: '/' },
+  { name: 'onboarding', route: '/onboarding' },
+  { name: 'map', route: '/map' },
+  { name: 'explore', route: '/explore' },
+  { name: 'explorer', route: '/explorer' },
+  { name: 'search', route: '/search' },
+  { name: 'station-detail', route: '/weather/station/st-0' },
+  { name: 'leaderboard', route: '/leaderboard/contributors' },
+  { name: 'contributor', route: '/contributor/c_0123456789abcdef01234567' },
+  { name: 'governance', route: '/governance/public' },
+  { name: 'governance-proposal', route: '/governance/public/WIP-12' },
+  { name: 'forecast', route: '/weather/forecast' },
+  { name: 'wallet-locked', route: '/wallet' },
+  { name: 'connect-station-locked', route: '/connect-station' },
+  { name: 'downloads', route: '/downloads' },
+  { name: 'terms', route: '/terms' },
+  { name: 'privacy', route: '/privacy' },
+  { name: 'api-terms', route: '/api-terms' },
+  { name: 'security', route: '/security' },
+];
+
+export const SCENARIOS = [
+  { name: 'forecast-filled', route: '/weather/forecast', note: 'coordinates entered, stubbed NOAA proxy' },
+  { name: 'home-dismissed', route: '/', note: 'testnet banner dismissed; chip in the taskbar' },
+  { name: 'downloads-unpublished', route: '/downloads', note: 'the shipped manifest (nothing published)' },
+  { name: 'wallet-unlocked', route: '/wallet', note: 'after the real web-wallet setup and ed25519 login (stubbed challenge)' },
+  { name: 'connect-station-unlocked', route: '/connect-station', note: 'same signed-in session' },
+  { name: 'wallet-send-review', route: '/wallet', note: 'Send form filled and reviewed, not confirmed' },
+];
+
+/** Public navigation paths with route params are reached through a fixture id. */
+export const PARAM_ROUTE_EXAMPLES = {
+  '/governance/public/:proposalId': '/governance/public/WIP-12',
+  '/weather/station/:stationId': '/weather/station/st-0',
+  '/contributor/:key': '/contributor/c_0123456789abcdef01234567',
+};
+
+export const VIEWPORTS = [
+  { name: 'desktop-1440', width: 1440, height: 900, tall: 2400 },
+  { name: 'phone-390', width: 390, height: 844, tall: 3200, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
+];

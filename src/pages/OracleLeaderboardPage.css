@@ -1,0 +1,234 @@
+/* Oracle Leaderboard Page — uses existing CSS variable theme tokens */
+
+.oracle-lb-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem;
+  color: var(--text-primary, var(--text-color, #e0e0e0));
+}
+
+.oracle-lb-page__header {
+  margin-bottom: 2rem;
+}
+
+.oracle-lb-page__header h1 {
+  color: var(--text-primary, var(--text-color, #e0e0e0));
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.oracle-lb-subtitle {
+  color: var(--text-secondary, #888);
+  margin-bottom: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.oracle-lb-updated {
+  color: var(--text-secondary, #888);
+  font-size: 0.8rem;
+}
+
+/* ── Top-oracle hero card ── */
+.oracle-lb-top-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.oracle-lb-top-medal {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.oracle-lb-top-addr {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-primary, var(--text-color, #e0e0e0));
+  font-size: 0.9rem;
+  word-break: break-all;
+  margin-bottom: 0.25rem;
+}
+
+.oracle-lb-top-score {
+  color: var(--accent-green, #22C55E);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.oracle-lb-top-tier {
+  color: var(--text-secondary, #888);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* ── Table section card ── */
+.oracle-lb-page__table-section {
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+/* ── Table ── */
+.oracle-lb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.oracle-lb-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  color: var(--text-secondary, #888);
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.oracle-lb-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+  color: var(--text-primary, var(--text-color, #e0e0e0));
+}
+
+.oracle-lb-table tr:last-child td {
+  border-bottom: none;
+}
+
+.oracle-lb-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Loading skeleton rows */
+.oracle-lb-table--loading td {
+  padding: 0.75rem;
+}
+
+.oracle-lb-placeholder {
+  display: block;
+  height: 1rem;
+  border-radius: 4px;
+  background: var(--border-color, #2a2a4a);
+  opacity: 0.5;
+  animation: oracle-lb-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes oracle-lb-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 0.2; }
+}
+
+/* ── Cell modifiers ── */
+.oracle-lb-rank {
+  font-weight: 700;
+  text-align: center;
+  width: 3rem;
+}
+
+.oracle-lb-addr {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  cursor: default;
+}
+
+.oracle-lb-raw-score {
+  color: var(--text-secondary, #888);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Reputation score badges ── */
+.oracle-score {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Platinum tier: ≥75% */
+.score--high {
+  color: var(--accent-green, #22C55E);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+/* Gold tier: ≥50% */
+.score--mid {
+  color: var(--accent-amber, #F59E0B);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+/* Silver tier: ≥25% */
+.score--low {
+  color: var(--accent-orange, #F97316);
+  background: rgba(249, 115, 22, 0.1);
+}
+
+/* Bronze tier: <25% */
+.score--very-low {
+  color: var(--accent-red, #EF4444);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ── Tier badges ── */
+.oracle-tier-badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.oracle-tier--platinum {
+  background: rgba(168, 85, 247, 0.15);
+  color: var(--accent-purple, #A855F7);
+}
+
+.oracle-tier--gold {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--accent-amber, #F59E0B);
+}
+
+.oracle-tier--silver {
+  background: rgba(148, 163, 184, 0.15);
+  color: #94A3B8;
+}
+
+.oracle-tier--bronze {
+  background: rgba(180, 120, 60, 0.15);
+  color: #B47A3C;
+}
+
+/* ── State messages ── */
+.oracle-lb-skeleton,
+.oracle-lb-empty {
+  color: var(--text-secondary, #888);
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+.oracle-lb-error {
+  color: var(--accent-red, var(--danger-color, #EF4444));
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+/* ── Compact variant ── */
+.oracle-leaderboard--compact .oracle-lb-table {
+  font-size: 0.82rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .oracle-lb-page {
+    padding: 1rem;
+  }
+}

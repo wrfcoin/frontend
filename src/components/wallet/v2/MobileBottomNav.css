@@ -1,0 +1,114 @@
+/**
+ * MobileBottomNav Component Styles
+ */
+
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: var(--bg-secondary, #1E293B);
+  border-top: 1px solid var(--border-default, rgba(51, 65, 85, 0.5));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.3s ease-out;
+  /* Safe area for notched devices */
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Visibility states */
+.mobile-bottom-nav.visible {
+  transform: translateY(0);
+}
+
+.mobile-bottom-nav.hidden {
+  transform: translateY(100%);
+}
+
+/* Container */
+.nav-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 12px 16px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+/* Action Button */
+.nav-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 24px;
+  background: color-mix(in srgb, var(--action-color) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--action-color) 30%, transparent);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+  flex: 1;
+  max-width: 100px;
+}
+
+.nav-action:hover,
+.nav-action:active {
+  background: color-mix(in srgb, var(--action-color) 25%, transparent);
+  border-color: var(--action-color);
+  transform: scale(1.02);
+}
+
+.nav-action:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--action-color) 30%, transparent);
+}
+
+/* Icon */
+.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--action-color);
+}
+
+/* Label */
+.nav-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-primary, #F8FAFC);
+}
+
+/* Only show on mobile */
+@media (min-width: 768px) {
+  .mobile-bottom-nav {
+    display: none;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-bottom-nav {
+    transition: none;
+  }
+
+  .nav-action:hover,
+  .nav-action:active {
+    transform: none;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 360px) {
+  .nav-container {
+    padding: 10px 12px;
+  }
+
+  .nav-action {
+    padding: 8px 16px;
+  }
+
+  .nav-label {
+    font-size: 0.6875rem;
+  }
+}

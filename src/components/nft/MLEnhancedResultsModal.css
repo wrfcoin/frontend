@@ -1,0 +1,446 @@
+.ml-enhanced-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+}
+
+.ml-enhanced-modal {
+  width: 80%;
+  max-width: 900px;
+  max-height: 90vh;
+  background-color: var(--bg-card);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.ml-enhanced-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: var(--bg-card-header);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.ml-enhanced-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text-primary);
+}
+
+.ml-enhanced-modal-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(90vh - 120px);
+}
+
+.ml-enhanced-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background-color: var(--bg-card-footer);
+  border-top: 1px solid var(--border-color);
+}
+
+.close-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.close-button:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.close-button-text {
+  background-color: var(--bg-button-secondary);
+  color: var(--text-button-secondary);
+  border: 1px solid var(--border-color);
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.close-button-text:hover {
+  background-color: var(--bg-button-secondary-hover);
+}
+
+.ml-powered-by {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+}
+
+/* ML Results styling */
+.ml-results-error,
+.ml-results-warning {
+  padding: 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.ml-results-error {
+  background-color: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.ml-results-warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.error-icon,
+.warning-icon {
+  display: flex;
+  flex-shrink: 0;
+  color: rgb(220, 38, 38);
+}
+
+.warning-icon {
+  color: rgb(245, 158, 11);
+}
+
+.ml-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+  background-color: var(--bg-card-header);
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.ml-metric {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  background-color: var(--bg-card);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.ml-metric-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.ml-metric-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ml-analysis-section {
+  margin-bottom: 24px;
+}
+
+.ml-analysis-section h4 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 6px;
+}
+
+.ml-analysis-section.warnings {
+  background-color: rgba(245, 158, 11, 0.05);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.warning-item {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.warning-item:last-child {
+  margin-bottom: 0;
+}
+
+.warning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.warning-type {
+  font-weight: 600;
+  flex: 1;
+}
+
+.warning-severity {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.warning-item.high .warning-severity {
+  background-color: rgba(220, 38, 38, 0.2);
+  color: rgb(220, 38, 38);
+}
+
+.warning-item.medium .warning-severity {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: rgb(245, 158, 11);
+}
+
+.warning-item.low .warning-severity {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: rgb(59, 130, 246);
+}
+
+.warning-days {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: 8px;
+}
+
+.recommendations-list li {
+  margin-bottom: 8px;
+}
+
+.recommendations-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* Climate-specific styles */
+.impact-summary {
+  margin-bottom: 12px;
+  padding: 12px;
+  background-color: var(--bg-card-header);
+  border-radius: 6px;
+}
+
+.risk-level {
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.risk {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+}
+
+.risk.high {
+  background-color: rgba(220, 38, 38, 0.2);
+  color: rgb(220, 38, 38);
+}
+
+.risk.medium {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: rgb(245, 158, 11);
+}
+
+.risk.low {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: rgb(16, 185, 129);
+}
+
+.impact-category {
+  margin-bottom: 16px;
+}
+
+.impact-category h5 {
+  font-size: 0.9375rem;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.impact-category ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.impact-category ul li {
+  margin-bottom: 4px;
+}
+
+.key-indicators {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.indicator-item {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.indicator-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.indicator-name {
+  font-weight: 600;
+}
+
+.indicator-confidence {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.indicator-confidence.high {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: rgb(16, 185, 129);
+}
+
+.indicator-confidence.medium {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: rgb(245, 158, 11);
+}
+
+.indicator-confidence.low {
+  background-color: rgba(220, 38, 38, 0.2);
+  color: rgb(220, 38, 38);
+}
+
+/* Air Quality specific styles */
+.health-impacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.health-impact-item {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.health-impact-item h5 {
+  font-size: 0.9375rem;
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.health-impact-item p {
+  margin: 0;
+}
+
+.source-methodology {
+  font-style: italic;
+  margin-bottom: 12px;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.source-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.source-bar {
+  margin-bottom: 8px;
+}
+
+.source-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.confidence-badge {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.confidence-badge.high {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: rgb(16, 185, 129);
+}
+
+.confidence-badge.medium {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: rgb(245, 158, 11);
+}
+
+.confidence-badge.low {
+  background-color: rgba(220, 38, 38, 0.2);
+  color: rgb(220, 38, 38);
+}
+
+.source-bar-container {
+  height: 24px;
+  background-color: var(--bg-card-header);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.source-bar-fill {
+  height: 100%;
+  background-color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+}
+
+.peak-times {
+  background-color: var(--bg-card-header);
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 12px;
+}
+
+.peak-times p {
+  margin: 0 0 6px 0;
+}
+
+.peak-times p:last-child {
+  margin-bottom: 0;
+}

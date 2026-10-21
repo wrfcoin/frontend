@@ -1,0 +1,194 @@
+.dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+}
+
+.dashboard-title {
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+.metrics-card {
+  height: 100%;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: var(--card-background);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.metric-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.metric-title {
+  font-size: 0.9rem;
+  color: var(--secondary-color);
+  margin-bottom: 0.5rem;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.metric-unit {
+  font-size: 0.8rem;
+  color: var(--secondary-color);
+  margin-left: 0.2rem;
+}
+
+.network-status {
+  height: 100%;
+}
+
+.network-status-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.network-status-item:last-child {
+  border-bottom: none;
+}
+
+.network-status-label {
+  color: var(--secondary-color);
+}
+
+.network-status-value {
+  font-weight: 500;
+}
+
+.network-status-value.running {
+  color: var(--success-color);
+}
+
+.network-status-value.syncing {
+  color: var(--warning-color);
+}
+
+.network-status-value.offline {
+  color: var(--danger-color);
+}
+
+.sync-progress {
+  height: 6px;
+  border-radius: 3px;
+  margin-top: 0.5rem;
+}
+
+.recent-blocks-table {
+  font-size: 0.9rem;
+}
+
+.recent-blocks-table th {
+  white-space: nowrap;
+}
+
+.hash-cell {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wallet-balance {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.wallet-address-container {
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.03);
+  padding: 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.wallet-address {
+  font-family: monospace;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-grow: 1;
+}
+
+.wallet-address-copy {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  padding: 0.2rem;
+  margin-left: 0.5rem;
+  border-radius: 4px;
+}
+
+.wallet-address-copy:hover {
+  background-color: var(--sidebar-hover);
+}
+
+.transaction-list {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.transaction-type {
+  font-weight: 500;
+}
+
+.transaction-id {
+  font-size: 0.8rem;
+  color: var(--secondary-color);
+  font-family: monospace;
+}
+
+.transaction-time {
+  font-size: 0.8rem;
+  color: var(--secondary-color);
+}
+
+.transaction-amount {
+  font-weight: 600;
+}
+
+.transaction-amount.received {
+  color: var(--success-color);
+}
+
+.transaction-amount.sent {
+  color: var(--danger-color);
+}

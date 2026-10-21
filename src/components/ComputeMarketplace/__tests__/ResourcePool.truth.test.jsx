@@ -1,0 +1,40 @@
+/** @jest-environment jsdom */
+import React from 'react';
+import { jest } from '@jest/globals';
+import { render, screen, cleanup } from '@testing-library/react';
+import '@testing-library/jest-dom';
+const features = { demoSurfaces: false };
+await jest.unstable_mockModule('../../../config/features', () => ({ default: features, FEATURES: features }));
+const chart = jest.fn(() => React.createElement('div', { 'data-testid': 'sample-chart' }));
+await jest.unstable_mockModule('react-chartjs-2', () => ({ Doughnut: chart, Bar: chart }));
+jest.useFakeTimers({ now: Date.UTC(2026, 9, 3, 12), doNotFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+const cosine = jest.spyOn(Math, 'cos');
+const { default: ResourcePool } = await import('../ResourcePool.jsx');
+const importGenerationCalls = cosine.mock.calls.length;
+beforeEach(() => { features.demoSurfaces = false; chart.mockClear(); cosine.mockClear(); globalThis.fetch = jest.fn(); });
+afterEach(cleanup);
+afterAll(() => { cosine.mockRestore(); jest.useRealTimers(); });
+it('default leaf shows unavailable without pool totals, contributor rewards or generated forecast', () => {
+  render(<ResourcePool />);
+  expect(screen.getByText('Compute pool telemetry unavailable.')).toBeInTheDocument();
+  expect(screen.queryByText('NVIDIA RTX 4090')).not.toBeInTheDocument();
+  expect(screen.queryByText('WeatherNode_Alpha')).not.toBeInTheDocument();
+  expect(screen.queryByText('Top Contributors')).not.toBeInTheDocument();
+  expect(screen.queryByText('Global Node Distribution')).not.toBeInTheDocument();
+  expect(screen.queryByText('Predicted availability based on historical patterns')).not.toBeInTheDocument();
+  expect(chart).not.toHaveBeenCalled();
+  expect(importGenerationCalls).toBe(0);
+  expect(cosine).not.toHaveBeenCalled();
+  expect(globalThis.fetch).not.toHaveBeenCalled();
+});
+it('explicit demo discloses sample hardware, contributors and generated charts', () => {
+  features.demoSurfaces = true;
+  render(<ResourcePool />);
+  expect(screen.getByText('Sample data')).toBeInTheDocument();
+  expect(screen.getByText('NVIDIA RTX 4090')).toBeInTheDocument();
+  expect(screen.getByText('WeatherNode_Alpha')).toBeInTheDocument();
+  expect(screen.getByText('Global Node Distribution')).toBeInTheDocument();
+  expect(chart).toHaveBeenCalledTimes(2);
+  expect(cosine).toHaveBeenCalledTimes(24);
+  expect(globalThis.fetch).not.toHaveBeenCalled();
+});

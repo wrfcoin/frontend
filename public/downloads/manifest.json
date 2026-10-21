@@ -1,0 +1,42 @@
+{
+  "generated": "2026-10-19T04:20:00Z",
+  "release": null,
+  "artifacts": [
+    {
+      "id": "node-source",
+      "kind": "git",
+      "repo": "wrfcoin/core4",
+      "url": "https://github.com/wrfcoin/core4",
+      "tag": null,
+      "commit": null,
+      "published": false
+    },
+    {
+      "id": "android-apk",
+      "kind": "file",
+      "url": null,
+      "size": null,
+      "sha256": null,
+      "signedBy": null,
+      "published": false
+    },
+    {
+      "id": "cli-source",
+      "kind": "git",
+      "repo": "wrfcoin/core4",
+      "url": "https://github.com/wrfcoin/core4",
+      "tag": null,
+      "commit": null,
+      "published": false
+    },
+    {
+      "id": "cli-linux-x86_64",
+      "kind": "file",
+      "url": null,
+      "size": null,
+      "sha256": null,
+      "signedBy": null,
+      "published": false
+    }
+  ]
+}

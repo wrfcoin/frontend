@@ -1,0 +1,163 @@
+{
+  "backendCommit": "6229638650a1e2a3745ef1b381a7c687646fed00",
+  "sourcePath": "server/enhanced_unified_api_optimized.ts",
+  "sources": [
+    {
+      "path": "server/enhanced_unified_api_optimized.ts",
+      "sha256": "73be2c5757180518a06e17c61f9720d6a825f2ec1650d7219eabeedb3be38418"
+    },
+    {
+      "path": "server/routes/weather-routes.js",
+      "sha256": "a6216b4f3b6aa27d1056d51b558e7aa4b6505c065e01d19b880a509931f19545"
+    },
+    {
+      "path": "server/routes/station-detail-routes.ts",
+      "sha256": "2c48bb75927641e8a5360d77043092a84a729bcebf236b4a4f65c4634c6db2b6"
+    },
+    {
+      "path": "server/routes/station-owner-routes.ts",
+      "sha256": "8549c1be52e073d847ef0f8bdff0e802da30c22f9fbd6dca26444cb01b23007e"
+    }
+  ],
+  "operations": [
+    {
+      "method": "GET",
+      "path": "/api/stations/:stationId/earnings",
+      "sourcePath": "server/routes/station-detail-routes.ts",
+      "line": 664
+    },
+    {
+      "method": "GET",
+      "path": "/api/stations/:stationId/observations",
+      "sourcePath": "server/routes/station-detail-routes.ts",
+      "line": 369
+    },
+    {
+      "method": "GET",
+      "path": "/api/stations/:stationId/ownership",
+      "sourcePath": "server/routes/station-owner-routes.ts",
+      "line": 432
+    },
+    {
+      "method": "GET",
+      "path": "/api/stations/:stationId/quality",
+      "sourcePath": "server/routes/station-detail-routes.ts",
+      "line": 470
+    },
+    {
+      "method": "GET",
+      "path": "/api/stations/:stationId/submissions",
+      "sourcePath": "server/routes/station-detail-routes.ts",
+      "line": 511
+    },
+    {
+      "method": "GET",
+      "path": "/api/weather/alerts/:location",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 738
+    },
+    {
+      "method": "GET",
+      "path": "/api/weather/coverage-zones",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 546
+    },
+    {
+      "method": "GET",
+      "path": "/api/weather/current/:location",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 188
+    },
+    {
+      "method": "GET",
+      "path": "/api/weather/data/:location",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 178
+    },
+    {
+      "method": "GET",
+      "path": "/api/weather/forecast/:location",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 193
+    },
+    {
+      "method": "GET",
+      "path": "/api/weather/health",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 746
+    },
+    {
+      "method": "GET",
+      "path": "/api/weather/historical/:location",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 183
+    },
+    {
+      "method": "GET",
+      "path": "/api/weather/providers",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 198
+    },
+    {
+      "method": "GET",
+      "path": "/api/weather/stations",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 635
+    },
+    {
+      "method": "GET",
+      "path": "/api/weather/stations/:stationId/reward-progress",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 467
+    },
+    {
+      "method": "GET",
+      "path": "/api/weather/stations/credentials",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 518
+    },
+    {
+      "method": "GET",
+      "path": "/api/weather/stations/mobile",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 427
+    },
+    {
+      "method": "POST",
+      "path": "/api/stations/:stationId/owner-actions",
+      "sourcePath": "server/routes/station-owner-routes.ts",
+      "line": 349
+    },
+    {
+      "method": "POST",
+      "path": "/api/weather/data",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 247
+    },
+    {
+      "method": "POST",
+      "path": "/api/weather/stations",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 291
+    },
+    {
+      "method": "POST",
+      "path": "/api/weather/stations/mobile",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 415
+    },
+    {
+      "method": "POST",
+      "path": "/api/weather/stations/mobile/challenge",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 404
+    },
+    {
+      "method": "POST",
+      "path": "/api/weather/stations/verify-key",
+      "sourcePath": "server/routes/weather-routes.js",
+      "line": 435
+    }
+  ],
+  "checksum": "9717a6ee5ebac7072fc9187b2bc6c3824a9089f8d06d409981146bcd8c78a737"
+}

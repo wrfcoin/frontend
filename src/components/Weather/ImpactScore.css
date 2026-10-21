@@ -1,0 +1,291 @@
+/**
+ * ImpactScore Styles
+ *
+ * Apple Fitness-style rings with
+ * tier badges and metric cards.
+ */
+
+.impact-score {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.impact-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.impact-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+  margin: 0;
+}
+
+.info-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted, #64748B);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.info-btn:hover {
+  background: var(--bg-tertiary, #334155);
+  color: var(--text-primary, #F8FAFC);
+}
+
+.info-tooltip {
+  padding: 12px;
+  background: var(--bg-tertiary, #334155);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94A3B8);
+  line-height: 1.5;
+  animation: fadeIn 0.2s ease;
+}
+
+.info-tooltip p {
+  margin: 0;
+}
+
+/* Rings Container */
+.rings-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.rings-wrapper {
+  position: relative;
+  width: 180px;
+  height: 180px;
+}
+
+.ring-layer {
+  pointer-events: none;
+}
+
+.ring-svg {
+  display: block;
+}
+
+.progress-ring {
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+/* Center Content */
+.ring-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.overall-score {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #F8FAFC);
+  line-height: 1;
+}
+
+.overall-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-muted, #64748B);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Ring Legend */
+.ring-legend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legend-label {
+  font-size: 0.6875rem;
+  color: var(--text-muted, #64748B);
+}
+
+.legend-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+}
+
+/* Tier Badge */
+.tier-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-tertiary, #334155);
+  border-radius: 10px;
+}
+
+.tier-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 215, 0, 0.1);
+  border-radius: 10px;
+}
+
+.tier-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.current-tier {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+}
+
+.next-tier {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.next-tier span {
+  font-size: 0.6875rem;
+  color: var(--text-muted, #64748B);
+}
+
+.tier-progress-bar {
+  height: 4px;
+  background: rgba(51, 65, 85, 0.5);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.tier-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s ease-out;
+}
+
+/* Metrics Grid */
+.impact-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.impact-metric-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--bg-tertiary, #334155);
+  border-radius: 8px;
+}
+
+.metric-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, currentColor 15%, transparent);
+  border-radius: 8px;
+}
+
+.metric-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.metric-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+}
+
+.metric-suffix {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--text-muted, #64748B);
+  margin-left: 2px;
+}
+
+.metric-label {
+  font-size: 0.625rem;
+  color: var(--text-muted, #64748B);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .rings-wrapper {
+    width: 160px;
+    height: 160px;
+  }
+
+  .overall-score {
+    font-size: 2rem;
+  }
+
+  .ring-legend {
+    gap: 12px;
+  }
+
+  .impact-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .progress-ring {
+    transition: none;
+  }
+
+  .tier-progress-fill {
+    transition: none;
+  }
+
+  .info-tooltip {
+    animation: none;
+  }
+}

@@ -1,0 +1,239 @@
+/* Secondary sidebar styles */
+.secondary-sidebar {
+  position: fixed;
+  top: 46px; /* Position it below the status bar height (40px plus padding) */
+  left: 240px; /* Positioned right after the expanded sidebar */
+  width: 250px;
+  height: calc(100vh - 46px); /* Adjust height to account for top offset */
+  background-color: #ffffff; /* Solid white background in light mode */
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  z-index: 1002; /* Higher than status bar to appear on top */
+  box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+  animation: slide-in 0.25s ease-out;
+  overflow-y: auto;
+  padding-top: 0; /* Remove padding */
+  /* Ensure full opacity */
+  backdrop-filter: none;
+  opacity: 1;
+  background-image: none;
+}
+
+/* Add dark mode support */
+body.dark-mode .secondary-sidebar {
+  background-color: #1e1e1e; /* Solid dark background in dark mode */
+}
+
+/* Handle the collapsed sidebar case */
+.sidebar.collapsed ~ .secondary-sidebar,
+.sidebar-submenu-container.collapsed .secondary-sidebar {
+  left: 60px; /* Position it right after the collapsed sidebar */
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.secondary-sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.secondary-sidebar-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.close-secondary-btn {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.close-secondary-btn:hover {
+  background-color: var(--hover-bg-color);
+}
+
+.secondary-sidebar-menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+}
+
+.secondary-sidebar-item {
+  margin: 0;
+  padding: 0;
+}
+
+.secondary-sidebar-link {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  color: var(--text-color);
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.secondary-sidebar-link i {
+  margin-right: 12px;
+  font-size: 1.1rem;
+  color: var(--icon-color);
+}
+
+.secondary-sidebar-item:hover .secondary-sidebar-link {
+  background-color: var(--hover-bg-color);
+}
+
+.secondary-sidebar-item.active .secondary-sidebar-link {
+  background-color: var(--active-bg-color);
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.secondary-sidebar-item.active .secondary-sidebar-link i {
+  color: var(--primary-color);
+}
+
+/* Adjust main content when secondary sidebar is open */
+.content.shifted {
+  margin-left: 470px; /* Adjusted from default margin to accommodate secondary sidebar */
+}
+
+/* Adjust the content based on sidebar states */
+body.sidebar-collapsed .secondary-sidebar {
+  left: 60px; /* When main sidebar is collapsed */
+}
+
+/* Expandable chevron for sidebar items */
+.sidebar-link-expandable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-link-content {
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-link-content i {
+  margin-right: 12px;
+}
+
+.sidebar-link-expandable .bi-chevron-right {
+  margin-left: 5px;
+  transition: transform 0.3s;
+  font-size: 0.8rem;
+}
+
+.sidebar-link-expandable.active .bi-chevron-right {
+  transform: rotate(90deg);
+}
+
+/* Submenu styling */
+.secondary-sidebar-submenu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border-left: 2px solid var(--border-color);
+  margin-left: 16px;
+  font-size: 0.9rem;
+  z-index: 10; /* Ensure the submenu appears on top */
+}
+
+.secondary-sidebar-subitem {
+  margin: 0;
+  padding: 0;
+}
+
+.secondary-sidebar-sublink {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px 8px 24px;
+  text-decoration: none;
+  color: var(--text-color);
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.secondary-sidebar-sublink i {
+  margin-right: 10px;
+  font-size: 0.9rem;
+  color: var(--icon-color);
+}
+
+.secondary-sidebar-subitem.active .secondary-sidebar-sublink {
+  background-color: var(--active-bg-color);
+  color: var(--primary-color);
+}
+
+.secondary-sidebar-subitem.active .secondary-sidebar-sublink i {
+  color: var(--primary-color);
+}
+
+.secondary-sidebar-sublink:hover {
+  background-color: var(--hover-bg-color);
+}
+
+/* Category container styling */
+.category-container {
+  margin-top: 4px;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 16px 6px 24px;
+  cursor: pointer;
+  color: var(--text-muted-color, #6c757d);
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.category-header:hover {
+  background-color: var(--hover-bg-color);
+}
+
+.category-header i {
+  margin-right: 8px;
+  font-size: 0.8rem;
+  transition: transform 0.2s ease;
+}
+
+/* Submenu collapsed/expanded states */
+.secondary-sidebar-submenu.collapsed {
+  max-height: 0;
+  transition: max-height 0.3s ease-out;
+  overflow: hidden;
+}
+
+.secondary-sidebar-submenu.expanded {
+  max-height: 500px; /* Arbitrary large value to accommodate all items */
+  transition: max-height 0.5s ease-in;
+}

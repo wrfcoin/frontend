@@ -1,0 +1,113 @@
+name: TypeScript Type Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**/*.ts"
+      - "src/**/*.tsx"
+      - "src/**/*.js"
+      - "src/**/*.jsx"
+      - "tsconfig.json"
+      - "tsconfig.node.json"
+      - "tsconfig.test.json"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/typecheck.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    name: TypeScript type-check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Detect generated types dependency
+        id: generated-types
+        run: |
+          if node -e "const pkg=require('./package.json'); const deps={...(pkg.dependencies||{}), ...(pkg.devDependencies||{})}; process.exit(deps['@wrfcoin/generated-types'] ? 0 : 1)"; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout backend generated types
+        if: steps.generated-types.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: wrfcoin/backend
+          token: ${{ secrets.WRFCOIN_CI_TOKEN || github.token }}
+          path: backend
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Build backend generated types
+        if: steps.generated-types.outputs.enabled == 'true'
+        run: |
+          ln -sfn "$GITHUB_WORKSPACE/backend" "$GITHUB_WORKSPACE/../backend"
+          npm ci --prefix ../backend/shared/generated-types
+          npm run build --prefix ../backend/shared/generated-types
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run type-check
+        run: npm run type-check
+
+  # ---------------------------------------------------------------------------
+  # Type-check the TEST files. (frontend#269)
+  #
+  # The job above cannot see them: tsconfig.json excludes **/*.test.ts(x) and
+  # **/*.spec.ts(x). ts-jest cannot see them either — jest.config.cjs runs it
+  # with `isolatedModules: true`, which transpiles per file with no cross-file
+  # type information. So a type error in a test file was invisible to BOTH type
+  # paths, and the runtime failure it caused was invisible to CI because no
+  # workflow ran Jest (fixed separately in #271).
+  #
+  # That is how #267 stranded fixtures: it moved WRF amounts to bigint
+  # correctly, and the fixtures it left behind became type-invalid with no
+  # signal anywhere. This job reports exactly that error:
+  #
+  #   FirstEarnCelebration.test.tsx(18,28): error TS2322:
+  #     Type 'number' is not assignable to type 'string'.
+  #
+  # LANDS RED — 69 errors across 13 files, all of them test files. Production
+  # src/ type-checks clean, which is why this is a separate job rather than a
+  # relaxation of the one above: the existing gate stays meaningful and green
+  # while this one carries the backlog it just made visible.
+  #
+  # Do not add continue-on-error to green the board; that makes it wrapper-only
+  # success, which the evidence standard classifies VOID.
+  # ---------------------------------------------------------------------------
+  typecheck-tests:
+    name: TypeScript type-check (tests)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check test files
+        run: npx tsc -p tsconfig.test.json

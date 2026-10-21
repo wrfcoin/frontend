@@ -1,0 +1,50 @@
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-text {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  z-index: 1000;
+  margin-bottom: 5px;
+  width: max-content;
+  max-width: 250px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.tooltip-text::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(0, 0, 0, 0.8) transparent transparent transparent;
+}
+
+/* For info icon */
+.info-icon {
+  margin-left: 5px;
+  cursor: help;
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .tooltip-text {
+    max-width: 200px;
+    font-size: 0.7rem;
+    padding: 6px 10px;
+  }
+}

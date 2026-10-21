@@ -1,0 +1,246 @@
+/**
+ * EarningsCalendar Styles
+ *
+ * GitHub-style contribution heatmap
+ * with custom dark theme colors.
+ */
+
+.earnings-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.calendar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent-primary, #3B82F6);
+}
+
+.calendar-title h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+  margin: 0;
+}
+
+.calendar-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary, #F8FAFC);
+}
+
+.stat-label {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--text-muted, #64748B);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Heatmap Container */
+.heatmap-container {
+  overflow-x: auto;
+  padding: 8px 0;
+}
+
+/* Override react-calendar-heatmap styles */
+.react-calendar-heatmap {
+  font-family: var(--font-display, 'Inter', sans-serif);
+}
+
+.react-calendar-heatmap text {
+  font-size: 10px;
+  fill: var(--text-muted, #64748B);
+}
+
+.react-calendar-heatmap .react-calendar-heatmap-month-label {
+  font-size: 10px;
+  fill: var(--text-muted, #64748B);
+}
+
+.react-calendar-heatmap .react-calendar-heatmap-weekday-label {
+  font-size: 9px;
+  fill: var(--text-muted, #64748B);
+}
+
+/* Color Scale */
+.react-calendar-heatmap .color-scale-0 {
+  fill: rgba(51, 65, 85, 0.3);
+}
+
+.react-calendar-heatmap .color-scale-1 {
+  fill: rgba(34, 197, 94, 0.25);
+}
+
+.react-calendar-heatmap .color-scale-2 {
+  fill: rgba(34, 197, 94, 0.45);
+}
+
+.react-calendar-heatmap .color-scale-3 {
+  fill: rgba(34, 197, 94, 0.7);
+}
+
+.react-calendar-heatmap .color-scale-4 {
+  fill: rgba(34, 197, 94, 1);
+}
+
+.react-calendar-heatmap rect:hover {
+  stroke: var(--text-primary, #F8FAFC);
+  stroke-width: 1px;
+  cursor: pointer;
+}
+
+/* Legend */
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding-top: 8px;
+}
+
+.legend-label {
+  font-size: 0.6875rem;
+  color: var(--text-muted, #64748B);
+}
+
+.legend-scale {
+  display: flex;
+  gap: 3px;
+}
+
+.legend-box {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.legend-box.color-scale-0 { background: rgba(51, 65, 85, 0.3); }
+.legend-box.color-scale-1 { background: rgba(34, 197, 94, 0.25); }
+.legend-box.color-scale-2 { background: rgba(34, 197, 94, 0.45); }
+.legend-box.color-scale-3 { background: rgba(34, 197, 94, 0.7); }
+.legend-box.color-scale-4 { background: rgba(34, 197, 94, 1); }
+
+/* Tooltip */
+.earnings-tooltip {
+  background: rgba(15, 23, 42, 0.95) !important;
+  color: var(--text-primary, #F8FAFC) !important;
+  font-size: 0.75rem !important;
+  border: 1px solid var(--border-default, rgba(51, 65, 85, 0.5)) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  z-index: 1000 !important;
+}
+
+/* Selected Date Details */
+.selected-date-details {
+  padding: 12px;
+  background: var(--bg-tertiary, #334155);
+  border-radius: 10px;
+  animation: fadeIn 0.2s ease;
+}
+
+.details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-default, rgba(51, 65, 85, 0.5));
+}
+
+.details-date {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+}
+
+.details-total {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-green, #22C55E);
+}
+
+.details-breakdown {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 6px;
+}
+
+.breakdown-source {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748B);
+  text-transform: capitalize;
+}
+
+.breakdown-amount {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .calendar-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .calendar-stats {
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .details-breakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .heatmap-container {
+    margin: 0 -12px;
+    padding: 8px 12px;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .selected-date-details {
+    animation: none;
+  }
+}

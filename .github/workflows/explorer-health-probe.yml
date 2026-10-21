@@ -1,0 +1,78 @@
+name: Explorer Health Probe
+
+on:
+  schedule:
+    - cron: "23 5 * * *"
+  workflow_dispatch: {}
+  pull_request:
+    paths:
+      - ".github/workflows/explorer-health-probe.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "playwright.config.cjs"
+      - "src/__tests__/playwright/testnet-explorer-health.spec.js"
+      - "src/components/explorer/**"
+      - "src/components/Explorer/**"
+      - "src/components/DAGExplorer/**"
+      - "src/components/BlockExplorerDAG/**"
+      - "src/routes/networkRoutes.jsx"
+      - "src/services/apiClient/**"
+      - "src/api/**"
+
+# Refs wrfcoin/infra#1113: supersede PRs, preserve every scheduled/dispatch run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  explorer-health-probe:
+    name: Advisory explorer health probe
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run explorer health probe
+        id: explorer-probe
+        continue-on-error: true
+        run: npm run test:e2e:explorer
+        env:
+          CI: "true"
+
+      - name: Summarize advisory result
+        if: always()
+        run: |
+          if [ "${{ steps.explorer-probe.outcome }}" = "success" ]; then
+            echo "Explorer health probe passed." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Explorer health probe failed in advisory mode." >> "$GITHUB_STEP_SUMMARY"
+            echo "Check Playwright output for either testnet-down contract-stub failures or component-regression assertions." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload explorer probe artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: explorer-health-probe
+          if-no-files-found: ignore
+          path: |
+            test-results/
+            playwright-report/

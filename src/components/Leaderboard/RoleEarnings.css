@@ -1,0 +1,37 @@
+.lb-role-payments {
+  margin: 1.5rem 0;
+  padding: 1.25rem;
+  border: 1px solid rgba(128, 128, 128, .3);
+  border-radius: .75rem;
+  overflow-x: auto;
+}
+.lb-role-payments .lb-tab[aria-selected="true"] {
+  background: rgba(59, 130, 246, .18);
+  border-color: #3b82f6;
+}
+.lb-role-payments button, .role-payment-summary button {
+  cursor: pointer;
+  padding: .5rem .75rem;
+}
+.lb-role-payments .lb-tabbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem;
+}
+.lb-role-payments table {
+  width: 100%;
+  text-align: left;
+}
+.lb-role-payments th, .lb-role-payments td {
+  padding: .75rem .5rem;
+}
+.role-payment-summary dl {
+  display: grid;
+  grid-template-columns: minmax(9rem, 1fr) 2fr;
+  gap: .75rem;
+}
+.role-payment-summary dd { margin: 0; }
+@media (max-width: 480px) {
+  .role-payment-summary dl { grid-template-columns: 1fr; }
+  .role-payment-summary dt { font-weight: 600; }
+}

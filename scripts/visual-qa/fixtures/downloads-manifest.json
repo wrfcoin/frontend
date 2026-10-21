@@ -1,0 +1,41 @@
+{
+  "generated": "2026-10-22T12:00:00Z",
+  "release": "testnet-r21",
+  "artifacts": [
+    {
+      "id": "node-source",
+      "kind": "git",
+      "repo": "wrfcoin/core4",
+      "url": "https://github.com/wrfcoin/core4",
+      "tag": "testnet-r21",
+      "commit": "43150e6020bd0766d3e86cecb81e6fc010168bde",
+      "published": true
+    },
+    {
+      "id": "android-apk",
+      "kind": "file",
+      "url": "https://github.com/wrfcoin/mobile/releases/download/testnet-r21/wrfcoin-testnet-r21.apk",
+      "size": 50532114,
+      "sha256": "1352c483f60343e8c685f6d9d851337136285b9ef4cd62c0155b8d472283df48",
+      "signedBy": "WRFCoin testnet release key \u00b7 fingerprint published in the manifest",
+      "published": true
+    },
+    {
+      "id": "cli-source",
+      "kind": "git",
+      "repo": "wrfcoin/core4",
+      "url": "https://github.com/wrfcoin/core4",
+      "tag": "testnet-r21",
+      "commit": "43150e6020bd0766d3e86cecb81e6fc010168bde",
+      "published": true
+    },
+    {
+      "id": "cli-linux-x86_64",
+      "kind": "file",
+      "url": "https://github.com/wrfcoin/core4/releases/download/testnet-r21/wrfcoin-linux-x86_64.tar.gz",
+      "size": 8831021,
+      "sha256": "43ada04bb6ecec340d10b04b63d3ccfd671a8aa2fd28f8cdbcabe1d2636398e6",
+      "published": true
+    }
+  ]
+}

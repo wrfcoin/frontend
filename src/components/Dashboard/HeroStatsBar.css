@@ -1,0 +1,269 @@
+/**
+ * HeroStatsBar Styles
+ *
+ * Fixed position ticker with glassmorphism effect
+ * and smooth number animations.
+ */
+
+.hero-stats-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  z-index: 1000;
+}
+
+.hero-stats-container {
+  max-width: 1800px;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Connection Indicator */
+.connection-indicator {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding-right: 16px;
+  border-right: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.connection-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--status-online, #22C55E);
+  box-shadow: 0 0 10px var(--status-online, #22C55E);
+  animation: pulse 2s infinite;
+}
+
+.connection-indicator.disconnected .connection-dot {
+  background: var(--status-offline, #EF4444);
+  box-shadow: 0 0 10px var(--status-offline, #EF4444);
+  animation: none;
+}
+
+/* Stats Scroll Container */
+.stats-scroll {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.stats-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Stat Item */
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+  border-radius: 8px;
+}
+
+.stat-item:hover {
+  background: rgba(51, 65, 85, 0.3);
+}
+
+.stat-item.updating {
+  animation: statPulse 0.5s ease;
+}
+
+@keyframes statPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.stat-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-primary, #3B82F6);
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-muted, #64748B);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+  white-space: nowrap;
+}
+
+.stat-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.stat-change.positive {
+  color: var(--accent-green, #22C55E);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.stat-change.negative {
+  color: var(--accent-red, #EF4444);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Separator */
+.stat-separator {
+  width: 1px;
+  height: 24px;
+  background: rgba(51, 65, 85, 0.5);
+  flex-shrink: 0;
+}
+
+/* Live Indicator */
+.live-indicator {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 16px;
+  border-left: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-red, #EF4444);
+  animation: livePulse 1s infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+.live-text {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--accent-red, #EF4444);
+  letter-spacing: 1px;
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1279px) {
+  .stat-item {
+    padding: 8px 12px;
+  }
+
+  .stat-label {
+    font-size: 0.625rem;
+  }
+
+  .stat-value {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-stats-bar {
+    height: auto;
+    min-height: 64px;
+    padding: 8px 0;
+  }
+
+  .hero-stats-container {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 0 12px;
+    gap: 8px;
+  }
+
+  .connection-indicator,
+  .live-indicator {
+    border: none;
+    padding: 0;
+  }
+
+  .stats-scroll {
+    width: 100%;
+    justify-content: flex-start;
+    padding-bottom: 8px;
+  }
+
+  .stat-separator {
+    display: none;
+  }
+
+  .stat-item {
+    padding: 6px 10px;
+  }
+
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .stat-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .connection-dot,
+  .live-dot,
+  .stat-item.updating {
+    animation: none;
+  }
+}

@@ -1,0 +1,279 @@
+/* Proof-of-Meme Page — dark card layout matching WeatherStreakPage.css */
+
+.meme-page {
+  padding: 2rem;
+  max-width: 960px;
+  margin: 0 auto;
+  color: var(--text-primary, #e0e0e0);
+}
+
+/* ── Hero ── */
+.meme-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 12px;
+  padding: 2.5rem 2rem;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.meme-hero h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-primary, #e0e0e0);
+}
+
+.meme-hero p {
+  font-size: 1.05rem;
+  color: var(--text-secondary, #888);
+  max-width: 540px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── Multiplier hero number (in ProofOfMemeDashboard) ── */
+.meme-multiplier-hero,
+.pom-multiplier-hero {
+  font-size: 5rem;
+  font-weight: 900;
+  color: var(--accent-amber, #F59E0B);
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.pom-multiplier-x {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--accent-amber, #F59E0B);
+  opacity: 0.75;
+  vertical-align: super;
+}
+
+/* ── ProofOfMemeDashboard card ── */
+.pom-card {
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 12px;
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.pom-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.pom-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.pom-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary, #e0e0e0);
+}
+
+.pom-loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-amber, #F59E0B);
+  margin-left: auto;
+  animation: pom-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pom-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+.pom-error {
+  color: var(--accent-red, #EF4444);
+  font-size: 0.85rem;
+}
+
+/* ── Stats row ── */
+.pom-stats-row {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.pom-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.pom-stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary, #e0e0e0);
+}
+
+.pom-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pom-countdown {
+  color: var(--accent-green, #22C55E);
+}
+
+/* ── Twitter row ── */
+.pom-twitter-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pom-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  background: #1da1f2;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.pom-link-btn:hover { opacity: 0.85; }
+
+.pom-twitter-linked {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--accent-green, #22C55E);
+}
+
+.pom-twitter-icon {
+  font-size: 1.1rem;
+}
+
+.pom-share-link {
+  font-size: 0.9rem;
+  color: var(--accent-amber, #F59E0B);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.pom-share-link:hover { opacity: 0.8; }
+
+/* ── Compact bar ── */
+.pom-compact-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 8px;
+}
+
+.pom-compact-icon { font-size: 1.1rem; }
+.pom-compact-label { color: var(--text-secondary, #888); }
+
+.pom-compact-value {
+  font-weight: 700;
+  color: var(--accent-amber, #F59E0B);
+}
+
+.pom-compact-sep { color: var(--text-secondary, #888); }
+.pom-compact-posts { color: var(--text-secondary, #888); }
+.pom-compact-unlinked { color: var(--accent-amber, #F59E0B); font-size: 0.82rem; }
+
+/* ── Section titles ── */
+.meme-section-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 2rem 0 1rem;
+  color: var(--text-primary, #e0e0e0);
+  border-left: 4px solid var(--accent-amber, #F59E0B);
+  padding-left: 0.75rem;
+}
+
+/* ── Viral feed grid ── */
+.meme-feed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.meme-feed-card {
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  transition: border-color 0.2s;
+}
+
+.meme-feed-card:hover {
+  border-color: var(--accent-amber, #F59E0B);
+}
+
+.meme-feed-emoji {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.meme-feed-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #888);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.meme-feed-engagement {
+  font-size: 0.8rem;
+  color: var(--accent-green, #22C55E);
+  font-weight: 600;
+}
+
+/* ── FAQ accordion ── */
+.meme-faq {
+  margin-bottom: 2rem;
+}
+
+.meme-faq .MuiAccordion-root {
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 8px !important;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary, #e0e0e0);
+}
+
+.meme-faq .MuiAccordionSummary-root {
+  font-weight: 600;
+  color: var(--text-primary, #e0e0e0);
+}
+
+.meme-faq .MuiAccordionDetails-root {
+  color: var(--text-secondary, #888);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}

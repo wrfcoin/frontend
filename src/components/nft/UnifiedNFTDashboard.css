@@ -1,0 +1,76 @@
+.unified-nft-dashboard {
+  width: 100%;
+}
+
+.tab-navigation {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tab-item {
+  padding: 0.75rem 1.5rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 0.25rem 0.25rem 0 0;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.tab-item i {
+  margin-right: 0.5rem;
+}
+
+.tab-item:hover {
+  background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+.tab-item.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.tab-content {
+  min-height: 500px;
+}
+
+/* Wallet input container styles */
+.wallet-input-container {
+  background-color: rgba(var(--primary-rgb), 0.05);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+}
+
+.wallet-input-container .input-group {
+  max-width: 600px;
+}
+
+.wallet-input-container small {
+  display: block;
+  padding-top: 0.5rem;
+}
+
+/* Hide original title from child components since we have our own */
+.tab-content h2.dashboard-title {
+  display: none;
+}
+
+/* Adjustments for ComputationalNFTList inside the tabbed interface */
+.tab-content .computational-nft-list .page-header {
+  padding: 0;
+  margin-bottom: 1rem;
+}
+
+.tab-content .computational-nft-list .page-header h2 {
+  display: none;
+}
+
+/* Adjustments for NftMarketplace inside the tabbed interface */
+.tab-content .card-title {
+  display: none;
+}

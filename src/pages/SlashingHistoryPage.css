@@ -1,0 +1,254 @@
+/* Slashing History Page — uses existing CSS variable theme tokens */
+
+.slashing-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem;
+  color: var(--text-primary, var(--text-color, #e0e0e0));
+}
+
+.slashing-page__header {
+  margin-bottom: 2rem;
+}
+
+.slashing-page__header h1 {
+  color: var(--text-primary, var(--text-color, #e0e0e0));
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.slashing-page__subtitle {
+  color: var(--text-secondary, #888);
+  margin-bottom: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.slashing-page__updated {
+  color: var(--text-secondary, #888);
+  font-size: 0.8rem;
+}
+
+/* ── Stats bar ── */
+.slashing-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.slashing-stat {
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 8px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.slashing-stat__value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary, var(--text-color, #e0e0e0));
+}
+
+.slashing-stat__value--red {
+  color: var(--danger-color, var(--secondary-color, #e74c3c));
+}
+
+.slashing-stat__label {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #888);
+  text-align: center;
+}
+
+/* ── Table section ── */
+.slashing-page__table-section {
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+/* ── SlashingEventLog: filter bar ── */
+.slashing-log__filters {
+  margin-bottom: 1rem;
+  color: var(--text-secondary, #888);
+  font-size: 0.9rem;
+}
+
+.slashing-log__filters select {
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  color: var(--text-primary, var(--text-color, #e0e0e0));
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+}
+
+/* ── Table ── */
+.slashing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.slashing-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  color: var(--text-secondary, #888);
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.slashing-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border-color, #2a2a4a);
+  color: var(--text-primary, var(--text-color, #e0e0e0));
+}
+
+.slashing-table tr:last-child td {
+  border-bottom: none;
+}
+
+.slashing-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Loading skeleton rows */
+.slashing-table--loading td {
+  padding: 0.75rem;
+}
+
+.slashing-placeholder {
+  display: block;
+  height: 1rem;
+  border-radius: 4px;
+  background: var(--border-color, #2a2a4a);
+  opacity: 0.5;
+  animation: slashing-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes slashing-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.2; }
+}
+
+/* ── Cell modifiers ── */
+.slashing-mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+}
+
+.slashing-addr {
+  cursor: default;
+}
+
+.slashing-amount {
+  color: var(--danger-color, var(--secondary-color, #e74c3c));
+  font-weight: 600;
+}
+
+.slashing-streak {
+  color: var(--text-secondary, #888);
+  font-size: 0.82rem;
+}
+
+/* ── Violation badges ── */
+.slashing-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Red: low quality band — DATA-004 physical range violations */
+.slashing-badge--data {
+  background: rgba(231, 76, 60, 0.15);
+  color: var(--danger-color, #e74c3c);
+}
+
+/* Amber: other quality bands */
+.slashing-badge--other {
+  background: rgba(241, 196, 15, 0.15);
+  color: var(--warning-color, #f1c40f);
+}
+
+/* ── Pagination ── */
+.slashing-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  color: var(--text-secondary, #888);
+  font-size: 0.875rem;
+}
+
+.slashing-pagination button {
+  background: var(--card-bg, #1a1a2e);
+  border: 1px solid var(--border-color, #2a2a4a);
+  color: var(--text-primary, var(--text-color, #e0e0e0));
+  border-radius: 6px;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.slashing-pagination button:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.slashing-pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ── States ── */
+.slashing-empty {
+  color: var(--text-secondary, #888);
+  text-align: center;
+  padding: 2rem;
+  font-size: 0.9rem;
+}
+
+.slashing-error {
+  color: var(--danger-color, var(--secondary-color, #e74c3c));
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+.slashing-skeleton {
+  color: var(--text-secondary, #888);
+  padding: 1rem;
+  font-size: 0.9rem;
+}
+
+/* ── Compact variant ── */
+.slashing-log--compact .slashing-table {
+  font-size: 0.82rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .slashing-stats-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .slashing-stats-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .slashing-page {
+    padding: 1rem;
+  }
+}

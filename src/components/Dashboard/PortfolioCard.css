@@ -1,0 +1,320 @@
+/**
+ * PortfolioCard Styles
+ *
+ * Hero portfolio card with gradient chart,
+ * holdings breakdown, and interactive controls.
+ */
+
+.portfolio-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 420px;
+}
+
+/* Header Section */
+.portfolio-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.portfolio-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.portfolio-title h3 {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary, #94A3B8);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.portfolio-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-muted, #64748B);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: var(--bg-tertiary, #334155);
+  color: var(--text-primary, #F8FAFC);
+}
+
+.icon-btn.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Value Section */
+.portfolio-value-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.portfolio-main-value {
+  display: flex;
+  align-items: baseline;
+}
+
+.value-amount {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #F8FAFC);
+  line-height: 1.1;
+}
+
+.hidden-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-muted, #64748B);
+  letter-spacing: 4px;
+}
+
+.portfolio-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+}
+
+.portfolio-change.positive {
+  color: var(--accent-green, #22C55E);
+}
+
+.portfolio-change.negative {
+  color: var(--accent-red, #EF4444);
+}
+
+.change-amount {
+  font-weight: 600;
+}
+
+.change-percent {
+  font-weight: 500;
+}
+
+.change-period {
+  color: var(--text-muted, #64748B);
+  font-size: 0.75rem;
+  margin-left: 4px;
+}
+
+/* Time Range Selector */
+.time-range-selector {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-tertiary, #334155);
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.time-range-btn {
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary, #94A3B8);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.time-range-btn:hover {
+  color: var(--text-primary, #F8FAFC);
+}
+
+.time-range-btn.active {
+  background: var(--accent-primary, #3B82F6);
+  color: white;
+}
+
+/* Chart Section */
+.portfolio-chart {
+  height: 160px;
+  margin: 0 -8px;
+}
+
+/* Holdings Section */
+.holdings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-default, rgba(51, 65, 85, 0.5));
+}
+
+.holdings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.holdings-header h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+  margin: 0;
+}
+
+.view-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--accent-primary, #3B82F6);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.view-all-btn:hover {
+  opacity: 0.8;
+}
+
+.holdings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Holding Item */
+.holding-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 8px 16px;
+  padding: 10px 12px;
+  background: var(--bg-tertiary, #334155);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.holding-item:hover {
+  background: var(--bg-hover, #475569);
+}
+
+.holding-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.holding-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.holding-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.holding-symbol {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+}
+
+.holding-name {
+  font-size: 0.6875rem;
+  color: var(--text-muted, #64748B);
+}
+
+.holding-values {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.holding-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+}
+
+.holding-percent {
+  font-size: 0.6875rem;
+  color: var(--text-muted, #64748B);
+}
+
+.holding-bar {
+  grid-column: 1 / -1;
+  height: 4px;
+  background: rgba(51, 65, 85, 0.5);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.holding-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .portfolio-card {
+    min-height: auto;
+  }
+
+  .value-amount,
+  .hidden-value {
+    font-size: 2rem;
+  }
+
+  .portfolio-chart {
+    height: 120px;
+  }
+
+  .time-range-selector {
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .time-range-btn {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .icon-btn.spinning {
+    animation: none;
+  }
+
+  .holding-bar-fill {
+    transition: none;
+  }
+}

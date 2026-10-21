@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wrfcoin Core Preview</title>
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      .header {
+        background: #6f42c1;
+        color: white;
+        padding: 10px 20px;
+        font-family: Arial, sans-serif;
+      }
+      iframe {
+        flex: 1;
+        border: none;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>Wrfcoin Core Preview</h2>
+      </div>
+      <iframe src="http://localhost:5000" allowfullscreen></iframe>
+    </div>
+  </body>
+</html>

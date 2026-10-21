@@ -1,0 +1,44 @@
+/** @jest-environment jsdom */
+import React from 'react';
+import { jest } from '@jest/globals';
+import { render, screen, cleanup, act, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+const flags = { demoSurfaces: false };
+await jest.unstable_mockModule('../../../config/features', () => ({ default: flags, FEATURES: flags }));
+jest.useFakeTimers({ now: Date.UTC(2026, 9, 3, 12) });
+const random = jest.spyOn(Math, 'random').mockReturnValue(0.5);
+const interval = jest.spyOn(globalThis, 'setInterval');
+const { default: PipelineMonitor } = await import('../PipelineMonitor.jsx');
+const importedRandomCalls = random.mock.calls.length;
+const run = jest.fn(); const stop = jest.fn();
+beforeEach(() => { flags.demoSurfaces = false; random.mockClear(); interval.mockClear(); run.mockClear(); stop.mockClear(); globalThis.fetch = jest.fn(); });
+afterEach(() => { cleanup(); jest.clearAllTimers(); });
+afterAll(() => { random.mockRestore(); interval.mockRestore(); jest.useRealTimers(); });
+it('default monitor never invents run history, logs or periodic throughput', () => {
+  render(<PipelineMonitor pipeline={{ name: 'Synthetic pipeline' }} onRun={run} onStop={stop} />);
+  act(() => jest.advanceTimersByTime(6000));
+  expect(screen.getByText('Pipeline execution telemetry unavailable.')).toBeInTheDocument();
+  expect(screen.queryByText('Synthetic pipeline')).not.toBeInTheDocument();
+  expect(screen.queryByText('NYC Station')).not.toBeInTheDocument();
+  expect(screen.queryByText('Pipeline execution started (run-11)')).not.toBeInTheDocument();
+  expect(screen.queryByText('Execution Log')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /^(Run|Stop|Retry)$/ })).not.toBeInTheDocument();
+  expect(importedRandomCalls).toBe(0); expect(random).not.toHaveBeenCalled(); expect(interval).not.toHaveBeenCalled();
+  expect(run).not.toHaveBeenCalled(); expect(stop).not.toHaveBeenCalled(); expect(globalThis.fetch).not.toHaveBeenCalled();
+});
+it('explicit demo labels synthetic execution and cleans up its simulation timer', () => {
+  flags.demoSurfaces = true;
+  const { unmount } = render(<PipelineMonitor pipeline={{ name: 'Synthetic pipeline' }} onRun={run} onStop={stop} />);
+  expect(screen.getByText('Sample data')).toBeInTheDocument();
+  expect(screen.getByText('Synthetic pipeline')).toBeInTheDocument();
+  expect(screen.getByText('Pipeline execution started (run-11)')).toBeInTheDocument();
+  expect(random).toHaveBeenCalled(); expect(interval).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Stop' }));
+  expect(stop).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole('button', { name: 'Run' }));
+  expect(run).toHaveBeenCalledTimes(1);
+  const calls = random.mock.calls.length;
+  unmount(); act(() => jest.advanceTimersByTime(6000));
+  expect(random.mock.calls.length).toBe(calls);
+  expect(globalThis.fetch).not.toHaveBeenCalled();
+});

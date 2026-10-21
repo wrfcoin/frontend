@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import test from 'node:test';
+for (const file of ["src/components/iExec/iExecDashboard.jsx"]) test(`production sample gate protects ${file}`, t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sol-j-parent-ratchet-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, path.dirname(file)), { recursive: true });
+  fs.mkdirSync(path.join(root, 'scripts'));
+  fs.writeFileSync(path.join(root, 'scripts/ungated-fabrication-baseline.json'), '[]');
+  fs.writeFileSync(path.join(root, 'src/App.jsx'), `import View from './${file.slice(4)}'; export default View;`);
+  const source = fs.readFileSync(file, 'utf8');
+  fs.writeFileSync(path.join(root, file), source);
+  const run = () => spawnSync(process.execPath, [path.resolve('scripts/check-ungated-fabrication.mjs'), '--root', root], { encoding: 'utf8' });
+  const pristine = run(); assert.equal(pristine.status, 0, pristine.stdout + pristine.stderr);
+  const mutant = source.replace(/<DemoSurfaceGate\b[^>]*>/, '<>').replace('</DemoSurfaceGate>', '</>');
+  assert.notEqual(mutant, source);
+  fs.writeFileSync(path.join(root, file), mutant);
+  const result = run(); assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.ok(result.stderr.includes(path.basename(file)), result.stderr);
+});

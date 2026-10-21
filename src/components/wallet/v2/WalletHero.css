@@ -1,0 +1,187 @@
+/**
+ * WalletHero Component Styles
+ */
+
+.wallet-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Header */
+.hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hero-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #94A3B8);
+}
+
+.visibility-toggle {
+  background: none;
+  border: none;
+  color: var(--text-muted, #64748B);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.visibility-toggle:hover {
+  background: var(--bg-tertiary, rgba(51, 65, 85, 0.5));
+  color: var(--text-primary, #F8FAFC);
+}
+
+.refresh-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted, #64748B);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.refresh-btn:hover {
+  background: var(--bg-tertiary, rgba(51, 65, 85, 0.5));
+  color: var(--text-primary, #F8FAFC);
+}
+
+.refresh-btn.spinning svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Balance Display */
+.hero-balance {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.balance-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary, #F8FAFC);
+  font-family: var(--font-display, 'Inter', system-ui, sans-serif);
+  letter-spacing: -0.02em;
+}
+
+.balance-hidden {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-muted, #64748B);
+  letter-spacing: 0.1em;
+}
+
+.hero-change {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.hero-change.positive {
+  color: var(--accent-green, #22C55E);
+}
+
+.hero-change.negative {
+  color: var(--accent-red, #EF4444);
+}
+
+/* Sparkline Chart */
+.hero-chart {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.sparkline {
+  flex-shrink: 0;
+}
+
+.chart-label {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748B);
+}
+
+/* Divider */
+.hero-divider {
+  height: 1px;
+  background: var(--border-default, rgba(51, 65, 85, 0.5));
+  margin: 4px 0;
+}
+
+/* Top Tokens */
+.hero-tokens {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.token-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.token-symbol {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, #94A3B8);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.token-balance {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--text-primary, #F8FAFC);
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+/* Pending Transactions */
+.hero-pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--accent-amber, #F59E0B) 15%, transparent);
+  border-radius: 10px;
+  font-size: 0.875rem;
+  color: var(--accent-amber, #F59E0B);
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+  .balance-value,
+  .balance-hidden {
+    font-size: 2rem;
+  }
+
+  .hero-tokens {
+    gap: 16px;
+  }
+
+  .hero-chart {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

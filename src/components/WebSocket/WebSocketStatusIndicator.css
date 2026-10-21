@@ -1,0 +1,304 @@
+/* WebSocket Status Indicator Styles */
+.ws-status-indicator {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: auto;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Positioning */
+.ws-status-indicator.top-right {
+  top: 20px;
+  right: 20px;
+}
+
+.ws-status-indicator.top-left {
+  top: 20px;
+  left: 20px;
+}
+
+.ws-status-indicator.bottom-right {
+  bottom: 20px;
+  right: 20px;
+}
+
+.ws-status-indicator.bottom-left {
+  bottom: 20px;
+  left: 20px;
+}
+
+/* Visibility states */
+.ws-status-indicator.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.ws-status-indicator.hidden {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
+  pointer-events: none;
+}
+
+/* Main container */
+.ws-status-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ws-status-main:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .ws-status-main {
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+
+  .ws-status-main:hover {
+    background: rgba(40, 40, 40, 1);
+  }
+}
+
+/* Icon animations */
+.ws-status-icon {
+  font-size: 14px;
+  font-weight: bold;
+  min-width: 16px;
+  text-align: center;
+  position: relative;
+}
+
+.ws-status-icon.spin {
+  animation: wsStatusSpin 1s linear infinite;
+}
+
+.ws-status-icon.pulse {
+  animation: wsStatusPulse 2s ease-in-out infinite;
+}
+
+.ws-status-icon.shake {
+  animation: wsStatusShake 0.5s ease-in-out infinite;
+}
+
+/* Status info */
+.ws-status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ws-status-label {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ws-status-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ws-detail {
+  font-size: 10px;
+  opacity: 0.7;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Pulse effect */
+.ws-status-pulse {
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: wsStatusPulseRing 2s ease-out infinite;
+  pointer-events: none;
+}
+
+/* Message flash effect */
+.ws-status-main.message-flash {
+  background: rgba(76, 175, 80, 0.2);
+  transform: scale(1.02);
+}
+
+/* Close button */
+.ws-status-close {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: #f44336;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+  transition: all 0.2s ease;
+}
+
+.ws-status-close:hover {
+  background: #d32f2f;
+  transform: scale(1.1);
+}
+
+/* Mini indicator */
+.ws-status-mini {
+  position: fixed;
+  z-index: 9998;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ws-status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: wsStatusPulse 2s ease-in-out infinite;
+}
+
+.ws-status-dot.connected {
+  animation: wsStatusPulse 3s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes wsStatusSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes wsStatusPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes wsStatusShake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes wsStatusPulseRing {
+  0% {
+    opacity: 0.6;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .ws-status-indicator.top-right,
+  .ws-status-indicator.bottom-right {
+    right: 10px;
+  }
+
+  .ws-status-indicator.top-left,
+  .ws-status-indicator.bottom-left {
+    left: 10px;
+  }
+
+  .ws-status-indicator.top-right,
+  .ws-status-indicator.top-left {
+    top: 10px;
+  }
+
+  .ws-status-indicator.bottom-right,
+  .ws-status-indicator.bottom-left {
+    bottom: 10px;
+  }
+
+  .ws-status-main {
+    padding: 6px 10px;
+  }
+
+  .ws-status-label {
+    font-size: 11px;
+  }
+
+  .ws-detail {
+    font-size: 9px;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .ws-status-main {
+    border-width: 2px;
+    background: white;
+  }
+
+  .ws-status-pulse {
+    opacity: 0.8;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .ws-status-icon.spin,
+  .ws-status-icon.pulse,
+  .ws-status-icon.shake,
+  .ws-status-pulse,
+  .ws-status-dot {
+    animation: none;
+  }
+
+  .ws-status-indicator,
+  .ws-status-main,
+  .ws-status-close,
+  .ws-status-mini {
+    transition: none;
+  }
+}

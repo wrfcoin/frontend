@@ -1,0 +1,101 @@
+/* Public Forecast page (#556). Colours, radii and spacing are the design-system tokens
+   (src/theme/tokens.ts) injected as CSS custom properties by PublicForecastPage.jsx. */
+.pf-page { max-width: 1120px; margin: 0 auto; padding: 32px 24px 48px; color: var(--pf-text); font-family: var(--pf-font); }
+.pf-sr { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.pf-head { margin-bottom: 24px; }
+.pf-head h1 { margin: 0; font-size: 1.875rem; font-weight: 600; line-height: 1.25; letter-spacing: -0.02em; }
+.pf-lede { margin: 6px 0 0; color: var(--pf-text-secondary); font-size: 0.9375rem; max-width: 62ch; }
+
+.pf-locbar { margin-bottom: 16px; }
+.pf-loc-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: start; }
+.pf-loc-actions { display: flex; gap: 8px; padding-top: 2px; }
+.pf-note { margin: 12px 0 0; font-size: 0.75rem; color: var(--pf-text-muted); line-height: 1.5; }
+.pf-error { margin-top: 12px; }
+
+.pf-cell-line { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.pf-cell-line > div { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pf-cell { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 9999px; background: rgba(14, 165, 233, 0.15); color: var(--pf-info); font-size: 0.75rem; font-weight: 600; }
+.pf-small { font-size: 0.8125rem; color: var(--pf-text-secondary); }
+
+/* Hero */
+.pf-hero { position: relative; overflow: hidden; border-radius: var(--pf-r-lg); border: 1px solid rgba(14, 165, 233, 0.35); background: linear-gradient(135deg, #1E3A5F 0%, var(--pf-bg-secondary) 55%, #172033 100%); box-shadow: var(--pf-shadow-md), var(--pf-glow-weather); padding: 24px; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: center; margin-bottom: 16px; }
+.pf-hero::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--pf-weather); }
+.pf-hero__main { display: flex; align-items: center; gap: 24px; }
+.pf-hero__icon { width: 88px; height: 88px; border-radius: var(--pf-r-lg); background: rgba(14, 165, 233, 0.12); display: grid; place-items: center; color: var(--pf-sky-text); flex: none; }
+.pf-hero__icon--dim { color: var(--pf-text-muted); background: rgba(100, 116, 139, 0.12); }
+.pf-hero__temp { margin: 0; font-size: 4rem; font-weight: 700; line-height: 1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.pf-hero__unit { font-size: 1.5rem; font-weight: 500; color: var(--pf-text-secondary); margin-left: 2px; vertical-align: top; line-height: 2; }
+.pf-hero__cond { margin: 4px 0 0; font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pf-hero__sub { margin: 2px 0 0; font-size: 0.875rem; color: var(--pf-text-secondary); }
+.pf-hero__tag { display: inline-block; font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.02em; color: var(--pf-text-secondary); background: rgba(148, 163, 184, 0.12); border-radius: 9999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+.pf-hero__stats { display: grid; grid-template-columns: repeat(2, minmax(130px, 1fr)); gap: 12px 24px; margin: 0; }
+.pf-hero__stats dt { font-size: 0.75rem; font-weight: 500; color: var(--pf-text-muted); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; }
+.pf-hero__stats dd { margin: 2px 0 0; font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pf-hero__stats dd .pf-hero__tag { font-weight: 500; }
+.pf-hero--empty { grid-template-columns: 1fr; border-color: var(--pf-border); background: var(--pf-bg-secondary); box-shadow: var(--pf-shadow-md); }
+/* The hero's dark gradient runs through the themed card colour, so in the light theme it becomes a light tint instead of dark-blue ends around a white middle. */
+body.light-mode .pf-hero { background: linear-gradient(135deg, #EFF6FF 0%, var(--pf-bg-secondary) 35%); }
+body.light-mode .pf-hero--empty { background: var(--pf-bg-secondary); }
+.pf-hero--empty::before { background: var(--pf-text-muted); }
+.pf-hero--empty .pf-hero__cond { font-size: 1.125rem; }
+.pf-hero--empty .pf-hero__sub { max-width: 70ch; }
+
+/* Cards (WrfCard supplies the surface; these size its contents) */
+.pf-section { margin-bottom: 16px; }
+.pf-section-sub { font-size: 0.8125rem; color: var(--pf-text-secondary); font-weight: 400; }
+.pf-chart { width: 100%; min-height: 120px; }
+.pf-chart__fallback { margin: 0; padding-left: 20px; font-size: 0.875rem; color: var(--pf-text-secondary); columns: 2; }
+.pf-tip { background: var(--pf-bg-primary); border: 1px solid var(--pf-border); border-radius: var(--pf-r-sm); padding: 8px 10px; font-size: 0.8125rem; box-shadow: var(--pf-shadow-md); }
+.pf-tip__t { font-weight: 600; margin-bottom: 2px; }
+.pf-tip__m { color: var(--pf-text-secondary); }
+
+/* 7-day */
+.pf-days { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, 1fr); }
+.pf-day { padding: 18px 12px 16px; text-align: center; border-right: 1px solid var(--pf-border); min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.pf-day:last-child { border-right: 0; }
+.pf-day__name { font-size: 0.875rem; font-weight: 600; }
+.pf-day__date { font-size: 0.75rem; color: var(--pf-text-muted); margin-top: 1px; }
+.pf-day__icon { width: 40px; height: 40px; margin: 12px 0 8px; color: var(--pf-sky-text); }
+.pf-day__text { width: 100%; flex: 1; }
+.pf-day__short { font-size: 0.75rem; color: var(--pf-text-secondary); line-height: 1.4; min-height: 2.8em; }
+.pf-day__night { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--pf-border); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.75rem; color: var(--pf-text-secondary); }
+.pf-day__night svg { color: var(--pf-night-text); flex: none; }
+.pf-day__temps { margin-top: 8px; font-size: 1.0625rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.pf-day__lo { color: var(--pf-text-secondary); font-weight: 500; }
+.pf-day__pop { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 0.75rem; color: var(--pf-sky-text); font-weight: 500; }
+
+.pf-attribution { margin: 16px 0 0; font-size: 0.75rem; color: var(--pf-text-muted); line-height: 1.5; }
+.pf-attribution a { color: var(--pf-primary-light); }
+.pf-section-empty { margin: 0; padding: 16px 0 4px; font-size: 0.875rem; color: var(--pf-text-secondary); }
+
+@media (max-width: 900px) {
+  .pf-hero { grid-template-columns: 1fr; }
+  .pf-hero__stats { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 600px) {
+  .pf-page { padding: 24px 16px 48px; }
+  .pf-head h1 { font-size: 1.5rem; }
+  .pf-loc-form { grid-template-columns: 1fr 1fr; }
+  .pf-loc-actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }
+  .pf-loc-actions .MuiButton-root { white-space: nowrap; padding-left: 12px; padding-right: 12px; }
+  .pf-section-sub--long { display: none; }
+  .pf-hero { padding: 16px; }
+  .pf-hero__main { gap: 16px; }
+  .pf-hero__icon { width: 64px; height: 64px; }
+  .pf-hero__icon svg { width: 40px; height: 40px; }
+  .pf-hero__temp { font-size: 3rem; }
+  .pf-hero__stats { grid-template-columns: repeat(2, 1fr); }
+  .pf-chart__fallback { columns: 1; }
+  .pf-days { display: flex; flex-direction: column; }
+  .pf-day { display: grid; grid-template-columns: 52px 36px 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 2px 12px; text-align: left; padding: 12px 16px; border-right: 0; border-bottom: 1px solid var(--pf-border); }
+  .pf-day:last-child { border-bottom: 0; }
+  .pf-day__when { grid-column: 1; grid-row: 1 / 3; }
+  .pf-day__date { display: none; }
+  .pf-day__icon { grid-column: 2; grid-row: 1 / 3; margin: 0; width: 32px; height: 32px; }
+  .pf-day__icon svg { width: 32px; height: 32px; }
+  .pf-day__text { grid-column: 3; grid-row: 1 / 3; }
+  .pf-day__short { min-height: 0; }
+  .pf-day__night { margin: 2px 0 0; padding: 0; border: 0; justify-content: flex-start; font-size: 0.7rem; }
+  .pf-day__temps { grid-column: 4; grid-row: 1; margin: 0; text-align: right; align-self: end; }
+  .pf-day__pop { grid-column: 4; grid-row: 2; justify-self: end; margin: 0; align-self: start; }
+}

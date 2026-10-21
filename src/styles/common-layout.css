@@ -1,0 +1,66 @@
+/**
+ * Common layout styles for consistent spacing across components
+ */
+
+/* Reduce padding below status bar - general pages */
+.dashboard-container,
+.resources,
+.cross-chain-container,
+.system-monitor,
+.governance-dashboard,
+.nft-dashboard,
+.explorer-container,
+.privacy-container,
+.sharding-dashboard {
+  padding-top: 10px !important; /* Override inline styles */
+}
+
+/* Extra reduction for pages with excessive whitespace */
+.settings-dashboard,
+.pop-dashboard,
+.container[style*='paddingTop'],
+[class*='incentives'],
+[class*='proximity'],
+.proximity-incentives-container {
+  padding-top: 0 !important; /* Remove padding completely */
+  margin-top: 0 !important; /* Remove margin as well */
+}
+
+/* Ensure consistent content area padding */
+.tab-content,
+.settings-content,
+.resources-content,
+.dashboard-main {
+  padding-top: 15px;
+}
+
+/* Fix for Settings component specific padding issues */
+.settings-container {
+  margin-top: 0 !important;
+}
+
+/* Specific fixes for PoP Dashboard */
+.pop-dashboard > div:first-child,
+.container[style*='paddingTop'] > div:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Remove margin from specific headings */
+.settings-dashboard h2,
+.pop-dashboard h2,
+.container[style*='paddingTop'] h2 {
+  margin-top: 0 !important;
+}
+
+/* Force the flex container to start at the top */
+.page-content {
+  padding-top: 0 !important;
+}
+
+/* Remove any other top margins from direct children of containers */
+.settings-dashboard > *:first-child,
+.pop-dashboard > *:first-child,
+.container[style*='paddingTop'] > *:first-child {
+  margin-top: 0 !important;
+}

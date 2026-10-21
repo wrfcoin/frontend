@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import test from 'node:test';
+test('production required-read guard remains reviewed and intact', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sol-j-read-gate-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const file = "src/components/Identity/IdentityDashboard.tsx";
+  fs.mkdirSync(path.join(root, path.dirname(file)), { recursive: true });
+  fs.mkdirSync(path.join(root, 'scripts'));
+  fs.writeFileSync(path.join(root, 'scripts/ungated-fabrication-baseline.json'), '[]');
+  fs.writeFileSync(path.join(root, 'src/App.jsx'), `import View from './${file.slice(4)}'; export default View;`);
+  const source = fs.readFileSync(file, 'utf8');
+  fs.writeFileSync(path.join(root, file), source);
+  const gates = JSON.parse(fs.readFileSync('scripts/fabrication-reviewed-local-gates.json', 'utf8'));
+  assert.ok(gates[file]);
+  fs.writeFileSync(path.join(root, 'scripts/fabrication-reviewed-local-gates.json'), JSON.stringify({ [file]: gates[file] }));
+  const run = () => spawnSync(process.execPath, [path.resolve('scripts/check-ungated-fabrication.mjs'), '--root', root], { encoding: 'utf8' });
+  const pristine = run(); assert.equal(pristine.status, 0, pristine.stdout + pristine.stderr);
+  const mutant = source.replace("{didDoc && !didLoading && !didError ? (", "{true ? (");
+  assert.notEqual(mutant, source);
+  fs.writeFileSync(path.join(root, file), mutant);
+  const changed = run(); assert.equal(changed.status, 1, changed.stdout + changed.stderr);
+  assert.ok(changed.stderr.includes(file), changed.stderr);
+});

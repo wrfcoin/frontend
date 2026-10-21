@@ -1,0 +1,427 @@
+/* Network Participation Dashboard Styles */
+.network-participation-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  color: white;
+}
+
+.network-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.network-header h2 {
+  margin: 0 0 10px 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(45deg, #fff, #a8edea);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.network-header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 1.1rem;
+}
+
+/* Tab Navigation */
+.network-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.tab-button {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  background: transparent;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.tab-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tab-button.active {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* Overview Tab */
+.overview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.overview-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 24px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.overview-card h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.stat-label {
+  opacity: 0.8;
+}
+
+.stat-value {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.achievement-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mini-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.badge-icon {
+  font-size: 1.2rem;
+}
+
+/* Network Health Indicator */
+.network-health-indicator {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 24px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.network-health-indicator h3 {
+  margin: 0 0 16px 0;
+}
+
+.health-bar {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.health-fill {
+  height: 100%;
+  transition: all 0.3s ease;
+}
+
+.health-status {
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Mining Tab */
+.mining-content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.mining-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.mining-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.mining-card h3 {
+  margin: 0 0 16px 0;
+  opacity: 0.9;
+}
+
+.reward-amount {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.reward-rate,
+.next-distribution {
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+
+.chain-rewards-grid {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 24px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.chain-rewards-grid h3 {
+  margin: 0 0 20px 0;
+}
+
+.chain-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.chain-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chain-name {
+  font-weight: 600;
+}
+
+.chain-status {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.chain-status.active {
+  background: rgba(76, 175, 80, 0.3);
+  color: #4caf50;
+}
+
+.chain-rewards {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Validator Tab */
+.validator-content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.validator-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.validator-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.validator-card h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.validator-count {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.validator-performance {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 24px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.validator-performance h3 {
+  margin: 0 0 20px 0;
+}
+
+.performance-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.metric-label {
+  opacity: 0.8;
+}
+
+.metric-value {
+  font-weight: 600;
+}
+
+/* Achievements Tab */
+.achievements-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.achievements-content h3 {
+  margin: 0;
+  text-align: center;
+}
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.achievement-badge {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease;
+}
+
+.achievement-badge:hover {
+  transform: translateY(-2px);
+}
+
+.badge-icon-large {
+  font-size: 3rem;
+  min-width: 60px;
+}
+
+.badge-info h4 {
+  margin: 0 0 8px 0;
+  font-size: 1.2rem;
+}
+
+.badge-info p {
+  margin: 0 0 8px 0;
+  opacity: 0.8;
+  font-size: 0.9rem;
+}
+
+.badge-earned {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.no-achievements {
+  text-align: center;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.no-achievements p {
+  margin: 0;
+  font-size: 1.1rem;
+  opacity: 0.8;
+}
+
+/* Loading and Error States */
+.network-loading,
+.network-error {
+  padding: 40px;
+  text-align: center;
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.network-error {
+  background: rgba(244, 67, 54, 0.2);
+  color: #ffcdd2;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .network-participation-container {
+    padding: 16px;
+  }
+
+  .network-header h2 {
+    font-size: 2rem;
+  }
+
+  .network-tabs {
+    flex-wrap: wrap;
+  }
+
+  .overview-grid,
+  .mining-stats-grid,
+  .validator-stats-grid,
+  .achievements-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .achievement-badge {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .chain-card {
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+}

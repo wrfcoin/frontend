@@ -1,0 +1,67 @@
+.integrations-sidebar {
+  display: flex;
+  flex-direction: column;
+  transition:
+    width 0.3s ease,
+    transform 0.3s ease;
+  position: relative;
+  width: 60px;
+}
+
+.integrations-sidebar.pinned {
+  width: 250px !important;
+}
+
+.integrations-sidebar:not(.pinned):hover {
+  width: 250px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 10px 15px;
+  border-top: 1px solid var(--border-color, #2a2d35);
+}
+
+/* Text hiding when sidebar is collapsed */
+.integrations-sidebar:not(.pinned):not(:hover) .sidebar-category span,
+.integrations-sidebar:not(.pinned):not(:hover) .sidebar-header h3,
+.integrations-sidebar:not(.pinned):not(:hover) .pin-button span {
+  display: none;
+}
+
+.integrations-sidebar:not(.pinned):not(:hover) .sidebar-category {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.integrations-sidebar:not(.pinned):not(:hover) .pin-button {
+  justify-content: center;
+}
+
+.pin-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color, #2a2d35);
+  padding: 8px 12px;
+  border-radius: 4px;
+  color: var(--text-secondary, #a0a0a0);
+  cursor: pointer;
+  font-size: 0.9rem;
+  width: 100%;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.pin-button:hover {
+  background-color: var(--bg-hover, #32363f);
+  color: var(--primary-color, #3370ff);
+}
+
+.pin-button i {
+  font-size: 1rem;
+}

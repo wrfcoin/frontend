@@ -1,0 +1,185 @@
+.network-health-monitor {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 1.5rem;
+  max-width: 100%;
+  overflow-x: hidden;
+  background-color: var(--bg-surface);
+  border-radius: 8px;
+  height: 100%;
+  color: var(--text-color);
+}
+
+.network-health-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.network-health-header h1 {
+  color: var(--title-color);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.connection-indicator {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.connection-indicator.connected {
+  background-color: rgba(var(--success-rgb), 0.2);
+  color: var(--success-color);
+}
+
+.connection-indicator.disconnected {
+  background-color: rgba(var(--danger-rgb), 0.2);
+  color: var(--danger-color);
+}
+
+.connection-indicator.connecting {
+  background-color: rgba(var(--warning-rgb), 0.2);
+  color: var(--warning-color);
+}
+
+.health-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.health-status-card {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+}
+
+.health-status-card h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--title-color);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.health-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: var(--border-radius-sm);
+}
+
+.health-status.excellent {
+  background-color: rgba(var(--success-rgb), 0.2);
+}
+
+.health-status.good {
+  background-color: rgba(var(--info-rgb), 0.2);
+}
+
+.health-status.fair {
+  background-color: rgba(var(--warning-rgb), 0.2);
+}
+
+.health-status.poor {
+  background-color: rgba(var(--danger-rgb), 0.2);
+}
+
+.status-indicator {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.excellent .status-indicator {
+  background-color: var(--success-color);
+  box-shadow: 0 0 10px var(--success-color);
+}
+
+.good .status-indicator {
+  background-color: var(--info-color);
+  box-shadow: 0 0 10px var(--info-color);
+}
+
+.fair .status-indicator {
+  background-color: var(--warning-color);
+  box-shadow: 0 0 10px var(--warning-color);
+}
+
+.poor .status-indicator {
+  background-color: var(--danger-color);
+  box-shadow: 0 0 10px var(--danger-color);
+}
+
+.status-text {
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.metric-card {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-md);
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+}
+
+.metric-card h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.metric-value {
+  color: var(--text-color);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.network-visualization {
+  flex-grow: 1;
+  min-height: 500px;
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .metrics-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+
+  .network-visualization {
+    min-height: 350px;
+  }
+
+  .network-health-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .health-status-card {
+    padding: 1rem;
+  }
+}

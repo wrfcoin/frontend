@@ -1,0 +1,11 @@
+.page-navigator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-navigator .taskbar-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}

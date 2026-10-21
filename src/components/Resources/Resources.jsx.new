@@ -1,0 +1,194 @@
+import React, { useState } from 'react';
+import Card from '../common/Card';
+import './Resources.css';
+
+import SecurityDocs from './SecurityDocs';
+
+const Resources = () => {
+  const [activeTab, setActiveTab] = useState('documentation'); // 'documentation', 'security', 'community'
+  
+  return (
+    <div className="resources">
+      <h2 className="dashboard-title mb-4">Resources & Documentation</h2>
+      
+      <div className="resources-tabs">
+        <div 
+          className={`resources-tab ${activeTab === 'documentation' ? 'active' : ''}`}
+          onClick={() => setActiveTab('documentation')}
+        >
+          Documentation
+        </div>
+        <div 
+          className={`resources-tab ${activeTab === 'security' ? 'active' : ''}`}
+          onClick={() => setActiveTab('security')}
+        >
+          Security
+        </div>
+        <div 
+          className={`resources-tab ${activeTab === 'community' ? 'active' : ''}`}
+          onClick={() => setActiveTab('community')}
+        >
+          Community Resources
+        </div>
+      </div>
+      
+      {activeTab === 'documentation' && (
+        <div className="wiki-wrapper">
+          <div className="wiki-header">
+            <div className="wiki-title">
+              <h3>Wrfcoin Docs</h3>
+              <p className="subtitle">Official Documentation for v2</p>
+            </div>
+            <div className="wiki-search">
+              <div className="search-wrapper">
+                <i className="bi bi-search"></i>
+                <input type="text" placeholder="Search..." />
+              </div>
+            </div>
+          </div>
+
+          <div className="wiki-content">
+            <div className="wiki-sidebar">
+              <div className="table-of-contents">
+                <h4>TABLE OF CONTENTS</h4>
+                <div className="toc-item active">
+                  <i className="bi bi-chevron-right"></i>
+                  <span>Getting Started</span>
+                </div>
+                <div className="toc-item">
+                  <i className="bi bi-chevron-right"></i>
+                  <span>Administration</span>
+                </div>
+                <div className="toc-item with-submenu">
+                  <i className="bi bi-chevron-down"></i>
+                  <span>Modules</span>
+                </div>
+                <div className="toc-submenu">
+                  <div className="toc-subitem">
+                    <span>Mining</span>
+                  </div>
+                  <div className="toc-subitem">
+                    <span>Sharding</span>
+                  </div>
+                  <div className="toc-subitem">
+                    <span>Cross-Chain Bridge</span>
+                  </div>
+                </div>
+                <div className="toc-item">
+                  <i className="bi bi-chevron-right"></i>
+                  <span>User Guide</span>
+                </div>
+                <div className="toc-item">
+                  <i className="bi bi-chevron-right"></i>
+                  <span>Developers</span>
+                </div>
+              </div>
+              
+              <div className="wiki-last-edited">
+                <h4>LAST EDITED BY</h4>
+                <p>Administrator</p>
+                <p className="timestamp">05/11/2025</p>
+              </div>
+              
+              <div className="wiki-rating">
+                <h4>RATING</h4>
+                <div className="stars">
+                  <i className="bi bi-star-fill"></i>
+                  <i className="bi bi-star-fill"></i>
+                  <i className="bi bi-star-fill"></i>
+                  <i className="bi bi-star-half"></i>
+                  <i className="bi bi-star"></i>
+                </div>
+                <p className="rating-count">5 votes</p>
+              </div>
+            </div>
+            
+            <div className="wiki-main-content">
+              <div className="wiki-alert">
+                <i className="bi bi-exclamation-triangle"></i>
+                <p>Documentation is being worked on! Some pages may be incomplete or not exist yet.</p>
+              </div>
+              
+              <h2>Getting Started</h2>
+              <hr className="wiki-divider" />
+              
+              <p className="wiki-intro">
+                Wrfcoin Core is quick and easy to install. You should be up and running in no time.
+              </p>
+              
+              <div className="wiki-steps">
+                <div className="wiki-step">
+                  <i className="bi bi-check-circle"></i>
+                  <p>Make sure you have read the <a href="#" className="wiki-link">server requirements</a>.</p>
+                </div>
+                
+                <div className="wiki-step">
+                  <i className="bi bi-check-circle"></i>
+                  <p>Follow the quick and simple <a href="#" className="wiki-link">installation guide</a>.</p>
+                </div>
+                
+                <div className="wiki-step">
+                  <i className="bi bi-check-circle"></i>
+                  <p>Using Docker? Use the <a href="#" className="wiki-link">Docker installation guide</a> instead.</p>
+                </div>
+                
+                <div className="wiki-step">
+                  <i className="bi bi-check-circle"></i>
+                  <p>Using Heroku? Use the <a href="#" className="wiki-link">Heroku installation guide</a> instead.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {activeTab === 'security' && (
+        <SecurityDocs />
+      )}
+      
+      {activeTab === 'community' && (
+        <div className="community-resources">
+          <div className="community-header">
+            <h3>Community Resources</h3>
+            <p className="subtitle">Resources from the Wrfcoin Community</p>
+          </div>
+          
+          <div className="community-grid">
+            <Card 
+              title="Wrfcoin Forum"
+              description="Official discussion forum for Wrfcoin users and developers."
+              icon="bi-chat"
+            />
+            <Card 
+              title="Developer Hub"
+              description="Resources for building on top of the Wrfcoin blockchain."
+              icon="bi-code"
+            />
+            <Card 
+              title="Research Papers"
+              description="Academic research related to Wrfcoin technology."
+              icon="bi-journal"
+            />
+            <Card 
+              title="Tutorials"
+              description="Step-by-step guides for Wrfcoin features."
+              icon="bi-mortarboard"
+            />
+            <Card 
+              title="Governance Hub"
+              description="Information about the governance process."
+              icon="bi-person-circle"
+            />
+            <Card 
+              title="Ecosystem Projects"
+              description="Explore projects building on Wrfcoin."
+              icon="bi-building"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Resources;

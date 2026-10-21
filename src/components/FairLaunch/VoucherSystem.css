@@ -1,0 +1,595 @@
+/* VoucherSystem Component Styles */
+.voucher-system {
+  width: 100%;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.voucher-container {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+/* Header */
+.voucher-header {
+  padding: 2rem;
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  text-align: center;
+}
+
+.voucher-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+
+.voucher-description {
+  font-size: 1rem;
+  opacity: 0.9;
+  margin: 0 0 2rem;
+}
+
+/* Progress Indicator */
+.voucher-progress {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #48bb78, #38a169);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.9rem;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.progress-complete {
+  color: #48bb78;
+  font-weight: 600;
+}
+
+/* Add Voucher Form */
+.add-voucher-form {
+  padding: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.input-section {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.input-label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #2d3748;
+  margin-bottom: 0.75rem;
+}
+
+.address-input-wrapper {
+  display: flex;
+  gap: 1rem;
+  position: relative;
+}
+
+.address-input {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  font-family: 'Courier New', monospace;
+}
+
+.address-input:focus {
+  outline: none;
+  border-color: #4facfe;
+  box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+}
+
+.address-input.error {
+  border-color: #e53e3e;
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
+}
+
+.add-button {
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+}
+
+.add-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Suggestions Dropdown */
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 120px;
+  background: white;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 0.25rem;
+}
+
+.suggestion-item {
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background: #f7fafc;
+}
+
+.suggestion-info {
+  flex: 1;
+}
+
+.suggestion-name {
+  font-weight: 500;
+  color: #2d3748;
+  margin-bottom: 0.25rem;
+}
+
+.suggestion-address {
+  font-size: 0.8rem;
+  color: #718096;
+  font-family: 'Courier New', monospace;
+}
+
+.suggestion-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.reputation {
+  color: #4facfe;
+  font-weight: 500;
+}
+
+.stake {
+  color: #718096;
+}
+
+/* Error Messages */
+.error-message {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #fed7d7;
+  color: #c53030;
+  border-radius: 8px;
+  border-left: 4px solid #e53e3e;
+  font-size: 0.9rem;
+}
+
+/* Voucher List */
+.voucher-list {
+  padding: 2rem;
+  background: #f7fafc;
+}
+
+.list-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 1.5rem;
+  text-align: center;
+}
+
+.voucher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Voucher Cards */
+.voucher-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  position: relative;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.voucher-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.voucher-info {
+  flex: 1;
+}
+
+.voucher-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.verified-badge {
+  background: #48bb78;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+.voucher-address {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  color: #718096;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: #f7fafc;
+  border-radius: 6px;
+}
+
+.voucher-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.8rem;
+  color: #718096;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-weight: 600;
+  color: #2d3748;
+  font-size: 0.95rem;
+}
+
+.remove-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: #fed7d7;
+  color: #c53030;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+.remove-button:hover {
+  background: #fc8181;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* Requirements Info */
+.requirements-info {
+  padding: 2rem;
+  background: #f7fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.info-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 1rem;
+  text-align: center;
+}
+
+.requirements-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.requirements-list li {
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.requirements-list li::before {
+  content: '✓';
+  color: #48bb78;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+/* Success Message */
+.success-message {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+  padding: 2rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.success-icon {
+  font-size: 2rem;
+}
+
+.success-text {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Help Section */
+.help-section {
+  padding: 2rem;
+  background: #f7fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.help-details {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.help-summary {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #4a5568;
+  cursor: pointer;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.help-summary:hover {
+  background: #edf2f7;
+}
+
+.help-content {
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+
+.help-content p {
+  margin: 0 0 1rem;
+  color: #4a5568;
+}
+
+.help-content ul {
+  margin: 0 0 1.5rem;
+  padding-left: 1.5rem;
+  color: #4a5568;
+}
+
+.help-content li {
+  margin-bottom: 0.5rem;
+}
+
+.help-links {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.help-links a {
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.help-links a:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .voucher-header,
+  .add-voucher-form,
+  .voucher-list,
+  .requirements-info,
+  .help-section {
+    padding: 1.5rem 1rem;
+  }
+
+  .address-input-wrapper {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .address-input,
+  .add-button {
+    width: 100%;
+  }
+
+  .suggestions-dropdown {
+    right: 0;
+  }
+
+  .voucher-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .success-message {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .help-links {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .voucher-title {
+    font-size: 1.25rem;
+  }
+
+  .voucher-description {
+    font-size: 0.9rem;
+  }
+
+  .voucher-card {
+    padding: 1rem;
+  }
+
+  .suggestion-stats {
+    display: none; /* Hide stats on very small screens */
+  }
+
+  .voucher-stats {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    text-align: left;
+  }
+}
+
+/* Accessibility Improvements */
+.voucher-system *:focus {
+  outline: 2px solid #4facfe;
+  outline-offset: 2px;
+}
+
+.help-summary:focus {
+  outline: 3px solid #4facfe;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .voucher-container {
+    border: 2px solid #000;
+  }
+
+  .voucher-card {
+    border: 2px solid #000;
+  }
+
+  .address-input {
+    border: 2px solid #000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

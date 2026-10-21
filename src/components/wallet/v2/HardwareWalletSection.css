@@ -1,0 +1,323 @@
+/**
+ * HardwareWalletSection Styles
+ */
+
+.hardware-wallet-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Status Banner */
+.hw-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: var(--surface-card, rgba(30, 41, 59, 0.8));
+  border: 1px solid var(--border-default, rgba(51, 65, 85, 0.5));
+  border-radius: 12px;
+  color: var(--text-secondary, #94A3B8);
+}
+
+.hw-status-banner.connected {
+  border-color: var(--accent-green, #22C55E);
+  background: color-mix(in srgb, var(--accent-green) 10%, var(--surface-card));
+  color: var(--accent-green, #22C55E);
+}
+
+.banner-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.banner-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+}
+
+.hw-status-banner.connected .banner-title {
+  color: var(--accent-green, #22C55E);
+}
+
+.banner-subtitle,
+.banner-address {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94A3B8);
+}
+
+.banner-address {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+}
+
+.disconnect-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--accent-red, #EF4444);
+  border-radius: 8px;
+  color: var(--accent-red, #EF4444);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+}
+
+.disconnect-btn:hover {
+  background: var(--accent-red, #EF4444);
+  color: white;
+}
+
+/* Error Message */
+.hw-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: color-mix(in srgb, var(--accent-red) 15%, transparent);
+  border: 1px solid var(--accent-red, #EF4444);
+  border-radius: 10px;
+  color: var(--accent-red, #EF4444);
+  font-size: 0.875rem;
+}
+
+.hw-error span {
+  flex: 1;
+}
+
+.hw-error button {
+  background: none;
+  border: none;
+  color: var(--accent-red, #EF4444);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+/* Wallets Grid */
+.hw-wallets-grid h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+  margin: 0 0 16px 0;
+}
+
+.wallets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.wallet-card {
+  padding: 20px;
+  background: var(--surface-card, rgba(30, 41, 59, 0.8));
+  border: 1px solid var(--border-default, rgba(51, 65, 85, 0.5));
+  border-radius: 16px;
+  transition: all 0.2s ease-out;
+}
+
+.wallet-card:hover:not(.coming) {
+  border-color: var(--border-hover, rgba(59, 130, 246, 0.5));
+  transform: translateY(-2px);
+}
+
+.wallet-card.active {
+  border-color: var(--accent-green, #22C55E);
+}
+
+.wallet-card.coming {
+  opacity: 0.6;
+}
+
+.wallet-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.wallet-icon {
+  font-size: 2rem;
+}
+
+.wallet-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wallet-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+}
+
+.wallet-models {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94A3B8);
+}
+
+.coming-badge {
+  padding: 4px 8px;
+  background: var(--bg-tertiary, rgba(51, 65, 85, 0.5));
+  border-radius: 6px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: var(--text-muted, #64748B);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wallet-connections {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.connection-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--bg-primary, rgba(15, 23, 42, 0.5));
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary, #94A3B8);
+}
+
+.connect-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--accent-primary, #3B82F6);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+}
+
+.connect-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent-primary) 85%, black);
+}
+
+.connect-btn:disabled {
+  background: var(--bg-tertiary, #334155);
+  color: var(--text-muted, #64748B);
+  cursor: not-allowed;
+}
+
+.connect-btn.connecting {
+  background: var(--bg-tertiary, #334155);
+}
+
+.connect-btn .spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Features */
+.hw-features h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+  margin: 0 0 16px 0;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.feature-item {
+  display: flex;
+  gap: 14px;
+  padding: 16px;
+  background: var(--surface-card, rgba(30, 41, 59, 0.6));
+  border: 1px solid var(--border-default, rgba(51, 65, 85, 0.5));
+  border-radius: 12px;
+}
+
+.feature-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--accent-primary) 15%, transparent);
+  color: var(--accent-primary, #3B82F6);
+}
+
+.feature-content h5 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary, #F8FAFC);
+  margin: 0 0 4px 0;
+}
+
+.feature-content p {
+  font-size: 0.8125rem;
+  color: var(--text-secondary, #94A3B8);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Help Section */
+.hw-help {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--surface-card, rgba(30, 41, 59, 0.6));
+  border: 1px solid var(--border-default, rgba(51, 65, 85, 0.5));
+  border-radius: 12px;
+  color: var(--text-muted, #64748B);
+}
+
+.help-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.help-content span {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #94A3B8);
+}
+
+.help-content a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-primary, #3B82F6);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.help-content a:hover {
+  text-decoration: underline;
+}
+
+/* Light mode */
+body:not(.dark-mode) .hw-status-banner,
+body:not(.dark-mode) .wallet-card,
+body:not(.dark-mode) .feature-item,
+body:not(.dark-mode) .hw-help {
+  background: rgba(255, 255, 255, 0.9);
+}

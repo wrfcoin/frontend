@@ -1,0 +1,62 @@
+.public-policy {
+  width: min(860px, calc(100% - 2rem));
+  margin: 2rem auto 4rem;
+  padding: clamp(1.25rem, 3vw, 2.5rem);
+  color: var(--wrf-text-primary, #e9f2ff);
+  background: var(--wrf-surface, #111827);
+  border: 1px solid var(--wrf-border, #334155);
+  border-radius: 16px;
+  line-height: 1.65;
+}
+
+.public-policy h1 {
+  margin: 0.25rem 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.public-policy h2 {
+  margin-top: 2rem;
+  font-size: 1.25rem;
+}
+
+.public-policy li + li {
+  margin-top: 0.65rem;
+}
+
+.public-policy__eyebrow,
+.public-policy__effective {
+  color: var(--wrf-text-secondary, #a8b3c7);
+}
+
+.public-policy__eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+
+.public-policy__summary {
+  font-size: 1.1rem;
+}
+
+.public-policy__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--wrf-border, #334155);
+}
+
+.public-policy a {
+  color: var(--wrf-accent, #6ee7f2);
+}
+
+/* Light theme: the policy card reads the same --wrf-* variables as the landing page; outside it they fall back to dark. */
+body.light-mode .public-policy {
+  --wrf-text-primary: #0F172A;
+  --wrf-text-secondary: #475569;
+  --wrf-surface: #FFFFFF;
+  --wrf-border: rgba(148, 163, 184, 0.3);
+  --wrf-accent: #1D4ED8;
+}

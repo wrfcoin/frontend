@@ -1,0 +1,12 @@
+const { writeFileSync } = require('node:fs');
+const { resolve } = require('node:path');
+const { generateManifest, generateOperationManifest } = require('./lib/api-surface.cjs');
+const repo = process.argv[2];
+if (!repo) throw new Error('Supply the fetched backend repository path');
+const families = generateManifest(repo);
+const operations = generateOperationManifest(repo);
+if (families.backendCommit !== operations.backendCommit) throw new Error('Backend ref moved during generation');
+const root = resolve(__dirname, '../src/services/__fixtures__');
+writeFileSync(resolve(root, 'backend-mounts.json'), JSON.stringify(families, null, 2) + '\n');
+writeFileSync(resolve(root, 'backend-weather-operations.json'), JSON.stringify(operations, null, 2) + '\n');
+console.log(`Weather operations: ${operations.operations.length}; backend ${operations.backendCommit}`);

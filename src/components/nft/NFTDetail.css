@@ -1,0 +1,459 @@
+.nft-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.nft-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.nft-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nft-detail-title h2 {
+  color: var(--primary-color, #1e88e5);
+  margin: 0;
+  font-size: 2rem;
+}
+
+.nft-id {
+  font-family: monospace;
+  color: var(--text-secondary, #666);
+  font-size: 1rem;
+  padding: 0.25rem 0.5rem;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.nft-detail-content {
+  display: flex;
+  gap: 2rem;
+}
+
+.nft-detail-main {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.nft-detail-sidebar {
+  flex: 1;
+  min-width: 250px;
+}
+
+.nft-detail-visualization {
+  width: 100%;
+  background-color: var(--card-bg, #fff);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.nft-detail-visualization img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.nft-placeholder {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.nft-placeholder svg {
+  margin-bottom: 1rem;
+}
+
+.nft-placeholder span {
+  color: var(--text-secondary, #666);
+  font-size: 0.9rem;
+}
+
+.nft-detail-info {
+  background-color: var(--card-bg, #fff);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.info-section {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color, #eee);
+}
+
+.info-section:last-child {
+  border-bottom: none;
+}
+
+.info-section h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: var(--text-primary, #333);
+  font-size: 1.25rem;
+}
+
+.info-section p {
+  margin: 0;
+  color: var(--text-secondary, #666);
+  line-height: 1.6;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+}
+
+.info-value {
+  font-size: 1rem;
+  color: var(--text-primary, #333);
+}
+
+.complexity-meter {
+  position: relative;
+  height: 20px;
+  width: 100%;
+  background-color: #f5f5f5;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.complexity-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: #4caf50;
+  border-radius: 10px;
+}
+
+.complexity-meter span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.verification-status {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.verification-status.verified {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.verification-status.unverified {
+  background-color: #fff8e1;
+  color: #ff8f00;
+}
+
+.location-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.coordinates {
+  font-family: monospace;
+  font-size: 1rem;
+  color: var(--text-primary, #333);
+}
+
+.map-link {
+  color: var(--primary-color, #1e88e5);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.map-link:hover {
+  text-decoration: underline;
+}
+
+.sidebar-section {
+  background-color: var(--card-bg, #fff);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.sidebar-section h3 {
+  margin: 0;
+  padding: 1rem 1.5rem;
+  font-size: 1.25rem;
+  color: var(--text-primary, #333);
+  border-bottom: 1px solid var(--border-color, #eee);
+}
+
+.ownership-info {
+  padding: 1.5rem;
+}
+
+.owner-item {
+  margin-bottom: 1rem;
+}
+
+.owner-item:last-child {
+  margin-bottom: 0;
+}
+
+.owner-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary, #666);
+  margin-bottom: 0.5rem;
+}
+
+.owner-value {
+  display: block;
+  font-family: monospace;
+  font-size: 1rem;
+  color: var(--text-primary, #333);
+  word-break: break-all;
+}
+
+.tasks-list {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.task-item {
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color, #1e88e5);
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.task-title {
+  font-weight: 600;
+  color: var(--text-primary, #333);
+}
+
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.pending {
+  background-color: #fff9c4;
+  color: #f57f17;
+}
+
+.status-badge.assigned {
+  background-color: #e1f5fe;
+  color: #0277bd;
+}
+
+.status-badge.processing {
+  background-color: #e8eaf6;
+  color: #3949ab;
+}
+
+.status-badge.completed {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge.failed {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.status-badge.cancelled {
+  background-color: #f5f5f5;
+  color: #616161;
+}
+
+.task-description {
+  margin: 0.5rem 0;
+  color: var(--text-secondary, #666);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.task-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.task-date {
+  color: var(--text-secondary, #666);
+}
+
+.task-link {
+  color: var(--primary-color, #1e88e5);
+  text-decoration: none;
+}
+
+.task-link:hover {
+  text-decoration: underline;
+}
+
+.no-tasks {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-secondary, #666);
+}
+
+.nft-detail-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--card-bg, #fff);
+  border-radius: 10px;
+  padding: 4rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: var(--primary-color, #1e88e5);
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.nft-detail-error {
+  text-align: center;
+  padding: 4rem 2rem;
+  background-color: var(--card-bg, #fff);
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.nft-detail-error h2 {
+  color: #c62828;
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+.nft-detail-error p {
+  color: var(--text-secondary, #666);
+  margin-bottom: 2rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.button.primary {
+  background-color: var(--primary-color, #1e88e5);
+  color: white;
+}
+
+.button.primary:hover {
+  background-color: var(--primary-dark, #1565c0);
+}
+
+.button.secondary {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.button.secondary:hover {
+  background-color: #d5d5d5;
+}
+
+@media (max-width: 992px) {
+  .nft-detail-content {
+    flex-direction: column;
+  }
+
+  .nft-detail-sidebar {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .nft-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,256 @@
+.privacy-settings {
+  padding: 20px;
+  background: var(--card-bg-color);
+  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 20px;
+}
+
+.privacy-level-indicator {
+  margin: 20px 0;
+  background: var(--bg-color-darker);
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.privacy-level-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.privacy-level {
+  font-weight: 700;
+}
+
+.privacy-level-bar {
+  height: 10px;
+  background: var(--bg-color);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.privacy-level-progress {
+  height: 100%;
+  border-radius: 5px;
+  transition:
+    width 0.3s ease,
+    background-color 0.3s ease;
+}
+
+.privacy-features {
+  margin: 25px 0;
+}
+
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.feature-item {
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: var(--bg-color-darker);
+  transition: background-color 0.3s ease;
+}
+
+.feature-item.enabled {
+  background: var(--bg-color-highlight);
+}
+
+.feature-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.feature-title {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+}
+
+.feature-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 10px;
+  background-color: var(--danger-color);
+}
+
+.feature-item.enabled .feature-indicator {
+  background-color: var(--success-color);
+}
+
+.feature-controls {
+  display: flex;
+  align-items: center;
+}
+
+.feature-info-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-color-secondary);
+  margin-right: 10px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.feature-info-btn:hover {
+  color: var(--primary-color);
+}
+
+/* Toggle Switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 26px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-color);
+  transition: 0.4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: '';
+  height: 18px;
+  width: 18px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+}
+
+input:checked + .slider {
+  background-color: var(--success-color);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--success-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Feature details */
+.feature-details {
+  background: var(--bg-color-darker);
+  padding: 20px;
+  border-radius: 8px;
+  margin: 20px 0;
+  border-left: 4px solid var(--primary-color);
+}
+
+.feature-description {
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.feature-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .feature-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.feature-detail-card {
+  background: var(--bg-color);
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.feature-detail-card h4 {
+  margin-top: 0;
+  color: var(--primary-color);
+  margin-bottom: 10px;
+}
+
+.close-details-btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.close-details-btn:hover {
+  background: var(--primary-color-dark);
+}
+
+/* Privacy levels explanation */
+.privacy-explanation {
+  margin-top: 30px;
+  background: var(--bg-color-darker);
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.privacy-levels-list {
+  list-style: none;
+  padding: 0;
+  margin: 15px 0 0 0;
+}
+
+.privacy-levels-list li {
+  margin-bottom: 12px;
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 15px;
+  align-items: center;
+}
+
+.level-name {
+  font-weight: 700;
+}
+
+.level-description {
+  color: var(--text-color-secondary);
+  line-height: 1.5;
+}
+
+.loading {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-color-secondary);
+}

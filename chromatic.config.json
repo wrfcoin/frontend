@@ -1,0 +1,22 @@
+{
+  "projectToken": "chpt_b1e1b4f9b8b8b8b8",
+  "buildScriptName": "build-storybook",
+  "exitZeroOnChanges": false,
+  "exitOnceUploaded": true,
+  "autoAcceptChanges": false,
+  "ignoreLastBuildOnBranch": "main",
+  "skip": "renovate/**",
+  "externals": ["public/**"],
+  "traceChanged": "expanded",
+  "onlyChanged": true,
+  "untraced": [
+    "node_modules/**",
+    "dist/**",
+    "build/**",
+    "coverage/**",
+    "*.log"
+  ],
+  "debug": false,
+  "zip": true,
+  "diagnostics": false
+}

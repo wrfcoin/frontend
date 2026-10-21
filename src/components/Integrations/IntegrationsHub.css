@@ -1,0 +1,343 @@
+.integrations-hub {
+  padding: 0;
+  width: 100%;
+  margin: 0;
+  position: relative;
+  z-index: 1; /* Ensure this is lower than the StartMenu z-index of 1000 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* New title section to appear above content in all views */
+.integrations-title-section {
+  width: 100%;
+  padding: 1rem;
+  position: relative;
+  z-index: 5;
+}
+
+.integrations-title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--primary-color);
+}
+
+.integrations-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+/* Documentation-style layout */
+.integrations-container {
+  display: flex;
+  gap: 0;
+  min-height: 600px;
+}
+
+/* Mobile-specific layout to position title above content */
+@media (max-width: 768px) {
+  .integrations-title-section {
+    width: 100%;
+    padding: 0.75rem;
+    margin-top: 60px; /* Space for the taskbar */
+    z-index: 10;
+  }
+
+  .integrations-container {
+    flex-direction: column;
+    padding-top: 0;
+  }
+}
+
+/* Full width container styles */
+.integrations-container.full-width {
+  width: 100%;
+  padding: 0;
+}
+
+.integrations-content.full-width {
+  width: 100%;
+  padding: 0;
+}
+
+.integrations-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 0;
+}
+
+/* Integration categories section styles - for the grid view */
+.integration-category-section {
+  margin-bottom: 32px;
+}
+
+.category-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.integration-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 16px;
+}
+
+.integration-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.integration-item:hover {
+  background-color: var(--hover-color);
+}
+
+.integration-item.active {
+  background-color: var(--accent-light);
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+/* Governance Badges */
+.governance-badge {
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 8px;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.governance-badge.enabled {
+  background-color: rgba(25, 135, 84, 0.15);
+  color: rgb(25, 135, 84);
+  border: 1px solid rgba(25, 135, 84, 0.3);
+}
+
+.governance-badge.disabled {
+  background-color: rgba(220, 53, 69, 0.15);
+  color: rgb(220, 53, 69);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.governance-badge.testnet {
+  background-color: rgba(255, 193, 7, 0.15);
+  color: rgb(179, 135, 5);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+/* Category Tabs */
+.integration-categories {
+  display: flex;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  gap: 0.5rem;
+}
+
+.category-tab {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 20px;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid var(--border-color);
+}
+
+.category-tab i {
+  font-size: 1rem;
+}
+
+.category-tab.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.category-tab:hover:not(.active) {
+  background-color: var(--hover-color);
+}
+
+/* Integration Tabs */
+.integration-tabs {
+  display: flex;
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.integration-tab {
+  padding: 0.75rem 1.25rem;
+  margin-right: 0.25rem;
+  cursor: pointer;
+  border-radius: 4px 4px 0 0;
+  font-weight: 500;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.integration-tab.active {
+  background-color: var(--accent-light);
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+.integration-tab:hover:not(.active) {
+  background-color: var(--hover-color);
+}
+
+.integration-content {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: var(--card-shadow);
+  width: 100%;
+}
+
+.integration-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.integration-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.integration-header i {
+  font-size: 2rem;
+  color: var(--primary-color);
+}
+
+.integration-header-content h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.integration-header-content p {
+  margin: 0.25rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Status messages and alerts */
+.status-alert {
+  padding: 1rem;
+  border-radius: 4px;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.status-alert.success {
+  background-color: #e8f5e9;
+  border: 1px solid #81c784;
+  color: #2e7d32;
+}
+
+.status-alert.warning {
+  background-color: #fff8e1;
+  border: 1px solid #ffd54f;
+  color: #f57f17;
+}
+
+.status-alert.info {
+  background-color: #e3f2fd;
+  border: 1px solid #64b5f6;
+  color: #1565c0;
+}
+
+.status-alert i {
+  font-size: 1.25rem;
+}
+
+.alert-message {
+  padding: 1rem;
+  border-radius: 4px;
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.alert-message.error {
+  background-color: #ffebee;
+  border: 1px solid #ef9a9a;
+  color: #c62828;
+}
+
+.alert-message.info {
+  background-color: #e3f2fd;
+  border: 1px solid #64b5f6;
+  color: #1565c0;
+}
+
+/* Loading state */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.loading-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid var(--primary-color);
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Placeholder content */
+.integration-placeholder {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.integration-placeholder h3 {
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.coming-soon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}

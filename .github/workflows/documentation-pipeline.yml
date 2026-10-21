@@ -1,0 +1,323 @@
+name: Component Documentation Pipeline
+
+on:
+  # Public snapshots require an explicit run; documentation generation needs maintenance.
+  workflow_dispatch:
+    inputs:
+      deploy_docs:
+        description: Deploy the generated documentation to GitHub Pages
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-components:
+    name: Analyze Component Changes
+    runs-on: ubuntu-latest
+    outputs:
+      components-changed: ${{ steps.changes.outputs.components }}
+      should-rebuild: ${{ steps.changes.outputs.should-rebuild }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Detect component changes
+        id: changes
+        run: |
+          # Check for changes in components
+          if git diff --name-only HEAD~1 HEAD | grep -E "src/components/.*\.(jsx|tsx)$"; then
+            echo "components=true" >> $GITHUB_OUTPUT
+            echo "should-rebuild=true" >> $GITHUB_OUTPUT
+            echo "Component changes detected"
+          else
+            echo "components=false" >> $GITHUB_OUTPUT
+            echo "should-rebuild=false" >> $GITHUB_OUTPUT
+            echo "No component changes detected"
+          fi
+
+      - name: Generate component inventory
+        if: steps.changes.outputs.components == 'true'
+        run: node scripts/component-inventory-generator.js
+
+      - name: Upload component analysis
+        if: steps.changes.outputs.components == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: component-analysis
+          path: |
+            docs/component-inventory.json
+            docs/component-inventory-report.md
+
+  generate-documentation:
+    name: Generate Component Documentation
+    runs-on: ubuntu-latest
+    needs: analyze-components
+    if: needs.analyze-components.outputs.should-rebuild == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download component analysis
+        uses: actions/download-artifact@v4
+        with:
+          name: component-analysis
+          path: docs/
+
+      - name: Generate enhanced stories
+        run: node .storybook/enhanced-story-generator.js
+
+      - name: Build Storybook
+        run: npm run build-storybook
+        env:
+          NODE_OPTIONS: '--max-old-space-size=4096'
+
+      - name: Generate TypeDoc documentation
+        run: npx typedoc --out storybook-static/typedoc src/components --theme default --exclude "**/*.stories.*" --exclude "**/*.test.*"
+
+      - name: Upload Storybook build
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-build
+          path: storybook-static/
+
+      - name: Upload generated stories
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-stories
+          path: |
+            src/stories/auto-generated/
+            docs/components/
+
+  visual-testing:
+    name: Visual Regression Testing
+    runs-on: ubuntu-latest
+    needs: generate-documentation
+    if: needs.analyze-components.outputs.should-rebuild == 'true'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download Storybook build
+        uses: actions/download-artifact@v4
+        with:
+          name: storybook-build
+          path: storybook-static/
+
+      - name: Run Chromatic for visual testing
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: npm run chromatic:ci
+        env:
+          CHROMATIC_PROJECT_TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+
+      - name: Upload visual test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-test-results
+          path: chromatic-diagnostics.json
+
+  deploy-documentation:
+    name: Deploy Documentation
+    runs-on: ubuntu-latest
+    needs: [generate-documentation, visual-testing]
+    if: |
+      always() && 
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_docs == 'true')
+
+    # Deploying Pages needs write access only in this deployment job.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Storybook build
+        uses: actions/download-artifact@v4
+        with:
+          name: storybook-build
+          path: ./docs-site/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Create index page
+        run: |
+          mkdir -p ./docs-site
+          cat > ./docs-site/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>WRFCoin Component Documentation</title>
+              <style>
+                  body { 
+                      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                      margin: 0; padding: 40px; background: #f8f9fa;
+                  }
+                  .container { max-width: 1200px; margin: 0 auto; }
+                  .header { text-align: center; margin-bottom: 40px; }
+                  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+                  .card { 
+                      background: white; padding: 30px; border-radius: 8px; 
+                      box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-decoration: none; color: inherit;
+                      transition: transform 0.2s; 
+                  }
+                  .card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+                  .card h3 { margin: 0 0 10px 0; color: #0066cc; }
+                  .badge { 
+                      display: inline-block; padding: 4px 8px; background: #e3f2fd; 
+                      color: #1565c0; border-radius: 4px; font-size: 12px; margin: 5px 5px 0 0;
+                  }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <div class="header">
+                      <h1>WRFCoin Component Documentation</h1>
+                      <p>Enterprise-grade component library with interactive examples and comprehensive documentation</p>
+                  </div>
+                  <div class="cards">
+                      <a href="./index.html" class="card">
+                          <h3>📚 Component Library</h3>
+                          <p>Interactive component showcase with live examples, props documentation, and usage guidelines</p>
+                          <div class="badge">Storybook</div>
+                          <div class="badge">Interactive</div>
+                          <div class="badge">Live Examples</div>
+                      </a>
+                      <a href="./typedoc/index.html" class="card">
+                          <h3>📖 API Reference</h3>
+                          <p>TypeScript API documentation with detailed type information and component interfaces</p>
+                          <div class="badge">TypeDoc</div>
+                          <div class="badge">API Reference</div>
+                          <div class="badge">TypeScript</div>
+                      </a>
+                      <a href="https://github.com/wrfcoin/platform/tree/main/frontend/src/components" class="card">
+                          <h3>🔧 Source Code</h3>
+                          <p>Browse the component source code and contribute to the development</p>
+                          <div class="badge">GitHub</div>
+                          <div class="badge">Source Code</div>
+                          <div class="badge">Contributions</div>
+                      </a>
+                  </div>
+              </div>
+          </body>
+          </html>
+          EOF
+
+      - name: Upload to Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs-site/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  documentation-terminal-gate:
+    name: Documentation pipeline terminal gate
+    runs-on: ubuntu-latest
+    needs: [analyze-components, generate-documentation, visual-testing, deploy-documentation]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject skipped required documentation work
+        env:
+          ANALYZE_RESULT: ${{ needs.analyze-components.result }}
+          GENERATE_RESULT: ${{ needs.generate-documentation.result }}
+          VISUAL_RESULT: ${{ needs.visual-testing.result }}
+          DEPLOY_RESULT: ${{ needs.deploy-documentation.result }}
+          SHOULD_REBUILD: ${{ needs.analyze-components.outputs.should-rebuild }}
+          EVENT_NAME: ${{ github.event_name }}
+          DEPLOY_DOCS: ${{ inputs.deploy_docs }}
+        run: bash scripts/assert-documentation-pipeline-gate.sh
+
+  notify-completion:
+    name: Notify Documentation Update
+    runs-on: ubuntu-latest
+    needs: [analyze-components, generate-documentation, visual-testing, deploy-documentation, documentation-terminal-gate]
+    if: always()
+
+    steps:
+      - name: Create deployment summary
+        run: |
+          echo "## 📚 Component Documentation Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Pipeline Status" >> $GITHUB_STEP_SUMMARY
+          echo "- **Component Analysis**: ${{ needs.analyze-components.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Documentation Generation**: ${{ needs.generate-documentation.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Visual Testing**: ${{ needs.visual-testing.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Documentation Deployment**: ${{ needs.deploy-documentation.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Documentation Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [Component Library](${{ needs.deploy-documentation.outputs.page_url }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [API Reference](${{ needs.deploy-documentation.outputs.page_url }}typedoc/)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "- **Components Analyzed**: ${{ needs.analyze-components.outputs.components-changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Documentation Updated**: $(date)" >> $GITHUB_STEP_SUMMARY
+
+  # Clean up old workflow runs to save storage
+  cleanup:
+    # Deleting workflow runs needs actions write access only in this maintenance job.
+    permissions:
+      contents: read
+      actions: write
+    name: Cleanup Old Artifacts
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Delete old workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 30
+          keep_minimum_runs: 10

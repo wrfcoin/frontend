@@ -1,0 +1,241 @@
+.search-results-container {
+  padding: 20px;
+  max-width: 100%;
+  margin: 0 auto;
+  /* Add styles for when the secondary sidebar is active */
+  transition: margin-right 0.3s ease;
+}
+
+/* When expanded sidebar is active and showing search sidebar */
+body.secondary-sidebar-active .search-results-container {
+  margin-right: 280px;
+}
+
+.search-header {
+  margin-bottom: 24px;
+}
+
+.search-header h1 {
+  margin-bottom: 16px;
+  color: var(--text-primary, #212121);
+}
+
+.search-loading,
+.search-error,
+.search-no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  text-align: center;
+}
+
+.search-loading i,
+.search-error i,
+.search-no-results i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: var(--text-secondary, #757575);
+}
+
+.search-error i {
+  color: var(--error-color, #d32f2f);
+}
+
+.search-loading p,
+.search-error p,
+.search-no-results p {
+  color: var(--text-secondary, #757575);
+}
+
+.search-no-results h2 {
+  margin-bottom: 8px;
+  color: var(--text-primary, #212121);
+}
+
+.spinning {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.search-stats {
+  margin-bottom: 16px;
+  color: var(--text-secondary, #757575);
+}
+
+.active-category-indicator {
+  display: flex;
+  align-items: center;
+  background-color: var(--primary-light, #bb86fc);
+  color: var(--on-primary, #ffffff);
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-top: 8px;
+  display: inline-flex;
+}
+
+.active-category-indicator span {
+  margin-right: 8px;
+  font-size: 0.9rem;
+}
+
+.clear-filter-btn {
+  background: none;
+  border: none;
+  color: var(--on-primary, #ffffff);
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.clear-filter-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.clear-filter-btn i {
+  font-size: 16px;
+}
+
+.search-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.search-result-item {
+  display: flex;
+  padding: 16px;
+  border-radius: 8px;
+  background-color: var(--surface-color, #ffffff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.search-result-item:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.result-icon {
+  display: flex;
+  align-items: flex-start;
+  padding: 8px;
+  margin-right: 16px;
+  border-radius: 50%;
+  background-color: var(--primary-light, #bb86fc);
+  color: var(--on-primary, #ffffff);
+}
+
+.result-content {
+  flex: 1;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.result-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text-primary, #212121);
+  margin-right: 12px;
+}
+
+.result-category {
+  padding: 4px 8px;
+  border-radius: 12px;
+  background-color: var(--surface-variant, #eeeeee);
+  color: var(--text-secondary, #757575);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.result-description {
+  margin: 0 0 8px 0;
+  color: var(--text-secondary, #757575);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.result-metadata {
+  font-size: 12px;
+  color: var(--text-tertiary, #9e9e9e);
+  margin-bottom: 4px;
+}
+
+.result-relevance {
+  width: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.relevance-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--surface-variant, #eeeeee);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.relevance-fill {
+  height: 100%;
+  background-color: var(--primary-color, #6200ea);
+  border-radius: 4px;
+}
+
+.relevance-label {
+  font-size: 12px;
+  color: var(--text-tertiary, #9e9e9e);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .search-results-container {
+    padding: 16px;
+  }
+
+  .search-result-item {
+    flex-direction: column;
+  }
+
+  .result-icon {
+    margin-right: 0;
+    margin-bottom: 12px;
+  }
+
+  .result-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .result-title {
+    margin-right: 0;
+    margin-bottom: 8px;
+  }
+
+  .result-relevance {
+    width: 100%;
+    margin-top: 12px;
+  }
+}

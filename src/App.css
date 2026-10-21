@@ -1,0 +1,591 @@
+.app-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-container.start-menu-layout {
+  flex-direction: column;
+}
+
+/* Shell: the testnet notice sits above the app container in normal flow, so the
+   container (sized to the viewport on its own) used to overflow the viewport by
+   the notice height and the end of every page's scroll ended under the pinned
+   Start bar. The shell is one viewport tall and the container takes what is
+   left below the notice; the page scroller then ends exactly at the bar. */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.app-shell > .app-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+
+.app-shell .start-menu-layout .main-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+  margin-bottom: 48px; /* the pinned Start bar */
+}
+
+.app-shell .start-menu-layout .page-content {
+  height: calc(100% - 10px); /* the scroller's own top margin */
+}
+
+/* Sidebar styles with collapsible functionality */
+.sidebar {
+  width: 240px;
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1000;
+}
+
+.sidebar.collapsed {
+  width: 70px;
+}
+
+.sidebar-header {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  justify-content: space-between;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-image {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 2px rgba(var(--primary-color-rgb), 0.5));
+  transition: all 0.3s ease;
+}
+
+.app-title {
+  font-size: 1.2rem;
+  margin: 0;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--primary-color);
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+  background-color: var(--sidebar-hover);
+  color: var(--primary-color);
+}
+
+/* Pin button specific styles */
+.pin-button {
+  background-color: rgba(var(--primary-color-rgb), 0.08);
+  border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+  padding: 6px 8px;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.pin-button:hover {
+  background-color: rgba(var(--primary-color-rgb), 0.15);
+  border-color: rgba(var(--primary-color-rgb), 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.pin-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar.collapsed .pin-button {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Tooltip for visual indicator */
+.pin-button i {
+  position: relative;
+}
+
+.pin-button::after {
+  content: attr(title);
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  background-color: var(--tooltip-bg, rgba(0, 0, 0, 0.8));
+  color: white;
+  font-size: 12px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.2s,
+    visibility 0.2s;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.pin-button:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Additional helper triangle */
+.pin-button::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--tooltip-bg, rgba(0, 0, 0, 0.8)) transparent transparent
+    transparent;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.2s,
+    visibility 0.2s;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.pin-button:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sidebar-menu {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.sidebar-item {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+
+.sidebar-item.active {
+  background-color: rgba(var(--primary-color-rgb), 0.1);
+}
+
+.sidebar-item.active .sidebar-link {
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  color: var(--text-color);
+  text-decoration: none;
+  transition: all 0.2s;
+  gap: 0.75rem;
+  width: 100%;
+  position: relative;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-item.active .sidebar-link {
+  border-left-color: var(--primary-color);
+}
+
+.sidebar-link:hover {
+  background-color: var(--sidebar-hover);
+  color: var(--primary-color);
+}
+
+.sidebar-link i {
+  font-size: 1.2rem;
+  min-width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.sidebar-item.active .sidebar-link i {
+  color: var(--primary-color);
+}
+
+.link-text {
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.sidebar-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footer-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.theme-toggle-btn,
+.pin-button {
+  flex: 1;
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-color);
+  transition: all 0.2s;
+  min-height: 38px;
+  justify-content: center;
+}
+
+.theme-toggle-btn span,
+.pin-button span {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.theme-toggle-btn:hover,
+.pin-button:hover {
+  background-color: var(--sidebar-hover);
+  color: var(--primary-color);
+  border-color: rgba(var(--primary-color-rgb), 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.theme-toggle-btn:active,
+.pin-button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.theme-toggle-btn i,
+.pin-button i {
+  font-size: 1.1rem;
+  min-width: 20px;
+}
+
+.node-status {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  gap: 8px;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-indicator.online {
+  background-color: var(--success-color);
+  box-shadow: 0 0 4px var(--success-color);
+}
+
+.status-indicator.offline {
+  background-color: var(--danger-color);
+  box-shadow: 0 0 4px var(--danger-color);
+}
+
+.status-text {
+  transition: opacity 0.2s;
+}
+
+/* Main content area - below fixed ticker */
+.main-content {
+  flex: 1;
+  margin-top: 36px;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100vh - 36px - 48px);
+}
+
+/* Content area adjustments */
+.content {
+  flex-grow: 1;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+  transition: all 0.3s ease;
+  margin-top: 60px; /* For StatusBar */
+  position: absolute;
+  left: 240px; /* Position exactly next to sidebar */
+  right: 0;
+  bottom: 0;
+  top: 0;
+  box-sizing: border-box;
+  width: calc(100% - 240px); /* Full width minus sidebar */
+}
+
+/* When sidebar is collapsed */
+.sidebar-collapsed + .content {
+  left: 70px; /* Position exactly next to collapsed sidebar */
+  width: calc(100% - 70px); /* Full width minus collapsed sidebar */
+}
+
+/* When the secondary menu is open */
+.content.secondary-open {
+  left: 240px; /* Position exactly next to expanded sidebar */
+  width: calc(100% - 240px); /* Full width minus expanded sidebar */
+}
+
+/* When sidebar is collapsed but secondary menu is open */
+.sidebar-collapsed + .content.secondary-open {
+  left: 240px; /* Position exactly next to expanded secondary menu */
+  width: calc(100% - 240px); /* Full width minus expanded secondary menu */
+}
+
+.content-expanded {
+  margin-left: 0;
+  width: 100%;
+}
+
+/* Global search container styles */
+.global-search-container {
+  position: sticky;
+  top: 60px; /* Same as StatusBar height */
+  z-index: 100;
+  padding: 10px 20px;
+  background-color: var(--background-color);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+/* PageWrapper styles for StatusBar integration */
+.page-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.page-content {
+  padding: 20px;
+  margin-top: 10px;
+  width: 100%;
+  height: calc(
+    100vh - 48px
+  ); /* Adjusted: viewport height - taskbar (removed statusbar) */
+  box-sizing: border-box;
+  overflow-y: auto; /* Add vertical scrollbar when content overflows */
+  scrollbar-width: thin; /* For Firefox */
+  scrollbar-color: var(--primary-color) var(--bg-dark); /* For Firefox */
+  padding-bottom: 0; /* Remove bottom padding to eliminate gap */
+  margin-bottom: 0; /* Remove bottom margin to eliminate gap */
+}
+
+/* Custom scrollbar for Webkit browsers */
+.page-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.page-content::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+  border-radius: 4px;
+}
+
+.page-content::-webkit-scrollbar-thumb {
+  background-color: var(--primary-color);
+  border-radius: 4px;
+}
+
+.page-content::-webkit-scrollbar-thumb:hover {
+  background-color: var(--primary-color-hover);
+}
+
+/* Full-width page container for consistent widths across all pages */
+.full-width-container {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Apply full width to all main page components */
+.dashboard,
+.miner-dashboard,
+.explorer,
+.create-nft,
+.resources,
+.wallet-container,
+.bridge-container,
+.nft-container,
+.integrations-container,
+.sharding-container,
+.incentives-container,
+.search-container {
+  width: 100%;
+  margin: 0;
+}
+
+/* Integration category color themes */
+:root {
+  /* Oracles theme */
+  --color-oracles: #7952b3;
+  --color-oracles-dark: #6a469e;
+  --color-oracles-light: #8a63c8;
+
+  /* Compute theme */
+  --color-compute: #fd7e14;
+  --color-compute-dark: #e67212;
+  --color-compute-light: #ff8c29;
+
+  /* Storage theme */
+  --color-storage: #20c997;
+  --color-storage-dark: #1eb589;
+  --color-storage-light: #2fe0ac;
+
+  /* AI/ML theme */
+  --color-ai-ml: #d63384;
+  --color-ai-ml-dark: #c42e77;
+  --color-ai-ml-light: #e645a0;
+
+  /* IoT theme */
+  --color-iot: #0d6efd;
+  --color-iot-dark: #0b62e4;
+  --color-iot-light: #2a80ff;
+
+  /* Cross-Chain theme */
+  --color-cross-chain: #dc3545;
+  --color-cross-chain-dark: #c7303e;
+  --color-cross-chain-light: #e84c5c;
+
+  /* Data Providers theme */
+  --color-data-providers: #198754;
+  --color-data-providers-dark: #16794c;
+  --color-data-providers-light: #1ea266;
+}
+
+.card {
+  margin-bottom: 1.5rem;
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: rgba(var(--primary-color-rgb), 0.3);
+}
+
+.card-header {
+  background-color: var(--card-header-bg);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-body {
+  padding: 1rem;
+}
+
+/* Sidebar collapsed state overrides */
+.sidebar-collapsed .link-text,
+.sidebar-collapsed .app-title,
+.sidebar-collapsed .theme-toggle-btn span,
+.sidebar-collapsed .status-text {
+  display: none;
+}
+
+.sidebar-collapsed .sidebar-link {
+  justify-content: center;
+  padding: 0.75rem 0;
+}
+
+.sidebar-collapsed .sidebar-item.active .sidebar-link {
+  border-left-width: 4px;
+}
+
+.sidebar-collapsed .theme-toggle-btn {
+  justify-content: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    min-height: 60px;
+  }
+
+  .sidebar.collapsed {
+    width: 100%;
+    height: 60px;
+  }
+
+  .sidebar-collapsed .sidebar-menu {
+    display: none;
+  }
+
+  .content {
+    padding: 1rem;
+    margin-top: 60px;
+  }
+
+  .status-bar {
+    left: 0;
+  }
+
+  .sidebar-menu {
+    max-height: 300px;
+  }
+}

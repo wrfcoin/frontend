@@ -1,0 +1,11 @@
+node_modules/
+dist/
+storybook-static/
+backups/
+*.log
+.env
+.env.*
+!.env.example
+
+# Visual QA harness output (scripts/visual-qa)
+visual-qa-output/

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Precipitation gradient -->
+  <defs>
+    <linearGradient id="rain_gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFFFFF;stop-opacity:0.1" />
+      <stop offset="20%" style="stop-color:#CCCCFF;stop-opacity:0.3" />
+      <stop offset="40%" style="stop-color:#9999FF;stop-opacity:0.5" />
+      <stop offset="60%" style="stop-color:#6666FF;stop-opacity:0.7" />
+      <stop offset="80%" style="stop-color:#3333FF;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#0000CC;stop-opacity:0.9" />
+    </linearGradient>
+    
+    <!-- Rain pattern -->
+    <pattern id="raindrops" patternUnits="userSpaceOnUse" width="20" height="20">
+      <circle cx="5" cy="5" r="1" fill="#0066FF" opacity="0.8" />
+      <circle cx="15" cy="10" r="1" fill="#0066FF" opacity="0.8" />
+      <circle cx="8" cy="15" r="1" fill="#0066FF" opacity="0.8" />
+    </pattern>
+  </defs>
+  
+  <!-- Background map -->
+  <rect width="400" height="300" fill="#F0F0F0" />
+  
+  <!-- Land masses -->
+  <path d="M20,150 C40,100 120,80 180,120 C240,160 300,140 380,180 L380,280 L20,280 Z" fill="#E8E8E8" stroke="#CCCCCC" />
+  
+  <!-- Precipitation overlay with gradient -->
+  <path d="M50,100 C100,80 150,120 220,100 C290,80 340,110 380,130 L380,200 L300,220 L250,190 L150,200 L80,180 L50,160 Z" fill="url(#rain_gradient)" />
+  
+  <!-- Heavy rain area -->
+  <circle cx="180" cy="140" r="40" fill="url(#raindrops)" opacity="0.8" />
+  <circle cx="300" cy="160" r="30" fill="url(#raindrops)" opacity="0.7" />
+  
+  <!-- Grid lines -->
+  <g stroke="#FFFFFF" stroke-width="0.5" opacity="0.5">
+    <line x1="0" y1="50" x2="400" y2="50" />
+    <line x1="0" y1="100" x2="400" y2="100" />
+    <line x1="0" y1="150" x2="400" y2="150" />
+    <line x1="0" y1="200" x2="400" y2="200" />
+    <line x1="0" y1="250" x2="400" y2="250" />
+    
+    <line x1="50" y1="0" x2="50" y2="300" />
+    <line x1="100" y1="0" x2="100" y2="300" />
+    <line x1="150" y1="0" x2="150" y2="300" />
+    <line x1="200" y1="0" x2="200" y2="300" />
+    <line x1="250" y1="0" x2="250" y2="300" />
+    <line x1="300" y1="0" x2="300" y2="300" />
+    <line x1="350" y1="0" x2="350" y2="300" />
+  </g>
+  
+  <!-- Precipitation indicators -->
+  <g font-family="Arial" font-size="10" fill="#000000" text-anchor="middle">
+    <text x="180" y="140">12mm</text>
+    <text x="300" y="160">8mm</text>
+    <text x="120" y="100">2mm</text>
+    <text x="250" y="120">5mm</text>
+  </g>
+  
+  <!-- Title -->
+  <text x="200" y="30" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Precipitation Forecast</text>
+  
+  <!-- Legend -->
+  <g transform="translate(20, 20)">
+    <rect width="80" height="15" fill="url(#rain_gradient)" />
+    <text x="0" y="30" font-family="Arial" font-size="8">Light</text>
+    <text x="80" y="30" font-family="Arial" font-size="8" text-anchor="end">Heavy</text>
+  </g>
+</svg>

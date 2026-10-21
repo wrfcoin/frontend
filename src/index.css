@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * WRFCoin Global Base Styles
+ *
+ * Root CSS variables here use the CANONICAL v2 palette (Slate/Tailwind-based).
+ * Single source of truth: src/theme/tokens.ts — all values here must match.
+ *
+ * Color system layers (highest authority first):
+ *   1. src/theme/tokens.ts          — JS constants (MUI theme)
+ *   2. src/styles/theme.css         — CSS variables (dashboard-v2 selectors)
+ *   3. src/index.css (this file)    — legacy-compat aliases only
+ *
+ * Bootstrap-era button and card classes (.btn-*, .card) have been removed.
+ * Use WrfButton / WrfCard from src/components/DesignSystem instead.
+ */
+
+:root {
+  /* === Brand (canonical v2) === */
+  --primary-color: #3B82F6;        /* Blue 500 — tokens.ts: primary */
+  --primary-dark: #2563EB;         /* Blue 600 — tokens.ts: primaryDark */
+  --primary-light: #60A5FA;        /* Blue 400 — tokens.ts: primaryLight */
+  --secondary-color: #8B5CF6;      /* Violet 500 — tokens.ts: accentPurple */
+
+  /* === Status === */
+  --success-color: #10B981;        /* Emerald 500 — tokens.ts: success */
+  --warning-color: #F59E0B;        /* Amber 500   — tokens.ts: warning */
+  --danger-color: #EF4444;         /* Red 500     — tokens.ts: error */
+  --info-color: #0EA5E9;           /* Sky 500     — tokens.ts: info */
+
+  /* === Light-mode backgrounds === */
+  --background-color: #F8FAFC;     /* Slate 50  — tokens.ts: bgPrimaryLight */
+  --card-background: #FFFFFF;      /* White     — tokens.ts: bgSecondaryLight */
+  --border-color: rgba(148, 163, 184, 0.3); /* tokens.ts: borders.defaultLight */
+
+  /* === Text === */
+  --text-color: #0F172A;           /* Slate 900 — tokens.ts: textPrimaryLight */
+  --text-secondary: #475569;       /* Slate 600 — tokens.ts: textSecondaryLight */
+
+  /* === Sidebar (legacy-compat) === */
+  --sidebar-bg: #F8FAFC;
+  --sidebar-hover: rgba(59, 130, 246, 0.08);
+
+  /* === Status indicators === */
+  --status-online: #10B981;        /* tokens.ts: success */
+  --status-offline: #EF4444;       /* tokens.ts: error */
+
+  /* === Typography base === */
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+body.dark-mode {
+  /* === Dark-mode overrides (canonical v2) === */
+  --primary-color: #3B82F6;        /* Same brand blue */
+  --primary-dark: #2563EB;
+  --primary-light: #60A5FA;
+  --secondary-color: #8B5CF6;
+
+  --background-color: #0F172A;     /* Slate 900 — tokens.ts: bgPrimary */
+  --card-background: #1E293B;      /* Slate 800 — tokens.ts: bgSecondary */
+  --border-color: rgba(51, 65, 85, 0.5); /* tokens.ts: borders.default */
+
+  --text-color: #F8FAFC;           /* Slate 50  — tokens.ts: textPrimary */
+  --text-secondary: #94A3B8;       /* Slate 400 — tokens.ts: textSecondary */
+
+  --sidebar-bg: #1E293B;
+  --sidebar-hover: rgba(59, 130, 246, 0.12);
+
+  --success-color: #10B981;
+  --warning-color: #F59E0B;
+  --danger-color: #EF4444;
+  --info-color: #0EA5E9;
+
+  --status-online: #10B981;
+  --status-offline: #EF4444;
+}
+
+/* ---------------------------------------------------------------------------
+ * Reset / base
+ * ------------------------------------------------------------------------ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  transition:
+    background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------------------------------------------------------------------------
+ * Status indicators (used by StatusBar and similar legacy components)
+ * ------------------------------------------------------------------------ */
+
+.status-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.status-indicator.online {
+  background-color: var(--status-online);
+}
+
+.status-indicator.offline {
+  background-color: var(--status-offline);
+}
+
+/* ---------------------------------------------------------------------------
+ * Responsive base font
+ * ------------------------------------------------------------------------ */
+
+@media (max-width: 768px) {
+  :root {
+    font-size: 14px;
+  }
+}

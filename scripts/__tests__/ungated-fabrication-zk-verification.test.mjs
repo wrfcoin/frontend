@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import test from 'node:test';
+test('removing the production proof-verification gate is rejected', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zk-verification-ratchet-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const file = 'src/components/ZKVerification/ProofVerificationUI.tsx';
+  fs.mkdirSync(path.join(root, path.dirname(file)), { recursive: true });
+  fs.mkdirSync(path.join(root, 'scripts'));
+  fs.writeFileSync(path.join(root, 'scripts/ungated-fabrication-baseline.json'), '[]');
+  fs.writeFileSync(path.join(root, 'src/App.jsx'), "import View from './components/ZKVerification/ProofVerificationUI'; export default View;");
+  const source = fs.readFileSync(file, 'utf8');
+  fs.writeFileSync(path.join(root, file), source);
+  const run = () => spawnSync(process.execPath, [path.resolve('scripts/check-ungated-fabrication.mjs'), '--root', root], { encoding: 'utf8' });
+  const pristine = run(); assert.equal(pristine.status, 0, pristine.stdout + pristine.stderr);
+  const mutant = source.replace(/<DemoSurfaceGate\b[^>]*>/, '<>').replace('</DemoSurfaceGate>', '</>');
+  assert.notEqual(mutant, source);
+  fs.writeFileSync(path.join(root, file), mutant);
+  const result = run(); assert.equal(result.status, 1, result.stdout + result.stderr);
+  assert.match(result.stderr, /ProofVerificationUI.tsx/);
+});

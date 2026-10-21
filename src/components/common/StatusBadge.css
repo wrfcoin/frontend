@@ -1,0 +1,118 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3em 0.6em;
+  border-radius: 1em;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1;
+  margin: 5px 0;
+  transition: all 0.2s ease;
+}
+
+.status-badge i {
+  margin-right: 0.4em;
+  font-size: 0.9em;
+}
+
+/* Sizes */
+.status-badge-sm {
+  font-size: 0.7rem;
+  padding: 0.2em 0.5em;
+}
+
+.status-badge-md {
+  font-size: 0.8rem;
+  padding: 0.3em 0.6em;
+}
+
+.status-badge-lg {
+  font-size: 0.9rem;
+  padding: 0.4em 0.7em;
+}
+
+/* Status Colors */
+.status-active {
+  background-color: rgba(25, 135, 84, 0.15);
+  color: rgb(25, 135, 84);
+  border: 1px solid rgba(25, 135, 84, 0.25);
+}
+
+.status-warning {
+  background-color: rgba(255, 193, 7, 0.15);
+  color: rgb(176, 132, 0);
+  border: 1px solid rgba(255, 193, 7, 0.25);
+}
+
+.status-error {
+  background-color: rgba(220, 53, 69, 0.15);
+  color: rgb(220, 53, 69);
+  border: 1px solid rgba(220, 53, 69, 0.25);
+}
+
+.status-connecting {
+  background-color: rgba(13, 110, 253, 0.15);
+  color: rgb(13, 110, 253);
+  border: 1px solid rgba(13, 110, 253, 0.25);
+}
+
+.status-offline {
+  background-color: rgba(108, 117, 125, 0.15);
+  color: rgb(108, 117, 125);
+  border: 1px solid rgba(108, 117, 125, 0.25);
+}
+
+.status-testnet {
+  background-color: rgba(111, 66, 193, 0.15);
+  color: rgb(111, 66, 193);
+  border: 1px solid rgba(111, 66, 193, 0.25);
+}
+
+.status-default {
+  background-color: rgba(108, 117, 125, 0.15);
+  color: rgb(108, 117, 125);
+  border: 1px solid rgba(108, 117, 125, 0.25);
+}
+
+/* Status hover effects */
+.status-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: default;
+}
+
+/* Dark theme adjustments */
+.dark-theme .status-active {
+  background-color: rgba(25, 135, 84, 0.25);
+  color: rgb(40, 167, 107);
+}
+
+.dark-theme .status-warning {
+  background-color: rgba(255, 193, 7, 0.25);
+  color: rgb(255, 208, 75);
+}
+
+.dark-theme .status-error {
+  background-color: rgba(220, 53, 69, 0.25);
+  color: rgb(240, 101, 115);
+}
+
+.dark-theme .status-connecting {
+  background-color: rgba(13, 110, 253, 0.25);
+  color: rgb(83, 152, 255);
+}
+
+.dark-theme .status-offline {
+  background-color: rgba(108, 117, 125, 0.25);
+  color: rgb(173, 181, 189);
+}
+
+.dark-theme .status-testnet {
+  background-color: rgba(111, 66, 193, 0.25);
+  color: rgb(154, 120, 219);
+}
+
+.dark-theme .status-default {
+  background-color: rgba(108, 117, 125, 0.25);
+  color: rgb(173, 181, 189);
+}

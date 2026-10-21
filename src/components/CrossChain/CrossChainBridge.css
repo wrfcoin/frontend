@@ -1,0 +1,805 @@
+/* Cross-Chain Bridge Component Styles */
+.cross-chain-bridge {
+  color: var(--text-color);
+}
+
+.cross-chain-bridge h1,
+.cross-chain-bridge h2,
+.cross-chain-bridge h3,
+.cross-chain-bridge h4 {
+  color: var(--text-color);
+}
+
+.cross-chain-bridge .container {
+  max-width: 1200px;
+}
+
+/* Bridge Provider Selection */
+.bridge-providers-selection {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.bridge-providers {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.bridge-provider-card {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background-color: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Enhanced dropdown styling for better visibility */
+.form-group select {
+  width: 100%;
+  min-width: 200px;
+  padding: 12px 16px;
+  font-size: 16px;
+  line-height: 1.5;
+  background-color: var(--bg-color);
+  border: 2px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  color: var(--text-color);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.form-group select:hover {
+  border-color: var(--primary-color);
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.1);
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+}
+
+.form-group select option {
+  padding: 12px 16px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Network swap button enhancement */
+.network-swap button {
+  padding: 12px;
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 50%;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 48px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.network-swap button:hover {
+  background-color: var(--primary-dark);
+  transform: rotate(180deg);
+}
+
+/* Bridge form row styling */
+.bridge-form-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.bridge-form-row .form-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.bridge-form-row .network-swap {
+  flex-shrink: 0;
+}
+
+.bridge-provider-card:hover:not(.disabled) {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.bridge-provider-card.active {
+  border-color: var(--primary-color);
+  background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+.bridge-provider-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--bg-secondary);
+}
+
+.provider-logo {
+  font-size: 2rem;
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.provider-info {
+  flex: 1;
+}
+
+.provider-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.provider-status {
+  font-size: 0.85rem;
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.provider-status.active {
+  background-color: rgba(var(--success-rgb), 0.15);
+  color: var(--success-color);
+}
+
+.provider-status.maintenance {
+  background-color: rgba(var(--warning-rgb), 0.15);
+  color: var(--warning-color);
+}
+
+.provider-status.inactive {
+  background-color: rgba(var(--danger-rgb), 0.15);
+  color: var(--danger-color);
+}
+
+.provider-selected {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  color: var(--primary-color);
+  font-size: 1.2rem;
+}
+
+/* Stablecoin styles */
+.token-select {
+  font-weight: 500;
+}
+
+.stablecoin-option {
+  background-color: rgba(var(--success-rgb), 0.1);
+  font-weight: 600;
+}
+
+.stablecoin-info {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stablecoin-badge {
+  background-color: var(--success-color);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Network Status */
+.network-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.network-card {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-md);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.network-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.network-icon {
+  font-size: 1.5rem;
+  margin-right: 0.75rem;
+}
+
+.network-info {
+  flex: 1;
+}
+
+.network-name {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.network-status-indicator {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+.status-active {
+  background-color: var(--success-color);
+}
+
+.status-inactive {
+  background-color: var(--danger-color);
+}
+
+.status-maintenance {
+  background-color: var(--warning-color);
+}
+
+/* Network Visualization */
+.network-visualization {
+  position: relative;
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-md);
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+}
+
+.network-visualization .svg-container {
+  min-height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--card-bg);
+}
+
+.network-visualization .token-filter {
+  position: relative;
+  z-index: 5;
+}
+
+/* Enhanced styling for network visualization */
+.network-visualization .svg-container svg {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+}
+
+.network-visualization .token-filter button.btn-success {
+  background-color: var(--success-color);
+  border-color: var(--success-dark);
+}
+
+.network-visualization .token-filter button.btn-success:hover {
+  background-color: var(--success-dark);
+}
+
+/* Network legend styling */
+.network-visualization .network-icon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Base network specific styling */
+.network-card[data-network='base'] .network-icon {
+  color: var(--info-color);
+}
+
+/* USDT and USDC badges */
+.stablecoin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.stablecoin-badge::before {
+  content: '💵';
+  display: inline;
+}
+
+/* Fee discount notices */
+.discount-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+.stablecoin-discount {
+  background-color: rgba(var(--success-rgb), 0.1);
+  color: var(--success-dark);
+}
+
+.base-discount {
+  background-color: rgba(var(--info-rgb), 0.1);
+  color: var(--info-dark);
+}
+
+.discount-badge {
+  background-color: var(--warning-color);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Tab Navigation */
+.cross-chain-bridge nav {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.cross-chain-bridge nav button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.cross-chain-bridge nav button:hover {
+  color: var(--primary-color);
+  background: none;
+}
+
+.cross-chain-bridge nav button.active {
+  border-bottom: 2px solid var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Transfer Form */
+.transfer-form {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.transfer-form .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.transfer-form label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.transfer-form input,
+.transfer-form select {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-lighter);
+  color: var(--text-color);
+  transition: all 0.2s ease;
+}
+
+.transfer-form input:focus,
+.transfer-form select:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.15);
+}
+
+.transfer-form input.error,
+.transfer-form select.error {
+  border-color: var(--danger-color);
+}
+
+.transfer-form input.error:focus,
+.transfer-form select.error:focus {
+  box-shadow: 0 0 0 3px rgba(var(--danger-color-rgb), 0.15);
+}
+
+.transfer-form .error-message {
+  color: var(--danger-color);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.transfer-form .helper-text {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.fee-information {
+  background-color: rgba(var(--primary-color-rgb), 0.05);
+  border-radius: var(--border-radius-md);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(var(--primary-color-rgb), 0.1);
+}
+
+.fee-information h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+
+/* Provider info styles */
+.provider-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  background-color: rgba(var(--primary-color-rgb), 0.05);
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+}
+
+.provider-label {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.provider-value {
+  font-weight: 600;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.provider-feature {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.feature-tag {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.feature-tag.discount {
+  background-color: rgba(var(--success-rgb), 0.15);
+  color: var(--success-color);
+}
+
+.feature-tag.premium {
+  background-color: rgba(var(--primary-rgb), 0.15);
+  color: var(--primary-color);
+}
+
+.feature-tag.maintenance {
+  background-color: rgba(var(--warning-rgb), 0.15);
+  color: var(--warning-color);
+}
+
+.fee-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.fee-row:last-child {
+  margin-bottom: 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(var(--primary-color-rgb), 0.1);
+}
+
+.fee-label {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.fee-value {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.fee-value.highlight {
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.submit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  min-width: 180px;
+}
+
+.submit-button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 0.5rem;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.transfer-form .direction-arrow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background-color: var(--bg-lighter);
+  border-radius: var(--border-radius-md);
+  position: relative;
+  border: 1px solid var(--border-color);
+}
+
+.direction-arrow::before {
+  content: '';
+  position: absolute;
+  height: 2px;
+  background-color: var(--primary-color);
+  width: 60%;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.from-chain-icon,
+.to-chain-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--card-bg);
+  border-radius: 50%;
+  border: 2px solid var(--primary-color);
+  z-index: 1;
+  font-size: 1.2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.arrow {
+  margin: 0 1rem;
+  font-size: 1.5rem;
+  color: var(--primary-color);
+  z-index: 1;
+  font-weight: bold;
+}
+
+/* Transfer History */
+.transfer-history {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.transfer-history table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transfer-history th {
+  background-color: var(--card-header-bg);
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.transfer-history td {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.transfer-history tr:hover {
+  background-color: var(--bg-darker);
+}
+
+.transfer-status {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.status-initiated {
+  color: var(--info-color);
+}
+
+.status-completed {
+  color: var(--success-color);
+}
+
+.status-failed {
+  color: var(--danger-color);
+}
+
+.status-pending {
+  color: var(--warning-color);
+}
+
+/* Network Statistics */
+.network-stats .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-md);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-color);
+}
+
+.stat-card h3 {
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.stat-card .value {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.stat-card .subtext {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+/* Loading Spinner */
+.spinner {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid var(--border-light);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error Message */
+.error-message {
+  background-color: rgba(var(--danger-color-rgb), 0.1);
+  border: 1px solid var(--danger-color);
+  color: var(--danger-color);
+  padding: 1rem;
+  border-radius: var(--border-radius-sm);
+  margin-bottom: 1.5rem;
+}
+
+/* Chain Distribution */
+.chain-distribution {
+  margin-top: 2rem;
+}
+
+.distribution-bar {
+  height: 1rem;
+  background-color: var(--bg-darker);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.distribution-fill {
+  height: 100%;
+  background-color: var(--primary-color);
+  border-radius: 0.5rem;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .network-status {
+    grid-template-columns: 1fr;
+  }
+
+  .network-stats .grid {
+    grid-template-columns: 1fr;
+  }
+}

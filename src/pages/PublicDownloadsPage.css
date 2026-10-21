@@ -1,0 +1,253 @@
+/* Public Downloads page (frontend#574). Tokens arrive as --dl-* custom properties from the page. */
+
+.dl-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 24px 56px;
+  color: var(--dl-text);
+  font-family: var(--dl-font);
+  box-sizing: border-box;
+}
+
+.dl-page h1,
+.dl-page h2,
+.dl-page h3 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.dl-page h1 { font-size: 1.875rem; line-height: 1.25; letter-spacing: -0.02em; }
+.dl-page h2 { font-size: 1.25rem; line-height: 1.35; }
+.dl-page h3 { font-size: 1.125rem; line-height: 1.4; }
+
+.dl-head { margin-bottom: 24px; }
+.dl-lede { margin: 6px 0 0; color: var(--dl-text-secondary); font-size: 0.9375rem; max-width: 62ch; }
+
+.dl-secondary { color: var(--dl-text-secondary); }
+/* Secondary rather than muted: in dark the two tokens are the same slate-400; in light muted slate-500 sits at 4.3:1 on the filled cards and insets. */
+.dl-muted { color: var(--dl-text-secondary); }
+.dl-strong { color: var(--dl-text); font-weight: 600; }
+.dl-small { font-size: 0.8125rem; }
+.dl-mono { font-family: var(--dl-mono); }
+.dl-sr { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* Platform chips */
+.dl-chips {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 24px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.dl-chip {
+  flex: none;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: var(--dl-r-full);
+  border: 1px solid var(--dl-border);
+  background: var(--dl-row-bg);
+  color: var(--dl-text-secondary);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dl-chip--on {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.6);
+  color: var(--dl-primary-light);
+}
+
+.dl-chip:focus-visible { outline: 2px solid var(--dl-primary-light); outline-offset: 2px; }
+
+/* Hero */
+.dl-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 32px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #1E3A5F 0%, #1E293B 70%);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: var(--dl-r-lg);
+  box-shadow: var(--dl-glow-primary), var(--dl-shadow-md);
+}
+
+/* The hero's text inherits the page colour; in the light theme the gradient becomes a light tint to match. */
+body.light-mode .dl-hero { background: linear-gradient(135deg, #EFF6FF 0%, var(--dl-bg-secondary) 70%); }
+.dl-hero h2 { font-size: 1.5rem; margin: 10px 0 6px; }
+.dl-hero p { margin: 0; max-width: 60ch; }
+.dl-hero-actions { display: flex; gap: 12px; flex: none; }
+
+.dl-count { margin: 0 0 12px; font-size: 0.8125rem; color: var(--dl-text-muted); }
+
+/* Cards */
+.dl-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dl-card { min-width: 0; display: flex; flex-direction: column; }
+.dl-card .MuiCardContent-root { flex: 1 1 auto; }
+.dl-ttl { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.dl-ttl h2 { font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dl-ico {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--dl-r-sm);
+  background: rgba(59, 130, 246, 0.12);
+  color: var(--dl-primary-light);
+  display: grid;
+  place-items: center;
+  flex: none;
+  font-size: 18px;
+}
+
+.dl-card p { margin: 0 0 12px; font-size: 0.9375rem; }
+.dl-req { font-size: 0.8125rem; color: var(--dl-text-secondary); }
+.dl-req strong { color: var(--dl-text); font-weight: 600; margin-right: 4px; }
+
+.dl-plat { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.dl-plat li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: var(--dl-r-sm);
+  background: var(--dl-row-bg);
+  font-size: 0.875rem;
+}
+.dl-os { min-width: 0; }
+
+.dl-badge-nodot .MuiChip-icon,
+.dl-badge-nodot [class*='dot'] { display: none; }
+.dl-badge-purple { background-color: rgba(139, 92, 246, 0.15) !important; color: var(--dl-purple-text) !important; }
+
+.dl-links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 0.9375rem; }
+.dl-links a { color: var(--dl-primary-light); font-weight: 600; text-decoration: none; }
+.dl-links a:hover { text-decoration: underline; }
+.dl-link { color: var(--dl-primary-light); font-weight: 600; font-size: 0.875rem; text-decoration: none; padding: 8px 12px; }
+.dl-link:hover { text-decoration: underline; }
+.dl-ext { font-size: 0.75em; }
+
+/* Command / address line */
+.dl-cmd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 8px 8px 8px 12px;
+  border-radius: var(--dl-r-sm);
+  background: var(--dl-bg-primary);
+  border: 1px solid var(--dl-border);
+}
+.dl-cmd code {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--dl-mono);
+  font-size: 0.8125rem;
+  color: var(--dl-code);
+  /* A command must never read as complete-but-wrong: wrap it rather than clip it. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.dl-copy {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--dl-text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  position: relative;
+}
+.dl-copy:hover { background: rgba(59, 130, 246, 0.1); color: var(--dl-primary-light); }
+.dl-copy--done { color: var(--dl-success-light); }
+
+/* Release facts */
+.dl-rel {
+  margin: 4px 0 12px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: var(--dl-r-sm);
+  background: var(--dl-inset-bg);
+  border: 1px solid var(--dl-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dl-rel--off { gap: 8px; align-items: flex-start; }
+.dl-rel--off .dl-rel-note { margin: 0; }
+.dl-rel-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 0.8125rem; }
+.dl-rel-row dt {
+  color: var(--dl-text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.6875rem;
+  padding-top: 2px;
+}
+.dl-rel-row dd { margin: 0; color: var(--dl-text); min-width: 0; display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
+.dl-rel-row dd .dl-mono { font-size: 0.75rem; color: var(--dl-code); word-break: break-all; line-height: 1.5; }
+.dl-rel-row dd .dl-cmdline { display: block; width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
+.dl-rel-row dd .dl-copy { margin-top: -4px; }
+.dl-rel-hint { font-size: 0.75rem; color: var(--dl-text-secondary); }
+.dl-rel-note { font-size: 0.75rem; color: var(--dl-text-secondary); margin: 0 0 12px; }
+
+.dl-alert { margin-bottom: 12px; }
+.dl-alert--top { margin-bottom: 16px; }
+
+/* Verify */
+.dl-verify h2 { font-size: 1rem; }
+.dl-verify-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.dl-verify-grid > div { min-width: 0; }
+.dl-verify-grid p { margin: 6px 0 12px; font-size: 0.9375rem; }
+.dl-verify-grid .dl-small { font-size: 0.8125rem; }
+
+.dl-manifest {
+  margin-top: 16px;
+  border: 1px solid var(--dl-border);
+  border-radius: var(--dl-r-sm);
+  background: var(--dl-bg-primary);
+  overflow: hidden;
+}
+.dl-manifest-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--dl-border);
+  font-size: 0.8125rem;
+  color: var(--dl-text-secondary);
+}
+.dl-manifest-head .dl-small { flex: 1 1 auto; min-width: 0; }
+.dl-manifest pre { margin: 0; padding: 12px; font-size: 0.75rem; line-height: 1.55; color: var(--dl-code); overflow-x: auto; }
+.dl-manifest-body { padding: 12px; margin: 0; }
+
+/* Phone */
+@media (max-width: 600px) {
+  .dl-page { padding: 24px 16px 56px; }
+  .dl-page h1 { font-size: 1.5rem; }
+  .dl-grid, .dl-verify-grid { grid-template-columns: 1fr; }
+  .dl-hero { flex-direction: column; align-items: stretch; padding: 20px 16px; }
+  .dl-hero-actions { flex-direction: column; }
+  .dl-plat li { flex-wrap: wrap; }
+  .dl-rel-row { grid-template-columns: 1fr; gap: 2px; }
+  .dl-rel-row dt { margin-top: 4px; }
+  .dl-manifest-head { flex-wrap: wrap; }
+}

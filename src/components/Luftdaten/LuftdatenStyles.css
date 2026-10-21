@@ -1,0 +1,326 @@
+.luftdaten-dashboard {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+  background-color: #f5f5f5;
+}
+
+.tab-button.active {
+  border-bottom: 3px solid #2196f3;
+  font-weight: bold;
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  font-size: 18px;
+}
+
+.network-overview {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.status-card,
+.air-quality-card,
+.map-card,
+.recent-data-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.map-card,
+.recent-data-card {
+  grid-column: span 2;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  margin: 15px 0;
+}
+
+.status-indicator span:first-child {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.status-indicator-success {
+  background-color: #4caf50;
+}
+
+.status-indicator-warning {
+  background-color: #ff9800;
+}
+
+.status-indicator-error {
+  background-color: #f44336;
+}
+
+.status-indicator-neutral {
+  background-color: #9e9e9e;
+}
+
+.air-quality-indicator {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin: 20px 0;
+  padding: 15px;
+  border-radius: 8px;
+}
+
+.air-quality-value {
+  font-size: 36px;
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+.air-quality-unit {
+  font-size: 16px;
+  margin-right: 5px;
+}
+
+.air-quality-label {
+  font-size: 14px;
+  background-color: rgba(255, 255, 255, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.air-quality-text {
+  text-align: center;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.air-quality-good {
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #2e7d32;
+  border: 1px solid #2e7d32;
+}
+
+.air-quality-moderate {
+  background-color: rgba(255, 152, 0, 0.2);
+  color: #ef6c00;
+  border: 1px solid #ef6c00;
+}
+
+.air-quality-unhealthy-sensitive {
+  background-color: rgba(255, 87, 34, 0.2);
+  color: #d84315;
+  border: 1px solid #d84315;
+}
+
+.air-quality-unhealthy {
+  background-color: rgba(244, 67, 54, 0.2);
+  color: #c62828;
+  border: 1px solid #c62828;
+}
+
+.air-quality-hazardous {
+  background-color: rgba(123, 31, 162, 0.2);
+  color: #6a1b9a;
+  border: 1px solid #6a1b9a;
+}
+
+.status-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+  border-bottom: 1px dashed #e0e0e0;
+}
+
+.stat-label {
+  font-weight: 500;
+  color: #555;
+}
+
+.stat-value {
+  font-weight: bold;
+}
+
+.map-placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 40px;
+  margin: 10px 0;
+  height: 200px;
+  color: #757575;
+  text-align: center;
+}
+
+.recent-data-table,
+.sensors-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.recent-data-table th,
+.recent-data-table td,
+.sensors-table th,
+.sensors-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.recent-data-table th,
+.sensors-table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+.recent-data-table tr:hover,
+.sensors-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.view-toggle {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.toggle-button {
+  padding: 8px 15px;
+  background-color: #e0e0e0;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.toggle-button:first-child {
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
+}
+
+.toggle-button:last-child {
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+
+.toggle-button.active {
+  background-color: #2196f3;
+  color: white;
+}
+
+.data-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group label {
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.filter-group select {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.chart-placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 40px;
+  margin: 10px 0;
+  height: 300px;
+  color: #757575;
+  text-align: center;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.stat-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .network-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .map-card,
+  .recent-data-card {
+    grid-column: span 1;
+  }
+
+  .status-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-tabs {
+    flex-wrap: wrap;
+  }
+
+  .tab-button {
+    flex-grow: 1;
+  }
+
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+}

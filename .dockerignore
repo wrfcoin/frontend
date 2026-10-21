@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+.git
+*.log
+.env
+.env.*
+coverage
+__tests__
+docs
+.storybook
+storybook-static

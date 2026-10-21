@@ -1,0 +1,156 @@
+{
+  "src/components/BlockExplorerDAG/ExecutionTraceViewer.tsx": {
+    "reason": "Default wrapper gates ExecutionTraceViewerSample; ungated action is only the props.onBack Back button. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged.",
+    "sha256": "a3e8532951b548d61ec70e9120338acd5e9bd454142fc58d289e387ddbbb57d2"
+  },
+  "src/components/DAGExplorer/TransactionTrace.tsx": {
+    "reason": "Default wrapper gates TransactionTraceSample; ungated action is only the props.onBack Back button.",
+    "sha256": "5381fba7344b664cf7d6978181620ef8eb0cedf733796f93bec936e19c0227b8"
+  },
+  "src/components/ComputeMarketplace/ComputeMarketplace.jsx": {
+    "reason": "Default export returns the not-live notice before mounting ComputeMarketplaceSample while demoSurfaces is false. No blanket child exemption.",
+    "sha256": "320968e380f56d892e8224a986b1df8ea321f11747e381b75c3db12faf8bf3b9"
+  },
+  "src/components/FleetManagement/FleetDashboard.tsx": {
+    "reason": "Fleet API responses are actual data, not samples. Loading and failed or incomplete responses return before zero summaries. Actual failed, pending and successful-response controls and guard removal protect this local read boundary. No child exemption. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged.",
+    "sha256": "5fc2221f3ac3b92d309da9c750ee0344a2ff1ea5c166f08c5264792a9cec6680"
+  },
+  "src/components/Storage/DistributedStorageInterface.jsx": {
+    "reason": "Default export returns the not-live notice before mounting DistributedStorageInterfaceSample while demoSurfaces is false.",
+    "sha256": "7fa0ca221b7bb113d77c4e533b5c2cefccc1d183f7fca5f2450c834b741744e2"
+  },
+  "src/components/PipelineBuilder/PipelineBuilder.jsx": {
+    "reason": "Saved INITIAL_PIPELINES and PipelineMonitor render only under showSample=FEATURES.demoSurfaces; default editor remains available. PipelineMonitor baseline retained.",
+    "sha256": "2a63d015c90dd66a0409cfdf7dd6d3ee4460920d5461ae4554e776ac513c838b"
+  },
+  "src/components/WeatherGlobe/WeatherGlobe.tsx": {
+    "reason": "Mock Data header covers real fetched stations/static continent geometry; synthetic wind and precipitation hooks require syntheticLayersAllowed=FEATURES.demoSurfaces. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged.",
+    "sha256": "4e422e816ee38301121d7dc47179baa39f67a757d3e2c1cb9229cb7e0855b232"
+  },
+  "src/components/Notifications/NotificationCenter.jsx": {
+    "reason": "Default export: shell branch requires demoSurfaces; routed branch wraps NotificationCenter with DemoSurfaceGate.",
+    "sha256": "600ef98a25432044b2f291b758383460fc07be8cc500bee281d70283f1852bc6"
+  },
+  "src/components/CrossChain/EnhancedBridgePage.jsx": {
+    "reason": "Default export returns a not-live notice and real BridgeReadinessPanel before mounting its sample body. WeatherStationSetup is rendered only inside that sample.",
+    "gatedImports": [
+      "../WeatherStationSetup"
+    ],
+    "sha256": "e5acfd445effdeb44cf6f857643ce01a60cb5e1ecada79b74352d70b9eca2dc6"
+  },
+  "src/components/Dashboard/InfrastructureCapacityDashboard.jsx": {
+    "reason": "Default export returns a not-live notice before mounting InfrastructureCapacityDashboardSample; AIModelDashboard is mounted only inside that sample.",
+    "gatedImports": [
+      "./AIModelDashboard"
+    ],
+    "sha256": "7459098bc88fe18d0d2115b9f0cd2fade3b69fcd2ba3fe6ce8421a58aac1be23"
+  },
+  "src/components/PoP/PopDashboardSamples.jsx": {
+    "reason": "All four runtime tab exports wrap their named sample body and SAMPLE_REWARD_STATS in DemoSurfaceGate; default tabs mount no sample. Production tab tests and all four gate-removal controls verify containment. No child import exemption.",
+    "sha256": "dc4df9ff09e05e99d678529e013a55b0ba3f8bec1ae2468419e602f44ae00af7"
+  },
+  "src/components/AIMarketplace/ModelDetail.jsx": {
+    "reason": "The default export wraps ModelDetailSample in DemoSurfaceGate; the only ungated action is the props.onBack Back button. Existing real component default-build and Back tests verify containment. No child import exemption.",
+    "sha256": "9e55425012e9fd2245cb17a4796146ad7d9f23fe5ef6d346c9e3492e45686466"
+  },
+  "src/components/DeFi/StakingPanel.tsx": {
+    "reason": "EMPTY_SUMMARY cannot render until all three required reads succeed with complete finite summary fields. Loading and failure return before metrics. Actual all-404, mixed-status, malformed-summary and real-response controls plus gate-removal mutation verify this local read gate. No child import exemption. Failed reads retain an actual retry action; the failure-to-complete-data regression proves recovery.",
+    "sha256": "f2aaeb890967017322beb039251a22a187ad52da8ec2572bfbb8c19a3b214b13"
+  },
+  "src/components/Identity/IdentityDashboard.tsx": {
+    "reason": "DID-dependent summary and tables require a complete successful read; credentials and policy bodies require successful lifecycle reads. Key sample fallback remains limited to explicit demoSurfaces and labelled. Actual 404, incomplete, pending, real zero/populated and retry controls preserve independent unknown key history. No child exemption. Lifecycle read availability is explicit and independent of mutation warnings; actual failed request/revoke/toggle controls preserve loaded panels and their retry controls. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged.",
+    "sha256": "9634dc08470040dd25142a51cd56843115df08b5dc92acdfac78ba1bc202b330"
+  },
+  "src/pages/AlertRemediationDashboard.tsx": {
+    "reason": "Active alert counts require a completed successful alert read; pending and failed reads show loading/unavailable. Actual parent/real hook failed, pending and successful empty/firing controls and source guard reversal protect this boundary. No child exemption.",
+    "sha256": "4ab15b072d7f9515fdb0ea1f83e4dfd089b6be1263ced504966e2c06b45d372f"
+  },
+  "src/components/Staking/LiquidStakingDashboard.tsx": {
+    "sha256": "a0d6f4f6c78966a3b123e4f0d9fb3c7a928561c2099cd858856d1ef747ca050c",
+    "reason": "The default export mounts the three liquid-staking reads and simulation body only for operational/degraded capability evidence; loading, error, absent and weaker evidence render not-live. LiquidStakingDashboard.gate.test.tsx covers both directions and cached poll failure. Refs #357. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged."
+  },
+  "src/components/BridgeAdvanced/BridgeTransactionTracker.tsx": {
+    "sha256": "b6bc512fc9e58308a14e8e76e69ee80b5566b8ee95674b1ee6171b0ee8b6df2b",
+    "reason": "The default export contains the entire BridgeTransactionTrackerSample body in DemoSurfaceGate. Five-route and direct-leaf demo-off/no-read and labelled demo-on controls: advancedBridgeSamples.test.jsx; gate-removal runtime and ratchet mutations. Refs #499. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged."
+  },
+  "src/components/BridgeAdvanced/LiquidityDepthChart.tsx": {
+    "sha256": "5dd8f77e64dda058b90d2abd13e4cb6def79e7023858bd66e53f9d30d7a8cb7f",
+    "reason": "The default export contains the entire LiquidityDepthChartSample body in DemoSurfaceGate. Five-route and direct-leaf demo-off/no-read and labelled demo-on controls: advancedBridgeSamples.test.jsx; gate-removal runtime and ratchet mutations. Refs #499. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged."
+  },
+  "src/components/BridgeAdvanced/CrossChainPortfolio.tsx": {
+    "sha256": "463f2f00f92f052da7ac67d0cd769ef138f0c5d2e79563371e3b1ac34d7e3547",
+    "reason": "The default export contains the entire CrossChainPortfolioSample body in DemoSurfaceGate. Five-route and direct-leaf demo-off/no-read and labelled demo-on controls: advancedBridgeSamples.test.jsx; gate-removal runtime and ratchet mutations. Refs #499. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged."
+  },
+  "src/components/BridgeAdvanced/BridgeSecurityAudit.tsx": {
+    "sha256": "7bc25c4480955981bb89372c6c39aa65d6cb612a310583b01926a24e82acafd5",
+    "reason": "The default export contains the entire BridgeSecurityAuditSample body in DemoSurfaceGate. Five-route and direct-leaf demo-off/no-read and labelled demo-on controls: advancedBridgeSamples.test.jsx; gate-removal runtime and ratchet mutations. Refs #499. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged."
+  },
+  "src/components/BridgeAdvanced/BridgeRouteOptimizer.tsx": {
+    "sha256": "67921b3ecba6752d4badb15cd52c6d06d1e260daae583916e55448e85e77e373",
+    "reason": "The default export contains the entire BridgeRouteOptimizerSample body in DemoSurfaceGate. Five-route and direct-leaf demo-off/no-read and labelled demo-on controls: advancedBridgeSamples.test.jsx; gate-removal runtime and ratchet mutations. Refs #499. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged."
+  },
+  "src/components/DeFi/SwapInterface.tsx": {
+    "sha256": "9748d29354252765ae83af104f10c6d7cc2ce333038afcfcbee4a927aafdea08",
+    "reason": "The default export contains the entire SwapInterfaceSample body in DemoSurfaceGate. Real /defi tab and direct-leaf default/no-read and labelled demo controls in defiTabSamples.test.jsx plus runtime and ratchet gate-removal mutations protect containment. Refs #501."
+  },
+  "src/components/DeFi/YieldFarmingPanel.tsx": {
+    "sha256": "3dc3968b9ba8e84b7275e89b5121d3c42732aeb0a2ef374a613fbf5ef79ac636",
+    "reason": "The default export contains the entire YieldFarmingPanelSample body in DemoSurfaceGate. Real /defi tab and direct-leaf default/no-read and labelled demo controls in defiTabSamples.test.jsx plus runtime and ratchet gate-removal mutations protect containment. Refs #501."
+  },
+  "src/pages/ComputationalNFTPage.jsx": {
+    "sha256": "d52a63b8fa3f9270709bb383ba0346a9460ff139dfe7642630fcbe359836b452",
+    "reason": "Default export contains the entire unmounted computational/MPC body in DemoSurfaceGate. Actual NFT route and EnhancedNFTPage Privacy tab plus direct leaf default/no-read and labelled demo controls in operatorNftUnavailable.test.jsx; independent source boundary reversal protects containment. Refs #506. No child exemption."
+  },
+  "src/components/ComputationalNFT/MPCPrivacyControls.jsx": {
+    "sha256": "b3822425a6edce13ec148d35c20e12bee13587cce08b6543c4369cbe359f7baf",
+    "reason": "Default export contains the entire unmounted computational/MPC body in DemoSurfaceGate. Actual NFT route and EnhancedNFTPage Privacy tab plus direct leaf default/no-read and labelled demo controls in operatorNftUnavailable.test.jsx; independent source boundary reversal protects containment. Refs #506. No child exemption."
+  },
+  "src/components/Leaderboard/GlobalLeaderboard.jsx": {
+    "sha256": "af86f8aba7312695275ab52bafd5f536dce7ed4e4fc3f4ea3561f20cc661d864",
+    "reason": "Loading and unavailable/incomplete HTTP responses return before zero contributor/reward/station summaries. Actual ApiClient404 fallback, pending, malformed/metric-only/incomplete rows, real empty/populated, retry and period-refresh controls plus source guard reversal in GlobalLeaderboard.readState.test.jsx. Real backend earnings rows (S55, owner ruling 2026-10-03): only the node-proven earnings amount and ranking value are required; absent quality/stations/streak render as not available, never zero; null earnings, backend unavailable flag, non-WRF units and invalid optional metrics stay unavailable (GlobalLeaderboard.earnings.test.jsx). No child exemption. Chain-backed rows (backend#1456): the weather fallback requests metric=earnings; the updated fallback URL is asserted in GlobalLeaderboard.earnings.test.jsx and GlobalLeaderboard.readState.test.jsx. Refs #509. R90: wraps the unchanged guarded legacy consumer with the independent RoleEarningsBoard; new child is not exempted. Its real-fetch completeness/capability and race controls are in RoleEarnings.contract.test.jsx; legacy readState guard reversal and all original earnings controls still execute. Exact role amounts are BigInt and backend label map only."
+  },
+  "src/components/Leaderboard/StationOfTheDay.jsx": {
+    "reason": "Default export wraps StationOfTheDaySample in the actual DemoSurfaceGate. Production mounts no award corpus; explicit demo labels the sample. Mounted off/on tests and independent wrapper removal verify this leaf; no child import exemption.",
+    "sha256": "f2cc478c80d0764407256431b7d932470a6ec1171b2e7ded1862d58019bacef8"
+  },
+  "src/components/ComputeMarketplace/ResourceDashboard.jsx": {
+    "reason": "Default export wraps ResourceDashboardSample in actual DemoSurfaceGate. Date-dependent earnings generation runs only inside the mounted sample. Production mounts no invented hardware/earnings/chart; explicit demo labels values. Mounted off/on and independent wrapper removal verify this leaf, no child import exemption.",
+    "sha256": "34fdacbeff185f1c41f0687a29458719f0f95036106c2b4f7343ea1f67bced61"
+  },
+  "src/components/ComputeMarketplace/ResourcePool.jsx": {
+    "reason": "Actual default leaf gates ResourcePoolSample; generated availability forecast runs only inside the sample. No blanket child exemption.",
+    "sha256": "16b4e0064faa489ead7cbcc91aae6e48a4680c1efcccdc55183435857e8fc08b"
+  },
+  "src/components/PipelineBuilder/PipelineMonitor.jsx": {
+    "reason": "Actual default export gates PipelineMonitorSample before its random statuses/history/logs or interval mount. Mounted default/demo controls protect this leaf; no child exemption.",
+    "sha256": "0f80373abcfb08226e46f64fae6b5a841ad97b91ac3329091ad484cc403c1c6e"
+  },
+  "src/components/ComputeMarketplace/CostCalculator.jsx": {
+    "reason": "Math.random draws the 30-day cost-trend sample; mounted only as a tab of ComputeMarketplace, whose default export returns the not-live notice while demoSurfaces is false.",
+    "sha256": "407db6fab38a54a0477cf26372bccc6c0b858d157ab612bc28732027855a5804"
+  },
+  "src/components/ExportManager/ReportTemplateSelector.tsx": {
+    "reason": "Math.random varies decorative skeleton bar widths in a template thumbnail; no figure, metric or record is drawn from it. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged.",
+    "sha256": "579b4972f609a5551df1453e47f1466c8cefa8faf0bdd4126ed86f903aeffc3d"
+  },
+  "src/components/ForecastStudio/ForecastPreview.jsx": {
+    "reason": "Math.random feeds generateTempChartData/generatePrecipChartData; both charts render only when showSyntheticCharts (FEATURES.demoSurfaces) is true.",
+    "sha256": "11c855c7931d5c37843fbdae619bd30d4edd73d6b8f936ec8f14e85c3454d5ec"
+  },
+  "src/components/Leaderboard/ContributorProfile.jsx": {
+    "reason": "Math.random generates HEATMAP_DATA only when FEATURES.demoSurfaces is on (empty otherwise); the not-live branch returns before the heatmap and existingContributorBoundary.test.jsx guards it.",
+    "sha256": "abdac0c1696cadcb7af2b69c9ea2664ffc6b64fa94d9631e9d8c8b04a7822148"
+  },
+  "src/components/Onboarding/ManualSetupFlow.tsx": {
+    "reason": "Math.random only shuffles static station-name suggestions; no data is generated. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged.",
+    "sha256": "4bd554eb0dfbe533c23c34e6ce2cbc26d6c2b2f9887a357075f4f7b8f8bb2ad6"
+  },
+  "src/components/WeatherMapGL/WindFlowOverlay.tsx": {
+    "reason": "Math.random seeds particle positions/ages for the wind-flow animation; it does not synthesize a measurement.",
+    "sha256": "4987b36e08d335577b08983327041577ccc4c10426b76143e71095493228e517"
+  },
+  "src/pages/ConnectStationPage.tsx": {
+    "reason": "Math.random only picks which recovery-phrase word positions to quiz in the backup challenge; no data is generated. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged.",
+    "sha256": "602e2bf5ec203e26090735c8a01c47d22fd4912ee9faabe97263917981a765ad"
+  }
+}

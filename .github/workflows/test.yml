@@ -1,0 +1,118 @@
+# test.yml — run the Jest suite on pull requests. (frontend#269)
+#
+# WHY THIS EXISTS
+# ---------------
+# `frontend` had no unit-test gate. Before this workflow, the three workflows on
+# main were:
+#
+#   typecheck.yml               push + PR   -> `npm run type-check` only
+#   explorer-health-probe.yml   nightly cron, workflow_dispatch, and PR behind a
+#                               5-path filter -> `npm run test:e2e:explorer`
+#                               (Playwright, a different command)
+#   documentation-pipeline.yml  docs
+#
+# So `npm test` — the 78-suite Jest run — executed in **no** PR check at all.
+#
+# THIS GATE LANDS RED. THAT IS THE POINT.
+# ---------------------------------------
+# `main` currently fails 12 of 443 tests across 5 suites. This workflow is
+# expected to be RED on the PR that introduces it and on `main` after it merges,
+# until #269's failures are fixed.
+#
+# It is deliberately sequenced that way. A gate that has never been observed
+# failing is indistinguishable from a gate that cannot fail, and this repository
+# has been bitten by that twice already: `Lint Dockerfiles` in the infra repo
+# reported green having read 0 of the 1 file a PR changed, and the sibling
+# launchReadinessRetirement guard here mocked every feature flag OFF, hiding 11
+# of 24 routes from a guard whose whole job was asserting absence (#268).
+#
+# Landing it green — by fixing the tests first, or by adding
+# `continue-on-error`, or by scoping it to passing suites — would produce a check
+# whose first observed state is a pass, with no evidence it can do anything else.
+# The red run this produces IS the evidence, and it is cited in the PR body.
+#
+# DO NOT add `continue-on-error: true` to make the board green. That converts
+# this into a wrapper-only success, which the evidence standard classifies as
+# VOID: it can neither admit nor block a PR.
+#
+# WHY IT IS NOT A STEP IN typecheck.yml
+# -------------------------------------
+# typecheck.yml's `paths:` filter is `src/**/*.ts(x)` + tsconfig + manifests. It
+# does not match `.jsx`, `.js`, or `jest.config.cjs`, so a change to a JSX
+# component or to the Jest config would not trigger a test step added there. The
+# filter below is wider, and includes this file so edits to the gate run the gate.
+
+name: Unit Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      # Any source change can break a test, so this is deliberately broad —
+      # broader than typecheck.yml, which only matches .ts/.tsx.
+      - "src/**"
+      - "jest.config.cjs"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.json"
+      - "tsconfig.node.json"
+      - ".github/workflows/test.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unit-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Jest unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `tee`, never `tail`. Piping a gate through `tail` has twice reported a
+      # RED run as exit 0 in this workspace because the summary got clipped;
+      # `${PIPESTATUS[0]}` reads jest's status, not the pager's.
+      - name: Run Jest
+        id: jest
+        run: |
+          set +e
+          npm test 2>&1 | tee /tmp/jest.log
+          rc="${PIPESTATUS[0]}"
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit "$rc"
+
+      # Runs on failure too, so the counts are legible without opening the log.
+      - name: Summarise
+        if: always()
+        run: |
+          {
+            echo "### Jest result"
+            echo
+            echo '```'
+            grep -E '^(Test Suites|Tests|Snapshots|Time):' /tmp/jest.log || echo "no summary line found"
+            echo '```'
+            echo
+            echo "Failing suites:"
+            echo
+            echo '```'
+            grep -E '^FAIL' /tmp/jest.log | sort -u || echo "none"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,423 @@
+.tatau-cloud-dashboard {
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    'Open Sans',
+    'Helvetica Neue',
+    sans-serif;
+}
+
+.tatau-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 1rem;
+}
+
+.tatau-header h2 {
+  margin: 0;
+  color: #212529;
+  font-weight: 600;
+}
+
+.tatau-status-indicator {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+.status-green {
+  background-color: #28a745;
+}
+
+.status-red {
+  background-color: #dc3545;
+}
+
+.status-yellow {
+  background-color: #ffc107;
+}
+
+.status-blue {
+  background-color: #007bff;
+}
+
+.tatau-tabs {
+  display: flex;
+  overflow-x: auto;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 1.5rem;
+}
+
+.tatau-tabs button {
+  background-color: transparent;
+  border: none;
+  padding: 0.75rem 1rem;
+  margin-right: 0.5rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+  cursor: pointer;
+  position: relative;
+  outline: none;
+  transition: color 0.15s ease-in-out;
+}
+
+.tatau-tabs button:hover {
+  color: #343a40;
+}
+
+.tatau-tabs button.active {
+  color: #007bff;
+  font-weight: 600;
+}
+
+.tatau-tabs button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #007bff;
+}
+
+.tatau-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+}
+
+.tatau-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 123, 255, 0.2);
+  border-radius: 50%;
+  border-top-color: #007bff;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tatau-error {
+  padding: 1.5rem;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  color: #721c24;
+  text-align: center;
+}
+
+.tatau-error button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.tatau-error button:hover {
+  background-color: #c82333;
+}
+
+.tatau-content {
+  min-height: 300px;
+}
+
+.tatau-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.tatau-stat-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.tatau-stat-card h3 {
+  margin-top: 0;
+  font-size: 1rem;
+  color: #343a40;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.tatau-stat-card p {
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.tatau-stat-card p strong {
+  color: #343a40;
+}
+
+.tatau-table-container {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.tatau-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.tatau-table thead {
+  background-color: #f8f9fa;
+}
+
+.tatau-table th {
+  padding: 0.75rem;
+  text-align: left;
+  border-bottom: 2px solid #dee2e6;
+  color: #495057;
+  font-weight: 600;
+}
+
+.tatau-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e9ecef;
+  color: #6c757d;
+}
+
+.tatau-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.tatau-empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  color: #6c757d;
+}
+
+.tatau-empty-state button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.tatau-empty-state button:hover {
+  background-color: #0069d9;
+}
+
+.tatau-action-btn {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  color: #495057;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.15s ease-in-out;
+}
+
+.tatau-action-btn:hover {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+}
+
+.tatau-form {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.tatau-form-group {
+  margin-bottom: 1.25rem;
+}
+
+.tatau-form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #343a40;
+}
+
+.tatau-form-group select,
+.tatau-form-group input[type='text'],
+.tatau-form-group input[type='number'] {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #495057;
+}
+
+.tatau-form-group select:focus,
+.tatau-form-group input[type='text']:focus,
+.tatau-form-group input[type='number']:focus {
+  border-color: #80bdff;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.tatau-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.5rem;
+}
+
+.tatau-checkbox {
+  display: flex;
+  align-items: center;
+}
+
+.tatau-checkbox input[type='checkbox'] {
+  margin-right: 0.5rem;
+}
+
+.tatau-checkbox label {
+  margin-bottom: 0;
+  font-weight: normal;
+}
+
+.tatau-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.tatau-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  border: 1px solid #ced4da;
+  background-color: #f8f9fa;
+  color: #495057;
+}
+
+.tatau-btn:hover {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+}
+
+.tatau-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.tatau-btn-primary {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.tatau-btn-primary:hover {
+  background-color: #0069d9;
+  border-color: #0062cc;
+}
+
+.tatau-cost-estimate {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e9ecef;
+}
+
+.tatau-cost-estimate h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  color: #343a40;
+}
+
+.tatau-cost-estimate p {
+  margin: 0.5rem 0;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.tatau-cost-breakdown {
+  margin-top: 0.75rem;
+  border-top: 1px solid #e9ecef;
+  padding-top: 0.75rem;
+}
+
+.tatau-cost-breakdown h5 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #343a40;
+}
+
+.tatau-cost-breakdown ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.tatau-cost-breakdown li {
+  margin-bottom: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .tatau-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tatau-tabs {
+    flex-wrap: wrap;
+  }
+
+  .tatau-tabs button {
+    flex: 1 0 auto;
+    text-align: center;
+  }
+
+  .tatau-form-actions {
+    flex-direction: column;
+  }
+
+  .tatau-btn {
+    width: 100%;
+  }
+}

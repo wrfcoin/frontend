@@ -1,0 +1,316 @@
+/* PoP Dashboard Styles - Matching Mining Farm Management */
+
+.pop-dashboard {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.pop-dashboard-header {
+  margin-bottom: 20px;
+}
+
+.pop-dashboard-header h2 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.dashboard-description {
+  color: var(--text-secondary);
+  margin-bottom: 15px;
+}
+
+/* Consensus Info Cards */
+.consensus-info-cards {
+  margin-bottom: 20px;
+}
+
+.consensus-card {
+  padding: 15px;
+  border-radius: 8px;
+  height: 100%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.consensus-card h4 {
+  margin-top: 0;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.consensus-card .value {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* Tab Navigation */
+.pop-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.pop-tab {
+  padding: 10px 15px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-right: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.pop-tab:hover {
+  color: var(--text-primary);
+}
+
+.pop-tab.active {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+}
+
+/* Pop Content */
+.pop-content {
+  padding: 15px 0;
+}
+
+/* Overview cards */
+.overview-card {
+  padding: 15px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 15px;
+  background-color: var(--card-bg);
+}
+
+.card-icon {
+  font-size: 2rem;
+  margin-right: 15px;
+  color: var(--primary-color);
+}
+
+.card-content {
+  flex: 1;
+}
+
+.card-title {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+
+.card-value {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.card-subvalues {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.positive {
+  color: var(--success-color);
+}
+
+.negative {
+  color: var(--danger-color);
+}
+
+/* Reward Distribution Chart */
+.reward-distribution-chart {
+  margin-top: 25px;
+  padding: 20px;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.reward-distribution-chart h4 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.distribution-bars {
+  margin-top: 20px;
+}
+
+.distribution-bar {
+  margin-bottom: 15px;
+}
+
+.bar-label {
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.bar-container {
+  height: 30px;
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 10px;
+  font-weight: 500;
+}
+
+.contributors-bar {
+  background-color: #4285f4;
+}
+
+.analyzers-bar {
+  background-color: #34a853;
+}
+
+.developers-bar {
+  background-color: #ea4335;
+}
+
+/* Tab content specific styles */
+.section-header {
+  margin-bottom: 20px;
+}
+
+.section-header h3 {
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+
+.section-header p {
+  color: var(--text-secondary);
+  margin-bottom: 0;
+}
+
+.stats-card {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.stat-item {
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.top-contributor {
+  padding: 15px;
+  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 4px;
+}
+
+.contributor-address {
+  font-family: monospace;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 5px 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.stat-name {
+  color: var(--text-secondary);
+}
+
+.stat-figure {
+  font-weight: bold;
+}
+
+/* Tables */
+.table {
+  width: 100%;
+  margin-bottom: 0;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table th {
+  font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.reward-tiers,
+.validation-rewards,
+.algorithm-categories {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.reward-tiers h4,
+.validation-rewards h4,
+.algorithm-categories h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+/* Submit and Validate tabs */
+.submit-tab,
+.validate-tab {
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .pop-tab {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

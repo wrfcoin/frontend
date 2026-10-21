@@ -1,0 +1,38 @@
+{
+  "source": "infra testnet/edge/public_onboarding.caddy (public_onboarding_api), GET matchers plus the S9 send routes from infra#1319 (head 07cc748d, not yet merged); infraCommit = infra main ac481c06 for the GET set",
+  "infraCommit": "ac481c06974e298ed17ddbbae0a3a745b6602850",
+  "readonlyApi": "on",
+  "note": "PUBLIC_READONLY_API=on is the Stage 1.5 edge state. `query: null` admits any query string; an array admits exactly those query strings (\"\" = none); `queryPattern` (optional) additionally admits any query matching that regex (the edge `{query}.matches(...)` expression, public_readonly_weather_leaderboard). `requiresBearer: true` marks a matcher that also requires an `Authorization: Bearer *` request header. Refresh this file whenever the edge allowlist changes.",
+  "get": [
+    { "name": "wallet_nonce", "path": "^/api/auth/nonce/0x[0-9A-Fa-f]{40}$", "query": null },
+    { "name": "station_reward_progress", "path": "^/api/weather/stations/[A-Za-z0-9_-]{1,64}/reward-progress$", "query": null },
+    { "name": "chain_status", "path": "^/api/blockchain/status$", "query": null },
+    { "name": "chain_blocks", "path": "^/api/blockchain/blocks$", "query": null },
+    { "name": "chain_transactions", "path": "^/api/blockchain/transactions$", "query": null },
+    { "name": "chain_transaction_detail", "path": "^/api/blockchain/transactions/(0x)?[0-9A-Fa-f]{64}$", "query": null },
+    { "name": "chain_validators", "path": "^/api/blockchain/validators$", "query": null },
+    { "name": "chain_stats", "path": "^/api/blockchain/stats$", "query": null },
+    { "name": "weather_coverage_zones", "path": "^/api/weather/coverage-zones$", "query": null },
+    { "name": "public_readonly_stations", "path": "^/api/weather/stations$", "query": [""] },
+    { "name": "public_readonly_station_detail", "path": "^/api/stations/[A-Za-z0-9_-]{1,64}/(observations|quality|submissions)$", "query": ["", "limit=1"] },
+    { "name": "public_readonly_station_ownership", "path": "^/api/stations/st_[0-9a-f]{12}/ownership$", "query": [""] },
+    { "name": "public_weather_leaderboard", "path": "^/api/weather/leaderboard$", "query": [], "queryPattern": "^metric=(earnings|submissions|quality_score|streak)&period=(7d|30d|all)&limit=([1-9]|[12][0-9]|30)$" },
+    { "name": "public_build", "path": "^/api/build$", "query": null },
+    { "name": "public_capabilities", "path": "^/api/capabilities$", "query": null },
+    { "name": "station_mobile_status", "path": "^/api/weather/stations/mobile$", "query": [""] },
+    { "name": "public_readonly_station_earnings", "path": "^/api/stations/[A-Za-z0-9_-]{1,64}/earnings$", "query": [""] },
+    { "name": "public_earnings_leaderboard", "path": "^/api/earnings/leaderboard$", "query": [], "queryPattern": "^role=(contribution|attester|producer|node|forecast)&period=(all|7d|30d)&limit=([1-9]|[12][0-9]|30)$" },
+    { "name": "public_operator_profile", "path": "^/api/operators/c_[0-9a-f]{24}/profile$", "query": [""] },
+    { "name": "public_wallet_info", "path": "^/api/wallet/0x[0-9A-Fa-f]{40}$", "query": [""], "requiresBearer": true },
+    { "name": "public_wallet_transactions", "path": "^/api/wallet/0x[0-9A-Fa-f]{40}/transactions$", "query": [], "queryPattern": "^limit=([1-9]|[1-4][0-9]|50)&offset=[0-9]{1,6}$", "requiresBearer": true },
+    { "name": "public_wallet_send_nonce", "path": "^/api/wallet/0x[0-9a-f]{40}/nonce$", "query": [""], "requiresBearer": true },
+    { "name": "public_governance_proposals", "path": "^/api/governance/proposals$", "query": [""], "queryPattern": "^limit=([1-9]|[1-9][0-9]|100)&offset=[0-9]{1,6}$" },
+    { "name": "public_governance_proposal", "path": "^/api/governance/proposals/[A-Za-z0-9_-]{1,128}$", "query": [""] },
+    { "name": "public_governance_treasury", "path": "^/api/governance/treasury$", "query": [""] },
+    { "name": "public_weather_current", "path": "^/api/weather/current/-?[0-9]{1,2}\\.[0-9],-?[0-9]{1,3}\\.[0-9]$", "query": [""] },
+    { "name": "public_weather_forecast", "path": "^/api/weather/forecast/-?[0-9]{1,2}\\.[0-9],-?[0-9]{1,3}\\.[0-9]$", "query": ["type=hourly&days=1", "days=14"] }
+  ],
+  "post": [
+    { "name": "public_wallet_send", "path": "^/api/wallet/send$", "query": [""], "requiresBearer": true, "contentType": "application/json", "maxBytes": 4096, "gate": "PUBLIC_READONLY_API=on" }
+  ]
+}

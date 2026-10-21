@@ -1,0 +1,240 @@
+.fair-launch-page {
+  --launch-bg-1: #f8f7f3;
+  --launch-bg-2: #e8f0e7;
+  --launch-ink: #182018;
+  --launch-accent: #2e6b45;
+  --launch-accent-soft: #d7ead7;
+  --launch-border: #c8d7c8;
+  --launch-warning: #8a6124;
+  font-family: 'Space Grotesk', 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  color: var(--launch-ink);
+  min-height: 100%;
+  background: radial-gradient(circle at top right, var(--launch-bg-2), var(--launch-bg-1) 55%);
+  border: 1px solid var(--launch-border);
+  border-radius: 20px;
+  padding: 1.5rem;
+  animation: fadeIn 240ms ease-out;
+}
+
+.fair-launch-hero h1 {
+  margin: 0.25rem 0 0.5rem;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  line-height: 1.2;
+}
+
+.fair-launch-hero p {
+  margin: 0;
+  max-width: 56rem;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+  color: var(--launch-accent);
+  font-weight: 700;
+}
+
+.fair-launch-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.address-form {
+  background: #ffffffaa;
+  border: 1px solid var(--launch-border);
+  border-radius: 12px;
+  padding: 0.85rem;
+}
+
+.address-form label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+}
+
+.control-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.control-row input {
+  flex: 1;
+  border: 1px solid var(--launch-border);
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.control-row button {
+  border: 1px solid #1f4f31;
+  background: var(--launch-accent);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.status-banner {
+  margin-top: 0.9rem;
+  border: 1px solid var(--launch-border);
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+
+.status-banner.error {
+  border-color: #e0b8b0;
+  background: #fff5f3;
+  color: #7c2d1a;
+}
+
+.stake-panel,
+.commit-panel {
+  margin-top: 1rem;
+  background: #ffffffde;
+  border: 1px solid var(--launch-border);
+  border-radius: 14px;
+  padding: 0.95rem;
+}
+
+.stake-panel h2,
+.commit-panel h2 {
+  margin-top: 0;
+  margin-bottom: 0.8rem;
+  font-size: 1.1rem;
+}
+
+.stake-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.65rem;
+}
+
+.metric-card {
+  border: 1px solid var(--launch-border);
+  border-radius: 10px;
+  background: #fdfefd;
+  padding: 0.65rem;
+}
+
+.metric-card .label {
+  display: block;
+  font-size: 0.75rem;
+  color: #5a6a5a;
+  margin-bottom: 0.2rem;
+}
+
+.metric-card strong {
+  font-size: 1.12rem;
+}
+
+.progress-wrap {
+  margin-top: 0.9rem;
+}
+
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.progress-track {
+  height: 11px;
+  border-radius: 999px;
+  margin-top: 0.35rem;
+  background: #d6dfd6;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4e965f 0%, #1f7d4f 100%);
+  transition: width 260ms ease;
+}
+
+.progress-note {
+  margin: 0.45rem 0 0;
+  font-size: 0.82rem;
+  color: #4d604d;
+}
+
+.table-shell {
+  margin-top: 0.8rem;
+  overflow-x: auto;
+  border: 1px solid var(--launch-border);
+  border-radius: 10px;
+}
+
+.table-shell table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.table-shell th,
+.table-shell td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid #e1e7e1;
+  font-size: 0.85rem;
+}
+
+.table-shell th {
+  background: var(--launch-accent-soft);
+  color: #1d3f26;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mono-cell {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.78rem;
+  word-break: break-all;
+}
+
+.lookup-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.45rem;
+  background: #fff;
+  border: 1px solid var(--launch-border);
+  border-radius: 10px;
+  padding: 0.8rem;
+}
+
+.lookup-card p {
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .fair-launch-page {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .control-row {
+    flex-direction: column;
+  }
+
+  .control-row button {
+    width: 100%;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

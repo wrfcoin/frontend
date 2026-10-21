@@ -1,0 +1,14 @@
+The checker visits every import below main, App and route roots. It records gated and ungated visits separately: an ungated path to a shared child always produces a finding even if a gated path was encountered first. Gate words in comments, strings, imports or partial layouts never prune traversal.
+
+Named illustrative component declarations ending in Sample are fabrication markers, including HardwareStatusSample and the four PoP sample bodies. Removing their gates therefore remains visible even when they have no Mock comment or MOCK_ constant. Sample badge styling alone is not a component body. The miner/PoP script regression exercises the actual production sources, removing each of the five sample gates individually. PoP's four named exports and ModelDetail's Back action use exact-source reviewed records; any source change requires renewed evidence. The baseline remains unchanged.
+
+An exact default-export wrapper whose outer element is DemoSurfaceGate may contain its sample and imported children. Named runtime exports outside that wrapper, fragments, mixed content, action/children attributes and spread attributes are conservative ungated paths. The checker recognizes the existing wrapper convention; it does not prove arbitrary JavaScript rendering semantics.
+
+Mixed local gates which do not fit that convention are recorded in fabrication-reviewed-local-gates.json. Each record has a SHA256 of the complete source and a specific review reason. An edit or removed/unreachable source invalidates the record and fails the gate until renewed evidence or removal. A record exempts only that file's own markers. Two records additionally name a precise child import rendered exclusively in their sample branch; all other imports remain ungated. Root entrypoints cannot receive these exemptions. Existing render tests exercise the off/on behavior of these components.
+
+The correct initial finding baseline contains seven entries. The previous five remain; the former scanner hid two DeFi children behind a parent which merely imported PublicViewerNotice:
+
+- SwapInterface.tsx has literal token balances/prices; it is historical debt and its route remains withheld by the existing contract-surface policy.
+- YieldFarmingPanel.tsx has a stale Mock Data heading over real fetch code. The scanner conservatively reports the heading; removing that misleading heading is separate source work.
+
+No retired gate entry was reinstated. Baseline findings remain explicit debt rather than an exemption for new markers. A source deletion removes its finding from the baseline. npm test runs all script regressions and check:fabrication before Jest, so a failed or vacuous scan prevents the suite from starting. The existing fabrication workflow also invokes the checker as a required step; workflow ownership remains with frontend#392.

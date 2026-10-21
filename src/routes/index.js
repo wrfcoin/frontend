@@ -1,0 +1,13 @@
+export { default as dashboardRoutes } from './dashboardRoutes';
+export { default as walletRoutes } from './walletRoutes';
+export { default as miningRoutes } from './miningRoutes';
+export { default as nftRoutes } from './nftRoutes';
+export { default as governanceRoutes } from './governanceRoutes';
+export { default as weatherRoutes } from './weatherRoutes';
+export { default as networkRoutes } from './networkRoutes';
+export { default as settingsRoutes } from './settingsRoutes';
+export { default as defiRoutes } from './defiRoutes';
+export { default as identityRoutes } from './identityRoutes';
+export { default as communityRoutes } from './communityRoutes';
+export { default as platformRoutes } from './platformRoutes';
+export { default as earnRoutes } from './earnRoutes';
