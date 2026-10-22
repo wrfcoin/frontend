@@ -9,6 +9,7 @@ import {
 } from '../components/DesignSystem/tokens';
 import ReleaseFacts, { CommandLine, CopyButton } from '../components/downloads/ReleaseFacts';
 import { DOWNLOADS_MANIFEST_PATH, loadDownloadsManifest } from '../services/downloadsManifest';
+import { WRFCOIN_CHAIN_ID } from '../config/network';
 import './PublicDownloadsPage.css';
 
 /**
@@ -240,7 +241,7 @@ export default function PublicDownloadsPage() {
         <>
           <p className="dl-secondary">The <span className="dl-mono">wrfcoin</span> CLI for scripted sends, address inspection and node operators. Built with Rust from the core4 repository; prebuilt binaries are not published yet.</p>
           <CommandLine text={CLI_BUILD_COMMAND} />
-          <p className="dl-req"><strong>Needs</strong> a Rust toolchain. Set <span className="dl-mono">WRFCOIN_CHAIN_ID=777</span> and <span className="dl-mono">WRFCOIN_NETWORK_ID=testnet</span> before sending.</p>
+          <p className="dl-req"><strong>Needs</strong> a Rust toolchain. Set <span className="dl-mono">WRFCOIN_CHAIN_ID={WRFCOIN_CHAIN_ID ?? '<published-chain-id>'}</span> and <span className="dl-mono">WRFCOIN_NETWORK_ID=testnet</span> before sending. Verify the published genesis hash <span className="dl-mono">&lt;888-genesis-hash&gt;</span>; this placeholder is not a usable hash.</p>
           {facts('cli-source', { verifyHint: { command: 'sha256sum target/release/wrfcoin', text: 'compare with the manifest entry for your platform' } })}
           {byId.has('cli-linux-x86_64') ? facts('cli-linux-x86_64') : null}
           <p className="dl-rel-note">Release hashes appear only when they are available in the manifest.</p>
