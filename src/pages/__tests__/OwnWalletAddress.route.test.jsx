@@ -12,6 +12,10 @@ await jest.unstable_mockModule('../../contexts/WalletContext.jsx', () => ({
 }));
 const { walletProviderManager } = await import('../../services/walletProviders/WalletProviderManager.js');
 const { default: walletRoutes } = await import('../../routes/walletRoutes.jsx');
+// The /wallet page is React.lazy; a cold import of its module graph takes
+// longer than findBy's 1 s default, so preload it (after the mocks above).
+// See OwnWalletAddress.phoneStation.test.jsx for the measured race.
+beforeAll(async () => { await import('../OwnWalletAddress'); }, 30000);
 const mount = () => render(<MemoryRouter initialEntries={[`/wallet?address=${otherAddress}`]}><Suspense fallback="Loading"><Routes>{walletRoutes()}</Routes></Suspense></MemoryRouter>);
 beforeEach(async () => {
   localStorage.clear(); sessionStorage.clear();

@@ -10,6 +10,7 @@ describe('Stage 1.5 public route policy', () => {
     const candidates = [
       '/explore', '/explorer', '/map', '/search', '/weather/station/:stationId', '/leaderboard/contributors',
       '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
+      '/forecasters', '/forecasters/:profileKey',
       '/faucet/bond-grants', '/faucet', '/faucet/bond-grant', '/faucet/bond-grants/x',
       '/wallet', '/onboarding', '/governance', '/nfts', '/miner', '/dashboard',
       '/earnings', '/weather/dashboard', '/connect-station', '/earn', '/connect-station/x', '/earn/x',
@@ -28,6 +29,9 @@ describe('Stage 1.5 public route policy', () => {
     expect(isPublicTestnetPath('/contributor', false, true)).toBe(false);
     expect(isPublicTestnetPath('/contributor/:key/edit', false, true)).toBe(false);
     expect(isPublicTestnetPath('/impact/:address', false, true)).toBe(false);
+    // core4#3604 A4: two exact forecaster entries; no other descendant rides along.
+    expect(isPublicTestnetPath('/forecasters/:profileKey/edit', false, true)).toBe(false);
+    expect(isPublicTestnetPath('/forecasters/abc', false, true)).toBe(false);
     // Bond-grant audit list: one exact entry; the faucet's other paths never ride along.
     expect(isPublicTestnetPath('/faucet', false, true)).toBe(false);
     expect(isPublicTestnetPath('/faucet/bond-grants/x', false, true)).toBe(false);
@@ -58,6 +62,7 @@ describe('Stage 1.5 station detail', () => {
     expect([...PUBLIC_READONLY_PATHS]).toEqual([
       '/explore', '/explorer', '/map', '/search', STATION, '/leaderboard/contributors',
       '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
+      '/forecasters', '/forecasters/:profileKey',
       '/faucet/bond-grants',
     ]);
   });

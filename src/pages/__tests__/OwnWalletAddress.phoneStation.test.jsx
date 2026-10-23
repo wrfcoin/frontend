@@ -15,6 +15,14 @@ await jest.unstable_mockModule('../../components/wallet/PhoneStationStatusCard',
 }));
 const { walletProviderManager } = await import('../../services/walletProviders/WalletProviderManager.js');
 const { default: walletRoutes } = await import('../../routes/walletRoutes.jsx');
+// /wallet renders the page through React.lazy, so the first mount shows the
+// Suspense fallback until the page module is imported. A cold import of the
+// page's module graph (transform + evaluate) takes ~1-3 s, longer than
+// findBy's 1 s default, so whichever test mounts first used to time out on
+// the fallback. Import it once here, after the mocks above are registered;
+// the lazy route then resolves from the module registry. The hook gets its
+// own budget because a cold, uncached import can exceed jest's 5 s default.
+beforeAll(async () => { await import('../OwnWalletAddress'); }, 30000);
 const mount = () => render(<MemoryRouter initialEntries={['/wallet']}><Suspense fallback="Loading"><Routes>{walletRoutes()}</Routes></Suspense></MemoryRouter>);
 beforeEach(async () => {
   await walletProviderManager.connect('custom', { walletData: { address: vector.address, mnemonic: vector.mnemonic } });

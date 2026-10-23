@@ -15,6 +15,8 @@ export const ROUTES = [
   { name: 'station-detail', route: '/weather/station/st-0' },
   { name: 'leaderboard', route: '/leaderboard/contributors' },
   { name: 'contributor', route: '/contributor/c_0123456789abcdef01234567' },
+  { name: 'forecasters', route: '/forecasters' },
+  { name: 'forecaster', route: '/forecasters/c_0123456789abcdef01234567' },
   { name: 'bond-grants', route: '/faucet/bond-grants' },
   { name: 'governance', route: '/governance/public' },
   { name: 'governance-proposal', route: '/governance/public/WIP-12' },
@@ -35,6 +37,9 @@ export const SCENARIOS = [
   { name: 'wallet-unlocked', route: '/wallet', note: 'after the real web-wallet setup and ed25519 login (stubbed challenge)' },
   { name: 'connect-station-unlocked', route: '/connect-station', note: 'same signed-in session' },
   { name: 'wallet-send-review', route: '/wallet', note: 'Send form filled and reviewed, not confirmed' },
+  { name: 'forecasters-empty', route: '/forecasters', note: 'index running, no forecasts yet: the honest empty state' },
+  { name: 'forecaster-empty', route: '/forecasters/c_0123456789abcdef01234567', note: 'a forecaster with no decisions in the index' },
+  { name: 'forecasters-unavailable', route: '/forecasters', note: 'the backend 503 while the chain-reward index is off on a network' },
   { name: 'bond-grants-empty', route: '/faucet/bond-grants', note: 'no grants yet: the honest empty state' },
   { name: 'bond-grants-unavailable', route: '/faucet/bond-grants', note: 'the 503 a network without the public audit list answers' },
 ];
@@ -44,6 +49,7 @@ export const PARAM_ROUTE_EXAMPLES = {
   '/governance/public/:proposalId': '/governance/public/WIP-12',
   '/weather/station/:stationId': '/weather/station/st-0',
   '/contributor/:key': '/contributor/c_0123456789abcdef01234567',
+  '/forecasters/:profileKey': '/forecasters/c_0123456789abcdef01234567',
 };
 
 export const VIEWPORTS = [
