@@ -293,7 +293,7 @@ export default function PublicDownloadsPage() {
   const manifestText = manifest ? JSON.stringify(manifest, null, 2) : null;
 
   return (
-    <main className="public-read-page dl-page" data-testid="public-downloads" style={themeVars}>
+    <div className="public-read-page dl-page" data-testid="public-downloads" style={themeVars}>
       <header className="dl-head">
         <h1>Downloads</h1>
         <p className="dl-lede">Source and software availability for the WRFCoin testnet. Testnet WRF has no monetary value; the network may reset and no mainnet migration is promised.</p>
@@ -378,6 +378,6 @@ export default function PublicDownloadsPage() {
           {manifestText ? <pre className="dl-mono" data-testid="manifest-json" tabIndex={0} aria-label="Release manifest">{manifestText}</pre> : null}
         </div>
       </WrfCard>
-    </main>
+    </div>
   );
 }

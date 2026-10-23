@@ -258,7 +258,7 @@ function WalletSetupStep({ completeStep }: WalletSetupStepProps) {
   if ((mode === 'social' || mode === 'select') && isPublicBuild()) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }} data-testid="onboarding-public-wallet-setup">
-        <Typography variant="h6">Your wallet lives in the WRFCoin app</Typography>
+        <Typography variant="h6" component="h2">Your wallet lives in the WRFCoin app</Typography>
         <Typography variant="body2" color="text.secondary">
           Create or restore your WRFCoin wallet in the WRFCoin phone app. The testnet is
           invite-only for now, and your invitation includes the app.
@@ -279,7 +279,7 @@ function WalletSetupStep({ completeStep }: WalletSetupStepProps) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {unlockCard}
-        <Typography variant="h6">No wallet? No problem.</Typography>
+        <Typography variant="h6" component="h2">No wallet? No problem.</Typography>
         <Typography variant="body2" color="text.secondary">
           Sign in with your existing social account. A smart wallet is created instantly for you — no seed phrases needed.
         </Typography>
@@ -348,7 +348,7 @@ function WalletSetupStep({ completeStep }: WalletSetupStepProps) {
         <WrfButton variant="ghost" onClick={() => setMode('social')} sx={{ alignSelf: 'flex-start' }}>
           Back
         </WrfButton>
-        <Typography variant="h6">Create New Wallet</Typography>
+        <Typography variant="h6" component="h2">Create New Wallet</Typography>
 
         {createError && (
           <WrfAlert severity="error">{createError}</WrfAlert>
@@ -532,7 +532,7 @@ function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h6">Fund Your Wallet</Typography>
+      <Typography variant="h6" component="h2">Fund Your Wallet</Typography>
       <WrfAlert severity="warning" title="Testnet faucet">
         {FAUCET_DISCLAIMER}
       </WrfAlert>
@@ -653,7 +653,7 @@ function HardwareWalletStep({ completeStep, skipStep }: HardwareWalletStepProps)
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6">Hardware Wallet (Optional)</Typography>
+        <Typography variant="h6" component="h2">Hardware Wallet (Optional)</Typography>
         <WrfButton variant="outline" onClick={handleSkip}>
           Skip This Step
         </WrfButton>
@@ -731,7 +731,7 @@ function CompleteStep({ completedSteps, completeStep }: CompleteStepProps) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, textAlign: 'center' }}>
-      <Typography variant="h4" sx={{ fontWeight: 700 }}>
+      <Typography variant="h4" component="h2" sx={{ fontWeight: 700 }}>
         You're All Set!
       </Typography>
 
@@ -759,7 +759,7 @@ function CompleteStep({ completedSteps, completeStep }: CompleteStepProps) {
         </Box>
       </WrfCard>
 
-      <Typography variant="h6" sx={{ mt: 1 }}>
+      <Typography variant="h6" component="h3" sx={{ mt: 1 }}>
         What would you like to do next?
       </Typography>
 
@@ -922,7 +922,7 @@ export default function OnboardingPage() {
 
   return (
     <Box sx={{ maxWidth: 800, mx: 'auto', py: 4, px: 2 }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, textAlign: 'center' }}>
+      <Typography variant="h4" component="h1" sx={{ fontWeight: 700, mb: 1, textAlign: 'center' }}>
         Welcome to WRFCoin
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4, textAlign: 'center' }}>

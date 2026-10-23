@@ -89,17 +89,17 @@ export default function PublicForecasterPage() {
 
   if (notFound) {
     return (
-      <main className="public-read-page fc-page" data-testid="public-forecaster" style={themeVars}>
+      <div className="public-read-page fc-page" data-testid="public-forecaster" style={themeVars}>
         <BackLink />
         <WrfEmptyState title="Forecaster not found" description="No forecaster matches this link. It may have been shortened or copied incompletely." />
-      </main>
+      </div>
     );
   }
   if (loading || !result) {
-    return <main className="public-read-page fc-page" data-testid="public-forecaster" style={themeVars}><BackLink /><p className="fc-count" role="status">Loading track record…</p></main>;
+    return <div className="public-read-page fc-page" data-testid="public-forecaster" style={themeVars}><BackLink /><p className="fc-count" role="status">Loading track record…</p></div>;
   }
   if (result.kind !== 'ok') {
-    return <main className="public-read-page fc-page" data-testid="public-forecaster" style={themeVars}><BackLink /><Unavailable result={result} what="Forecaster track records" onRetry={load} /></main>;
+    return <div className="public-read-page fc-page" data-testid="public-forecaster" style={themeVars}><BackLink /><Unavailable result={result} what="Forecaster track records" onRetry={load} /></div>;
   }
 
   const d = result.data;
@@ -110,7 +110,7 @@ export default function PublicForecasterPage() {
   const noForecasts = totals.forecasts === '0';
 
   return (
-    <main className="public-read-page fc-page" data-testid="public-forecaster" style={themeVars}>
+    <div className="public-read-page fc-page" data-testid="public-forecaster" style={themeVars}>
       <BackLink />
       <header className="fc-head fc-record-head">
         <div>
@@ -194,6 +194,6 @@ export default function PublicForecasterPage() {
           <span>A forecast counts from the block where its reward decision was first recorded.</span>
         </div>
       </WrfCard>
-    </main>
+    </div>
   );
 }

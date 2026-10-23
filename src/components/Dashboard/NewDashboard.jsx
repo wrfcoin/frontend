@@ -92,7 +92,7 @@ const NewDashboard = () => {
   if (backendHealthQuery.isError) {
     return (
       <div className="dashboard-v2">
-        <main className="dashboard-main">
+        <div className="dashboard-main">
           <Box sx={{ maxWidth: 920, mx: 'auto', py: 5 }}>
             <Typography variant="h4" sx={{ color: '#F8FAFC', fontWeight: 700, mb: 2 }}>
               WRFCoin Dashboard
@@ -102,7 +102,7 @@ const NewDashboard = () => {
             </Typography>
             <BackendUnavailableBanner error={backendHealthQuery.error} />
           </Box>
-        </main>
+        </div>
         <footer className="dashboard-footer">
           <div className="footer-content">
             <span className="footer-version">WRFCoin Dashboard v2.0</span>
@@ -125,7 +125,7 @@ const NewDashboard = () => {
         <HeroStatsBar />
       </Suspense>
 
-      <main className="dashboard-main">
+      <div className="dashboard-main">
         <DashboardSection
           title="Weather & Environment"
           icon={Cloud}
@@ -231,7 +231,7 @@ const NewDashboard = () => {
             </Suspense>
           </div>
         </DashboardSection>
-      </main>
+      </div>
 
       <footer className="dashboard-footer">
         <div className="footer-content">

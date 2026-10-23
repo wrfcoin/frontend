@@ -37,23 +37,23 @@ export default function PublicContributorProfilePage() {
 
   if (notFound) {
     return (
-      <main className="lb-page" data-testid="public-profile">
+      <div className="lb-page" data-testid="public-profile">
         <p role="alert">Contributor not found.</p>
         <p><Link to="/leaderboard/contributors">Back to the leaderboard</Link></p>
-      </main>
+      </div>
     );
   }
   if (loading || !result) {
-    return <main className="lb-page" data-testid="public-profile"><p role="status">Loading profile…</p></main>;
+    return <div className="lb-page" data-testid="public-profile"><p role="status">Loading profile…</p></div>;
   }
   if (result.kind !== 'ok') {
     return (
-      <main className="lb-page" data-testid="public-profile">
+      <div className="lb-page" data-testid="public-profile">
         <p role="alert">
           {result.kind === 'rate_limited' ? 'Too many requests. Please wait a moment and try again.' : 'Profile unavailable right now.'}
         </p>
         <button className="lb-tab" type="button" onClick={() => load()}>Retry</button>
-      </main>
+      </div>
     );
   }
 
@@ -67,7 +67,7 @@ export default function PublicContributorProfilePage() {
     ['Quality score', metric(profile.qualityScore, '%')],
   ];
   return (
-    <main className="lb-page" data-testid="public-profile">
+    <div className="lb-page" data-testid="public-profile">
       <p><Link className="lb-link" to="/leaderboard/contributors">Back to the leaderboard</Link></p>
       <header className="lb-hero">
         <p className="lb-subtitle">Contributor profile</p>
@@ -97,6 +97,6 @@ export default function PublicContributorProfilePage() {
           <RoleEarningsSummary earnings={profile.roleEarnings} onRetry={() => load()} />
         </CardContent>
       </Card>}
-    </main>
+    </div>
   );
 }

@@ -142,7 +142,7 @@ export default function PublicBondGrantsPage() {
   const grants = ok ? result.data.grants.filter(g => g && typeof g === 'object') : [];
 
   return (
-    <main className="public-read-page bga-page" data-testid="public-bond-grants" style={themeVars}>
+    <div className="public-read-page bga-page" data-testid="public-bond-grants" style={themeVars}>
       <header className="bga-head">
         <h1>Bond grants</h1>
         <p className="bga-lede">
@@ -196,6 +196,6 @@ export default function PublicBondGrantsPage() {
           </p>
         ) : null}
       </WrfCard>
-    </main>
+    </div>
   );
 }

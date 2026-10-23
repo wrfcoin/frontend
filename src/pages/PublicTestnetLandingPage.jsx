@@ -40,7 +40,7 @@ const PublicTestnetLandingPage = () => {
   const policyLinks = entries.filter(e => e.group === 'legal');
 
   return (
-    <main className="public-testnet">
+    <div className="public-testnet">
       <header className="public-testnet__hero">
         <div className="public-testnet__intro">
           <p className="public-testnet__eyebrow">WRFCoin</p>
@@ -135,7 +135,7 @@ const PublicTestnetLandingPage = () => {
           <Link key={entry.path} to={entry.path}>{entry.name}</Link>
         ))}
       </nav>
-    </main>
+    </div>
   );
 };
 

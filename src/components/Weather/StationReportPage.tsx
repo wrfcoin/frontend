@@ -168,7 +168,7 @@ const MetricCard = ({
           <Typography variant="body2" sx={{ color: palette.textSecondary }}>
             {label}
           </Typography>
-          <Typography variant="h6" sx={{ color: palette.text, fontWeight: 700 }}>
+          <Typography variant="h6" component="p" sx={{ color: palette.text, fontWeight: 700 }}>
             {value}
           </Typography>
         </Box>
@@ -375,7 +375,7 @@ const StationReportPage: React.FC = () => {
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
             <Box>
               <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
-                <Typography variant="h5" sx={{ color: palette.text, fontWeight: 800 }}>
+                <Typography variant="h5" component="h1" sx={{ color: palette.text, fontWeight: 800 }}>
                   {stationView.name}
                 </Typography>
                 <Chip
@@ -444,7 +444,7 @@ const StationReportPage: React.FC = () => {
           <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" spacing={2} sx={{ mb: 2 }}>
             <Stack direction="row" spacing={1} alignItems="center">
               <TrendingUpIcon sx={{ color: palette.primary }} />
-              <Typography variant="h6" sx={{ color: palette.text, fontWeight: 700 }}>
+              <Typography variant="h6" component="h2" sx={{ color: palette.text, fontWeight: 700 }}>
                 Observation History
               </Typography>
             </Stack>
@@ -471,7 +471,7 @@ const StationReportPage: React.FC = () => {
             <Typography role="status" sx={{ color: palette.textSecondary }}>Loading observation history…</Typography>
           ) : filteredObservations.length > 0 && !observationsQuery.isError ? (
             <Box sx={{ height: 300 }}>
-              <Line data={observationChartData} options={chartOptions} />
+              <Line data={observationChartData} options={chartOptions} aria-label={`Observation history chart, ${timeRange}`} />
             </Box>
           ) : (
             observationsQuery.isError ? (
@@ -488,12 +488,12 @@ const StationReportPage: React.FC = () => {
           <CardContent sx={{ p: 3 }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
               <QualityIcon sx={{ color: palette.success }} />
-              <Typography variant="h6" sx={{ color: palette.text, fontWeight: 700 }}>
+              <Typography variant="h6" component="h2" sx={{ color: palette.text, fontWeight: 700 }}>
                 Data Quality
               </Typography>
             </Stack>
 
-            <Typography variant="h3" sx={{ color: palette.text, fontWeight: 800, mb: 0.5 }}>
+            <Typography variant="h3" component="p" sx={{ color: palette.text, fontWeight: 800, mb: 0.5 }}>
               {stationView.quality == null ? '--' : stationView.quality.toFixed(0)}
             </Typography>
             <Typography variant="body2" sx={{ color: palette.textSecondary, mb: 2 }}>
@@ -541,7 +541,7 @@ const StationReportPage: React.FC = () => {
               <Typography variant="body2" sx={{ color: palette.textSecondary }}>
                 Submission success rate
               </Typography>
-              <Typography variant="h6" sx={{ color: palette.text, fontWeight: 700 }}>
+              <Typography variant="h6" component="p" sx={{ color: palette.text, fontWeight: 700 }}>
                 {submissionStatus ?? (stationView.validationRate == null
                   ? 'No submission history'
                   : `${stationView.validationRate.toFixed(1)}%`)}
@@ -554,7 +554,7 @@ const StationReportPage: React.FC = () => {
           <CardContent sx={{ p: 3 }}>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
               <WarningIcon sx={{ color: palette.warning }} />
-              <Typography variant="h6" sx={{ color: palette.text, fontWeight: 700 }}>
+              <Typography variant="h6" component="h2" sx={{ color: palette.text, fontWeight: 700 }}>
                 Submission Anomalies
               </Typography>
             </Stack>
@@ -562,7 +562,7 @@ const StationReportPage: React.FC = () => {
             {submissionStatus ? (
               <Alert severity={submissionsQuery.isError ? 'warning' : 'info'}>{submissionStatus}</Alert>
             ) : anomalies.length > 0 ? (
-              <TableContainer>
+              <TableContainer tabIndex={0} role="region" aria-label="Submission anomalies">
                 <Table size="small">
                   {/* Head text comes from the theme's table-head token (slate-300 on the dark slate-700 head). */}
                   <TableHead>
@@ -608,7 +608,7 @@ const StationReportPage: React.FC = () => {
         <CardContent sx={{ p: 3 }}>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
             <TrophyIcon sx={{ color: palette.warning }} />
-            <Typography variant="h6" sx={{ color: palette.text, fontWeight: 700 }}>
+            <Typography variant="h6" component="h2" sx={{ color: palette.text, fontWeight: 700 }}>
               Earnings
             </Typography>
           </Stack>
@@ -635,7 +635,7 @@ const StationReportPage: React.FC = () => {
 
               {filteredEarnings.length > 0 ? (
                 <Box sx={{ height: 260 }}>
-                  <Bar data={earningsChartData} options={chartOptions} />
+                  <Bar data={earningsChartData} options={chartOptions} aria-label="Earnings history chart" />
                 </Box>
               ) : (
                 <Alert severity="info">No earnings history is available for this station yet.</Alert>

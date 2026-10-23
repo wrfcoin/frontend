@@ -234,7 +234,7 @@ const NewMinerPageContent = () => {
 
   return (
     <div className="miner-v2">
-      <main className="miner-main">
+      <div className="miner-main">
         {/* Page Header */}
         <header className="miner-header">
           <h1 className="miner-title">Weather Processing</h1>
@@ -355,7 +355,7 @@ const NewMinerPageContent = () => {
             </Suspense>
           </ErrorBoundary>
         </CollapsibleSection>
-      </main>
+      </div>
 
       {/* Mobile Bottom Navigation */}
       {isMobile && (

@@ -101,7 +101,7 @@ export default function PublicForecastersPage() {
   const periodLabel = PERIODS.find(p => p.key === period)?.label ?? period;
 
   return (
-    <main className="public-read-page fc-page" data-testid="public-forecasters" style={themeVars}>
+    <div className="public-read-page fc-page" data-testid="public-forecasters" style={themeVars}>
       <header className="fc-head">
         <div>
           <h1>Forecasters</h1>
@@ -173,6 +173,6 @@ export default function PublicForecastersPage() {
           </div>
         ) : null}
       </WrfCard>
-    </main>
+    </div>
   );
 }

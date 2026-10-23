@@ -163,7 +163,7 @@ export default function PublicPolicyPage() {
   const policy = policies[pathname] ?? policies['/terms'];
 
   return (
-    <main className="public-policy" aria-labelledby="policy-title">
+    <article className="public-policy" aria-labelledby="policy-title">
       <p className="public-policy__eyebrow">WRFCoin public testnet</p>
       <h1 id="policy-title">{policy.title}</h1>
       <p className="public-policy__effective">Effective {effectiveDate}</p>
@@ -195,6 +195,6 @@ export default function PublicPolicyPage() {
         <Link to="/api-terms">API Terms</Link>
         <Link to="/security">Security</Link>
       </nav>
-    </main>
+    </article>
   );
 }

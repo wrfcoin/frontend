@@ -224,7 +224,7 @@ const NewWalletPage = () => {
   return (
     <div className="wallet-v2">
       {/* Main Wallet Content */}
-      <main className="wallet-main">
+      <div className="wallet-main">
         {walletNotice && (
           <div className="wallet-scheme-notice" role="alert" data-testid="wallet-scheme-notice">
             <AlertTriangle size={18} aria-hidden="true" />
@@ -403,7 +403,7 @@ const NewWalletPage = () => {
             <HardwareWalletSection />
           </Suspense>
         </CollapsibleSection>
-      </main>
+      </div>
 
       {/* Mobile Bottom Navigation */}
       {isMobile && (
