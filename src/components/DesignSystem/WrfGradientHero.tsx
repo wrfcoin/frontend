@@ -55,7 +55,9 @@ export const WrfGradientHero = React.forwardRef<HTMLDivElement, WrfGradientHeroP
     const look = GRADIENTS[variant];
     const muted = variant === 'muted';
     const foreground = muted ? palette.text.primary : '#FFFFFF';
-    const dim = muted ? palette.text.secondary : 'rgba(255,255,255,0.78)';
+    // 0.92 white keeps the label/fraction/unit a step below the figure and holds 4.6:1 under the
+    // highlight circle (0.78 gave 3.8:1 there).
+    const dim = muted ? palette.text.secondary : 'rgba(255,255,255,0.92)';
     return (
       <Box
         ref={ref}

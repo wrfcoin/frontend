@@ -17,6 +17,7 @@ export const ROUTES = [
   { name: 'contributor', route: '/contributor/c_0123456789abcdef01234567' },
   { name: 'forecasters', route: '/forecasters' },
   { name: 'forecaster', route: '/forecasters/c_0123456789abcdef01234567' },
+  { name: 'bond-grants', route: '/faucet/bond-grants' },
   { name: 'governance', route: '/governance/public' },
   { name: 'governance-proposal', route: '/governance/public/WIP-12' },
   { name: 'forecast', route: '/weather/forecast' },
@@ -39,6 +40,8 @@ export const SCENARIOS = [
   { name: 'forecasters-empty', route: '/forecasters', note: 'index running, no forecasts yet: the honest empty state' },
   { name: 'forecaster-empty', route: '/forecasters/c_0123456789abcdef01234567', note: 'a forecaster with no decisions in the index' },
   { name: 'forecasters-unavailable', route: '/forecasters', note: 'the backend 503 while the chain-reward index is off on a network' },
+  { name: 'bond-grants-empty', route: '/faucet/bond-grants', note: 'no grants yet: the honest empty state' },
+  { name: 'bond-grants-unavailable', route: '/faucet/bond-grants', note: 'the 503 a network without the public audit list answers' },
 ];
 
 /** Public navigation paths with route params are reached through a fixture id. */

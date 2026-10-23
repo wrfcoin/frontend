@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { mapOverlayTextMuted } from '../../theme/tokens';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -82,7 +83,7 @@ const sectionLabel: React.CSSProperties = {
   fontWeight: 700,
   textTransform: 'uppercase',
   letterSpacing: '0.08em',
-  color: '#64748B',
+  color: mapOverlayTextMuted,
   padding: '10px 14px 4px',
 };
 

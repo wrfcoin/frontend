@@ -501,6 +501,9 @@ body.dark-mode code { color: #f0abcf; }
 /* Bootstrap's pink code colour sits at 4.4:1 on white; pink-800 holds 7:1 in the light theme. */
 body.light-mode code { color: #9D174D; }
 body.dark-mode { --text-muted: #94A3B8; }
+/* Leaflet's attribution links (#0078A8) sit at 3.2:1 on its translucent white box over a blank or
+ * grey tile; a darker shade of the same cyan holds 4.9:1 there and 7.3:1 on white. Both themes. */
+.leaflet-container .leaflet-control-attribution a { color: #005A80; }
 
 /* ---------------------------------------------------------------------------
  * Design-system palette (src/components/DesignSystem/tokens.ts `palette`).

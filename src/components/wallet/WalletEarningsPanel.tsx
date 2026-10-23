@@ -33,7 +33,6 @@ import { WrfTooltip } from '../DesignSystem/WrfTooltip';
 import { palette } from '../DesignSystem/tokens';
 import { categoryColors } from '../../theme/tokens';
 import { useViewportBelow } from '../../hooks/useViewportBelow';
-import { useIsDarkTheme } from '../../theme/ThemeProvider';
 
 /**
  * The signed-in wallet's own balance, reward totals, recent activity and Receive (S3, owner ruling
@@ -342,7 +341,6 @@ const cardHeading = (text: string) => (
  * Send, and `null` while loading or when the node did not answer: the Send form then does not gate.
  */
 export default function WalletEarningsPanel({ ownerAddress, aside, onAvailableUnits }: { ownerAddress: string | null; aside?: React.ReactNode; onAvailableUnits?: (units: string | null) => void }) {
-  const isDark = useIsDarkTheme();
   const token = useSyncExternalStore(subscribeAuthToken, getAuthToken, () => '');
   const signedIn = token.trim() !== '';
   const [balance, setBalance] = useState<BalanceView>({ kind: 'loading' });
@@ -455,8 +453,9 @@ export default function WalletEarningsPanel({ ownerAddress, aside, onAvailableUn
                 <WrfBadge
                   status="info"
                   label={`${processing} transfer${processing === 1 ? '' : 's'} processing`}
-                  // On the light theme's blue-700 hero the white label needs a darker chip to hold 4.5:1 (the pale chip gave 4.1:1).
-                  sx={isDark ? { backgroundColor: 'rgba(255,255,255,0.18)', color: '#FFFFFF' } : { backgroundColor: 'rgba(15, 23, 42, 0.32)', color: '#FFFFFF' }}
+                  // The white label needs a darker chip than the hero to hold 4.5:1 in both themes (the pale
+                  // white-18% chip gave 4.1:1); a slate-900 32% chip holds 7.8:1.
+                  sx={{ backgroundColor: 'rgba(15, 23, 42, 0.32)', color: '#FFFFFF' }}
                 />
               )}
             </WrfGradientHero>

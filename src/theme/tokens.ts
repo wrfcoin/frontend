@@ -22,6 +22,13 @@ export const bgHover = '#475569';
 export const primary = '#3B82F6';
 export const primaryLight = '#60A5FA';
 export const primaryDark = '#2563EB';
+/**
+ * Blue-700 / blue-800: fills behind white (or slate-200) labels. White holds 5.2:1 on blue-600,
+ * 6.7:1 on blue-700 and 8.7:1 on blue-800; on blue-500 it is 3.7:1 and on blue-400 2.5:1, so
+ * neither may sit behind normal-size text.
+ */
+export const primaryDeep = '#1D4ED8';
+export const primaryDeeper = '#1E40AF';
 
 /** Emerald - success states */
 export const success = '#10B981';
@@ -48,6 +55,14 @@ export const textPrimary = '#F8FAFC';
 export const textSecondary = '#94A3B8';
 export const textMuted = '#94A3B8';
 export const textDisabled = '#475569';
+/** Secondary text on the raised slate-700 fill (table heads): slate-300 holds 7.0:1 there, slate-400 4.0:1. */
+export const textSecondaryRaised = '#CBD5E1';
+
+/**
+ * Map overlay panels stay dark (#0F172A at ~0.92) in both themes, so their muted labels use the
+ * dark secondary text (slate-400, 7.0:1 there) rather than slate-500 (3.8:1).
+ */
+export const mapOverlayTextMuted = '#94A3B8';
 
 // Text on light backgrounds
 export const textPrimaryLight = '#0F172A';

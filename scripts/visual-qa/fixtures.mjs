@@ -113,7 +113,17 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     profileKey: 'c_0123456789abcdef01234567', shortAddress: '0xaaaa…aaaa', address: null, isYou: false,
   };
 
-  return { PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, downloadsManifest: readFixture('downloads-manifest.json') };
+  // Faucet bond-grant audit list (infra testnet/services/faucet/BOND_GRANT.md): exactly the six fields the
+  // faucet returns, newest first. Wallets and keys are visibly synthetic; peer ids are well-formed base58
+  // shapes, not real nodes. `bonded` is null on today's faucet; one true and one false show the other states.
+  const BOND_GRANTS = { grants: [
+    ['0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa01', '12D3KooWAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1', 'a1', 2, null],
+    ['0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb02', '12D3KooWBbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb2', 'b2', 9, true],
+    ['0xcccccccccccccccccccccccccccccccccccccc03', '12D3KooWCccccccccccccccccccccccccccccccccccccccccccc3', 'c3', 31, false],
+    ['0xdddddddddddddddddddddddddddddddddddddd04', '12D3KooWDddddddddddddddddddddddddddddddddddddddddddd4', 'd4', 55, null],
+  ].map(([ownerAddress, peerId, k, hoursAgo, bonded]) => ({ ownerAddress, peerId, serverKey: k.repeat(32), txHash: k.repeat(32), time: iso(hoursAgo * 3_600_000), bonded })) };
+
+  return { PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, BOND_GRANTS, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -124,11 +134,14 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * public/downloads/manifest.json through. `options.forecasters`: 'populated'
  * (default), 'empty' (no rows: the honest empty state) or 'unavailable' (the
  * backend's 503 while the chain-reward index is off on a network).
+ * `options.bondGrants`: 'populated' (default), 'empty' (no grants yet) or
+ * 'unavailable' (the 503 a network without the public audit list answers).
  */
 export async function installRoutes(page, fx, options = {}) {
   const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
   const manifestMode = options.manifest || 'populated';
   const forecastersMode = options.forecasters || 'populated';
+  const bondGrantsMode = options.bondGrants || 'populated';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -164,6 +177,10 @@ export async function installRoutes(page, fx, options = {}) {
       // c_ key only, like the backend for every public caller; the record answers for the fixture rows' keys.
       if ((m = /^\/api\/forecasters\/(c_[0-9a-f]{24})$/.exec(p)) && fx.FORECASTERS('7d').rows.some(r => r.profileKey === m[1])) return json(route, forecastersMode === 'empty' ? { ...fx.FORECASTER, totals: { ...fx.FORECASTER.totals, forecasts: '0', byProvenance: { real: '0', synthetic: '0', unclassified: '0' }, firstActiveAt: null, lastActiveAt: null }, series: [], recent: [] } : { ...fx.FORECASTER, profileKey: m[1] });
       return json(route, { error: { code: 'FORECASTER_NOT_FOUND' } }, 404);
+    }
+    if (p === '/api/faucet/bond-grants') {
+      if (bondGrantsMode === 'unavailable') return json(route, { error: { code: 'BOND_GRANTS_UNAVAILABLE', message: 'Bond grant history is unavailable' } }, 503);
+      return json(route, bondGrantsMode === 'empty' ? { grants: [] } : fx.BOND_GRANTS);
     }
     return json(route, { error: 'visual-qa stub: not provided' }, 404);
   });

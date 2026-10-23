@@ -27,7 +27,7 @@
 .pf-hero__unit { font-size: 1.5rem; font-weight: 500; color: var(--pf-text-secondary); margin-left: 2px; vertical-align: top; line-height: 2; }
 .pf-hero__cond { margin: 4px 0 0; font-size: 1.25rem; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .pf-hero__sub { margin: 2px 0 0; font-size: 0.875rem; color: var(--pf-text-secondary); }
-.pf-hero__tag { display: inline-block; font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.02em; color: var(--pf-text-secondary); background: rgba(148, 163, 184, 0.12); border-radius: 9999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+.pf-hero__tag { display: inline-block; font-size: 0.6875rem; font-weight: 500; letter-spacing: 0.02em; color: var(--pf-text); background: rgba(148, 163, 184, 0.12); border-radius: 9999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
 .pf-hero__stats { display: grid; grid-template-columns: repeat(2, minmax(130px, 1fr)); gap: 12px 24px; margin: 0; }
 .pf-hero__stats dt { font-size: 0.75rem; font-weight: 500; color: var(--pf-text-muted); text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; }
 .pf-hero__stats dd { margin: 2px 0 0; font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums; }

@@ -40,3 +40,27 @@ it.each(pages)('the %s keeps the dark tokens in dark mode', (_name, testId, moun
   expect(main.style.getPropertyValue('--fc-text')).toBe(textPrimary);
   expect(main.style.getPropertyValue('--fc-bg-secondary')).toBe(bgSecondary);
 });
+
+// The Recharts chart takes colours as props, so the CSS variables above cannot reach it: its palette
+// comes from forecasterChartColors, built from the same surface map.
+const { forecasterChartColors } = await import('../publicForecastersShared');
+const { borders, infoDark, infoLight, textMuted, textMutedLight, textSecondary, textSecondaryLight } = await import('../../theme/tokens');
+
+it('the chart uses the light grid, ticks, tooltip and bars in light mode', () => {
+  const c = forecasterChartColors(false);
+  expect(c.grid).toBe(borders.defaultLight);
+  expect(c.tick).toBe(textMutedLight);
+  expect(c.bar).toBe(infoDark);
+  expect(c.tooltip).toMatchObject({ background: bgSecondaryLight, border: borders.defaultLight, label: textSecondaryLight, item: textPrimaryLight });
+  // None of the dark-theme surface or text colours leak into the light palette.
+  const light = JSON.stringify(c);
+  for (const dark of [bgSecondary, textPrimary, 'rgba(51, 65, 85']) expect(light).not.toContain(dark);
+});
+
+it('the chart keeps the dark palette in dark mode', () => {
+  const c = forecasterChartColors(true);
+  expect(c.grid).toBe(borders.default);
+  expect(c.tick).toBe(textMuted);
+  expect(c.bar).toBe(infoLight);
+  expect(c.tooltip).toMatchObject({ background: bgSecondary, border: borders.default, label: textSecondary, item: textPrimary });
+});
