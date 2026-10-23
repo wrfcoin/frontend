@@ -49,6 +49,7 @@ export const PUBLIC_NON_MENU_PATHS: Readonly<Record<string, string>> = {
   '/earn': 'alias of /connect-station (same page)',
   '/governance/public/:proposalId': 'proposal detail reached from the governance list, not a destination',
   '/contributor/:key': 'profile reached from the leaderboard by opaque key, not a destination',
+  '/faucet/bond-grants': 'bond-grant audit list linked from the node operator guide, not a destination',
 };
 
 /** Entries the public build can actually reach, in display order. */

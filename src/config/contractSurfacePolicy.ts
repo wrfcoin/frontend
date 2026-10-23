@@ -90,6 +90,9 @@ export const PUBLIC_READONLY_PATHS = new Set([
   '/governance/public/:proposalId',
   '/weather/forecast',
   '/contributor/:key',
+  // Self-serve bond grant spec section 4: the read-only faucet bond-grant audit list
+  // (GET /api/faucet/bond-grants). Exact entry: no other /faucet path is admitted.
+  '/faucet/bond-grants',
 ]);
 
 // Owner ruling 2026-10-02 FULL WEB JOIN PATH, frontend#437: admit the exact

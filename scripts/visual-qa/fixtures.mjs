@@ -88,7 +88,17 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
   const SUBMISSIONS = Array.from({ length: 8 }, (_, i) => ({ id: `sub-${i}`, createdAt: iso((i + 1) * 20 * 60_000), status: 'revealed', chainStatus: i === 0 ? 'pending' : 'reward_finalized', blockHeight: 44812 - i * 15, txId: `0x${hex(64)}` }));
   const PROFILE = { profileKey: 'c_0123456789abcdef01234567', displayName: 'Hilltop', walletAddress: '0xa1a1…a1a1', rank: 1, badgeLevel: 'gold', stationCount: 3, totalSubmissions: 4812, currentStreak: 21, longestStreak: 63, qualityScore: 0.93, weatherStatisticsAvailable: true, roleEarnings: { amountUnits: { available: true }, roles: [{ role: 'weather', earningsBaseUnits: '1241000000000' }, { role: 'node', earningsBaseUnits: '342978588754' }] }, updatedAt: iso(3_600_000) };
 
-  return { PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, downloadsManifest: readFixture('downloads-manifest.json') };
+  // Faucet bond-grant audit list (infra testnet/services/faucet/BOND_GRANT.md): exactly the six fields the
+  // faucet returns, newest first. Wallets and keys are visibly synthetic; peer ids are well-formed base58
+  // shapes, not real nodes. `bonded` is null on today's faucet; one true and one false show the other states.
+  const BOND_GRANTS = { grants: [
+    ['0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa01', '12D3KooWAaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1', 'a1', 2, null],
+    ['0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb02', '12D3KooWBbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb2', 'b2', 9, true],
+    ['0xcccccccccccccccccccccccccccccccccccccc03', '12D3KooWCccccccccccccccccccccccccccccccccccccccccccc3', 'c3', 31, false],
+    ['0xdddddddddddddddddddddddddddddddddddddd04', '12D3KooWDddddddddddddddddddddddddddddddddddddddddddd4', 'd4', 55, null],
+  ].map(([ownerAddress, peerId, k, hoursAgo, bonded]) => ({ ownerAddress, peerId, serverKey: k.repeat(32), txHash: k.repeat(32), time: iso(hoursAgo * 3_600_000), bonded })) };
+
+  return { PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, BOND_GRANTS, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -96,11 +106,14 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * Only backend paths are intercepted: a glob like `**\/api/**` would also catch
  * the app's own /src/hooks/api/* modules. `options.manifest`: 'populated'
  * (default) serves the fixture manifest; 'shipped' lets the app's own
- * public/downloads/manifest.json through.
+ * public/downloads/manifest.json through. `options.bondGrants`: 'populated'
+ * (default), 'empty' (no grants yet) or 'unavailable' (the 503 a network
+ * without the public audit list answers).
  */
 export async function installRoutes(page, fx, options = {}) {
   const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
   const manifestMode = options.manifest || 'populated';
+  const bondGrantsMode = options.bondGrants || 'populated';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -129,6 +142,10 @@ export async function installRoutes(page, fx, options = {}) {
     if ((m = /^\/api\/stations\/([^/]+)\/(observations|quality|submissions)$/.exec(p))) return json(route, m[2] === 'observations' ? { observations: fx.OBSERVATIONS, source: 'backend-db', unavailable: [] } : m[2] === 'quality' ? { overall: 0.93, dimensions: [{ name: 'completeness', score: 0.97 }, { name: 'timeliness', score: 0.91 }, { name: 'plausibility', score: 0.9 }], advisory: false, unavailable: [] } : { submissions: fx.SUBMISSIONS, source: 'backend-db', limit: 25, offset: 0 });
     if ((m = /^\/api\/weather\/stations\/([^/]+)$/.exec(p))) { const st = fx.STATIONS.find(x => x.stationId === decodeURIComponent(m[1])); return st ? json(route, { station: st, ...st }) : json(route, { error: 'not found' }, 404); }
     if ((m = /^\/api\/operators\/(c_[0-9a-f]{24})\/profile$/.exec(p))) return json(route, { profile: fx.PROFILE });
+    if (p === '/api/faucet/bond-grants') {
+      if (bondGrantsMode === 'unavailable') return json(route, { error: { code: 'BOND_GRANTS_UNAVAILABLE', message: 'Bond grant history is unavailable' } }, 503);
+      return json(route, bondGrantsMode === 'empty' ? { grants: [] } : fx.BOND_GRANTS);
+    }
     return json(route, { error: 'visual-qa stub: not provided' }, 404);
   });
 }

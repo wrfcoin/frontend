@@ -1,0 +1,47 @@
+/* Public bond-grant audit page (self-serve bond grant spec section 4). Colours are design-system tokens
+   handed in as CSS custom properties by PublicBondGrantsPage.jsx (publicPageSurfaceVars, both themes). */
+.bga-page { max-width: 1120px; margin: 0 auto; padding: 32px 24px 48px; color: var(--bga-text); font-family: var(--bga-font); }
+.bga-head { margin-bottom: 20px; }
+.bga-head h1 { margin: 0; font-size: 1.875rem; font-weight: 600; line-height: 1.25; letter-spacing: -0.02em; }
+.bga-lede { margin: 6px 0 0; color: var(--bga-text-secondary); font-size: 0.9375rem; max-width: 72ch; }
+
+.bga-section { margin-bottom: 16px; }
+.bga-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.bga-section-head h2 { margin: 0; font-size: 1rem; font-weight: 600; }
+.bga-count { font-size: 0.8125rem; color: var(--bga-text-secondary); }
+
+.bga-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.bga-table th { text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--bga-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; background: var(--bga-bg-primary); padding: 12px 16px; border-bottom: 1px solid var(--bga-border); white-space: nowrap; }
+.bga-table td { padding: 12px 16px; border-bottom: 1px solid var(--bga-border); vertical-align: middle; }
+.bga-table tr:last-child td { border-bottom: 0; }
+.bga-table th:first-child, .bga-table td:first-child { padding-left: 20px; }
+
+.bga-id { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.bga-mono { font-family: var(--bga-mono); font-size: 0.8125rem; color: var(--bga-text); }
+.bga-link { color: var(--bga-primary-light); text-decoration: none; }
+.bga-link:hover { text-decoration: underline; }
+.bga-copy { border: 1px solid var(--bga-border); background: transparent; color: var(--bga-text-secondary); font: inherit; font-size: 0.6875rem; padding: 2px 6px; border-radius: 6px; cursor: pointer; }
+.bga-copy:hover { color: var(--bga-text); }
+.bga-copy:focus-visible { outline: 2px solid var(--bga-primary-light); outline-offset: 1px; }
+.bga-muted { color: var(--bga-text-muted); font-size: 0.8125rem; }
+.bga-nowrap { white-space: nowrap; }
+.bga-bonded { font-weight: 600; font-size: 0.8125rem; }
+.bga-bonded--yes { color: var(--bga-success-light); }
+.bga-bonded--no { color: var(--bga-text-secondary); }
+.bga-sub { font-size: 0.75rem; color: var(--bga-text-muted); margin-top: 3px; }
+.bga-sub .bga-mono { font-size: 0.75rem; color: var(--bga-text-muted); }
+.bga-only-phone { display: none; }
+.bga-foot { margin: 0; padding: 12px 20px; border-top: 1px solid var(--bga-border); font-size: 0.75rem; color: var(--bga-text-muted); }
+.bga-empty-wrap { padding: 8px 0 0; }
+.bga-unavailable { margin: 16px 20px; }
+.bga-loading { margin: 0; padding: 16px 20px; }
+
+@media (max-width: 600px) {
+  .bga-page { padding: 24px 16px 48px; }
+  .bga-head h1 { font-size: 1.5rem; }
+  .bga-table th:first-child, .bga-table td:first-child { padding-left: 16px; }
+  .bga-table td, .bga-table th { padding: 12px; }
+  .bga-hide-phone { display: none; }
+  .bga-only-phone { display: block; }
+  .bga-foot { padding: 12px 16px; }
+}
