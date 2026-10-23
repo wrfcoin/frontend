@@ -18,6 +18,8 @@ import {
   primary,
   primaryLight,
   primaryDark,
+  primaryDeep,
+  primaryDeeper,
   success,
   successLight,
   successDark,
@@ -34,6 +36,7 @@ import {
   textSecondary,
   textMuted,
   textDisabled,
+  textSecondaryRaised,
   textPrimaryLight,
   textSecondaryLight,
   textDisabledLight,
@@ -320,9 +323,12 @@ export const darkTheme = createTheme({
           },
         },
         containedPrimary: {
-          background: `linear-gradient(135deg, ${primary} 0%, ${primaryDark} 100%)`,
+          // White labels need 4.5:1 along the whole gradient, hover included: blue-500 → blue-600 gave
+          // 3.7–5.2:1 and the blue-400 hover 2.5–2.9:1. Blue-600 → blue-700 at rest, blue-700 → blue-800
+          // on hover (the glow still marks hover on the dark page).
+          background: `linear-gradient(135deg, ${primaryDark} 0%, ${primaryDeep} 100%)`,
           '&:hover': {
-            background: `linear-gradient(135deg, ${primaryLight} 0%, ${primary} 100%)`,
+            background: `linear-gradient(135deg, ${primaryDeep} 0%, ${primaryDeeper} 100%)`,
             boxShadow: glows.primaryStrong,
           },
         },
@@ -358,6 +364,15 @@ export const darkTheme = createTheme({
           '&:hover': {
             backgroundColor: 'rgba(59, 130, 246, 0.08)',
           },
+        },
+      },
+    },
+    MuiStepIcon: {
+      styleOverrides: {
+        // The active/completed step circle carries a white number: blue-500 gave 3.7:1, blue-600 holds
+        // 5.2:1 and still reads 3.5:1 against the navy page as a component.
+        root: {
+          '&.Mui-active, &.Mui-completed': { color: primaryDark },
         },
       },
     },
@@ -476,7 +491,7 @@ export const darkTheme = createTheme({
         head: {
           fontWeight: fontWeight.semibold,
           backgroundColor: bgTertiary,
-          color: textSecondary,
+          color: textSecondaryRaised,
           fontSize: '0.8125rem',
           textTransform: 'uppercase' as const,
           letterSpacing: '0.05em',

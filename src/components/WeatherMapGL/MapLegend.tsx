@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { mapOverlayTextMuted } from '../../theme/tokens';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -160,7 +161,7 @@ const GradientBar: React.FC<{ stops: LegendStop[]; unit?: string }> = ({
           ))}
       </div>
       {unit && (
-        <div style={{ textAlign: 'right', fontSize: 9, color: '#64748B', marginTop: 1 }}>
+        <div style={{ textAlign: 'right', fontSize: 9, color: mapOverlayTextMuted, marginTop: 1 }}>
           {unit}
         </div>
       )}

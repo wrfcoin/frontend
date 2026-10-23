@@ -30,6 +30,7 @@ import {
   stationHasCoordinates,
   stationStatusPresentation,
 } from '../../lib/weatherViewModels';
+import { mapOverlayTextMuted, primaryDeep } from '../../theme/tokens';
 
 const INJECTED_CSS = `
   .wrfcoin-station-marker {
@@ -531,7 +532,7 @@ const EnhancedWeatherMap: React.FC = () => {
         >
           <button
             type="button"
-            style={{ ...toolbarButton, background: compactPanel === 'layers' ? '#3B82F6' : toolbarButton.background }}
+            style={{ ...toolbarButton, background: compactPanel === 'layers' ? primaryDeep : toolbarButton.background }}
             aria-expanded={compactPanel === 'layers'}
             aria-controls="map-layers-body"
             aria-label={compactPanel === 'layers' ? 'Hide map layers' : 'Show map layers'}
@@ -541,7 +542,7 @@ const EnhancedWeatherMap: React.FC = () => {
           </button>
           <button
             type="button"
-            style={{ ...toolbarButton, background: compactPanel === 'legend' ? '#3B82F6' : toolbarButton.background }}
+            style={{ ...toolbarButton, background: compactPanel === 'legend' ? primaryDeep : toolbarButton.background }}
             aria-expanded={compactPanel === 'legend'}
             aria-controls="map-legend-body"
             aria-label={compactPanel === 'legend' ? 'Hide map legend' : 'Show map legend'}
@@ -578,7 +579,7 @@ const EnhancedWeatherMap: React.FC = () => {
             <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#F1F5F9' }}>
             Weather Network Map
             </h2>
-            <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
+            <div style={{ fontSize: 11, color: mapOverlayTextMuted, marginTop: 2 }}>
             Station coverage across {stations.length} registered stations
             </div>
           </div>
@@ -614,7 +615,7 @@ const EnhancedWeatherMap: React.FC = () => {
                   }}
                 />
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#E2E8F0' }}>{badge.count}</span>
-                <span style={{ fontSize: 10, color: '#64748B' }}>{badge.label}</span>
+                <span style={{ fontSize: 10, color: mapOverlayTextMuted }}>{badge.label}</span>
               </div>
             ))}
           </div>
