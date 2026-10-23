@@ -152,7 +152,7 @@ export default function PublicForecastPage() {
   const showResults = Boolean(results) && !loading;
 
   return (
-    <main className="public-read-page pf-page" data-testid="public-forecast" style={themeVars}>
+    <div className="public-read-page pf-page" data-testid="public-forecast" style={themeVars}>
       <header className="pf-head">
         <h1>Weather forecast</h1>
         <p className="pf-lede">Current conditions, the next 24 hours and a 7-day outlook for any place in the United States.</p>
@@ -240,6 +240,6 @@ export default function PublicForecastPage() {
           </p>
         </>
       )}
-    </main>
+    </div>
   );
 }

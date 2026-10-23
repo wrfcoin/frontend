@@ -575,9 +575,9 @@ const EnhancedWeatherMap: React.FC = () => {
           }}
         >
           <div style={{ pointerEvents: 'auto' }}>
-            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#F1F5F9' }}>
+            <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#F1F5F9' }}>
             Weather Network Map
-            </h2>
+            </h1>
             <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
             Station coverage across {stations.length} registered stations
             </div>

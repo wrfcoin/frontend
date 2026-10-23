@@ -60,7 +60,7 @@ export default function PublicReadOnlySearch() {
 
   return (
     <Box sx={{ p: 3 }} data-testid="public-readonly-search">
-      <Typography variant="h4" fontWeight={700}>Search the testnet</Typography>
+      <Typography variant="h4" component="h1" fontWeight={700}>Search the testnet</Typography>
       <Typography color="text.secondary" sx={{ mb: 3 }}>
         Search by 64-character transaction hash. This page performs read-only chain queries.
       </Typography>

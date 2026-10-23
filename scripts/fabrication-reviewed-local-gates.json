@@ -150,7 +150,7 @@
     "sha256": "4987b36e08d335577b08983327041577ccc4c10426b76143e71095493228e517"
   },
   "src/pages/ConnectStationPage.tsx": {
-    "reason": "Math.random only picks which recovery-phrase word positions to quiz in the backup challenge; no data is generated. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged.",
-    "sha256": "602e2bf5ec203e26090735c8a01c47d22fd4912ee9faabe97263917981a765ad"
+    "reason": "Math.random only picks which recovery-phrase word positions to quiz in the backup challenge; no data is generated. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged. Hash renewed after the a11y heading pass (Typography component= attributes only; the reviewed Math.random word-position pick is unchanged).",
+    "sha256": "c02d84f8da4092268054e5ff6c44295e8592c80dd78f1fff7f2dce077fd362b4"
   }
 }

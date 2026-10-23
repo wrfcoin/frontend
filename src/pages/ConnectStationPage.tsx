@@ -245,7 +245,7 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
   if (mode === 'choose' && (ownedAddress || publicBuild)) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }} data-testid="connect-station-own-wallet">
-        <Typography variant="h6">Your wallet</Typography>
+        <Typography variant="h6" component="h2">Your wallet</Typography>
         <Typography variant="body2" color="text.secondary">
           Your wallet is the station owner and receives any rewards that are later recorded.
         </Typography>
@@ -276,7 +276,7 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
   if (mode === 'choose') {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Typography variant="h6">Set up your wallet</Typography>
+        <Typography variant="h6" component="h2">Set up your wallet</Typography>
         <Typography variant="body2" color="text.secondary">
           Your wallet identifies the station owner and receives any on-chain
           credits that are later recorded. It is non-custodial — only you hold
@@ -313,7 +313,7 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
         <WrfButton variant="ghost" onClick={() => setMode('choose')} sx={{ alignSelf: 'flex-start' }}>
           Back
         </WrfButton>
-        <Typography variant="h6">Create a new wallet</Typography>
+        <Typography variant="h6" component="h2">Create a new wallet</Typography>
         {createError && <WrfAlert severity="error">{createError}</WrfAlert>}
 
         {!createWallet ? (
@@ -449,7 +449,7 @@ export function FundStep({ address, onContinue }: FundStepProps) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h6">Fund your wallet (optional)</Typography>
+      <Typography variant="h6" component="h2">Fund your wallet (optional)</Typography>
       {faucetOpen && (
         <Typography variant="body2" color="text.secondary">
           Claim some free testnet WRF so your wallet can submit transactions.
@@ -664,7 +664,7 @@ export function StationStep({ form, setForm, verified, setVerified, onContinue }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h6">Your weather station</Typography>
+      <Typography variant="h6" component="h2">Your weather station</Typography>
       <Typography variant="body2" color="text.secondary">
         Provider: <strong>Ambient Weather</strong>. Enter your API and
         Application keys (from your Ambient account) so we can verify and read
@@ -985,7 +985,7 @@ export function ConfirmStep({ address, form }: ConfirmStepProps) {
   if (stationId) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'center' }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+        <Typography variant="h4" component="h2" sx={{ fontWeight: 700 }}>
           Station registered
         </Typography>
         <StationRewardProgressPanel stationId={stationId} />
@@ -1009,7 +1009,7 @@ export function ConfirmStep({ address, form }: ConfirmStepProps) {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      <Typography variant="h6">Confirm &amp; register</Typography>
+      <Typography variant="h6" component="h2">Confirm &amp; register</Typography>
       {error && <WrfAlert severity="error">{error}</WrfAlert>}
       <WrfCard variant="outlined">
         <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: 2, rowGap: 1 }}>
@@ -1102,7 +1102,7 @@ export default function ConnectStationPage() {
 
   return (
     <Box sx={{ maxWidth: 760, mx: 'auto', py: 4, px: 2 }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, mb: 1, textAlign: 'center' }}>
+      <Typography variant="h4" component="h1" sx={{ fontWeight: 700, mb: 1, textAlign: 'center' }}>
         Connect Your Weather Station
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4, textAlign: 'center' }}>

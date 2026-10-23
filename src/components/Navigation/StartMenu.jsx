@@ -855,10 +855,14 @@ const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false })
       )}
 
       {/* Taskbar */}
-      <div className="taskbar">
+      <nav className="taskbar" aria-label="Taskbar">
         <div className="taskbar-left">
-          <div
+          {/* A real button: the menu opens from the keyboard (Enter/Space) and reports its state. */}
+          <button
+            type="button"
             className={`start-button ${menuOpen ? 'active' : ''}`}
+            aria-expanded={menuOpen}
+            aria-haspopup="true"
             onClick={() => setMenuOpen(!menuOpen)}
           >
             <svg
@@ -883,7 +887,7 @@ const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false })
               />
             </svg>
             <span>Start</span>
-          </div>
+          </button>
 
           <PageNavigator
             currentPage={currentIndex}
@@ -935,7 +939,7 @@ const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false })
             })}
           </div>
         </div>
-      </div>
+      </nav>
     </div>
   );
 };

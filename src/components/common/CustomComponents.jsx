@@ -315,9 +315,9 @@ Layout.Header = ({ children, ...props }) => (
 );
 
 Layout.Content = ({ children, ...props }) => (
-  <main className="custom-layout-content" {...props}>
+  <div className="custom-layout-content" {...props}>
     {children}
-  </main>
+  </div>
 );
 
 Layout.Footer = ({ children, ...props }) => (

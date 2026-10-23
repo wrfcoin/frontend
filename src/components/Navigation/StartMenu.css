@@ -44,6 +44,10 @@
 
 /* Start Button */
 .start-button {
+  /* A <button>: reset the user-agent box so it looks as the old div did. */
+  border: 0;
+  font: inherit;
+  color: inherit;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -53,6 +57,11 @@
   transition: all 0.2s ease;
   background-color: rgba(var(--primary-color-rgb), 0.1);
   margin-right: 12px;
+}
+
+.start-button:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }
 
 .start-button:hover {

@@ -229,7 +229,7 @@ export function PublicGovernanceListPage() {
   const pageNumber = Math.floor(offset / GOVERNANCE_PAGE_SIZE) + 1;
 
   return (
-    <main className="public-read-page pg-page" data-testid="public-governance" style={themeVars}>
+    <div className="public-read-page pg-page" data-testid="public-governance" style={themeVars}>
       <header className="pg-head">
         <div>
           <h1>Governance</h1>
@@ -286,7 +286,7 @@ export function PublicGovernanceListPage() {
           </div>
         </div>
       </WrfCard>
-    </main>
+    </div>
   );
 }
 
@@ -311,7 +311,7 @@ export function PublicGovernanceProposalPage() {
   const notFound = result?.kind === 'not_found' || (result?.kind === 'ok' && !proposal);
 
   return (
-    <main className="public-read-page pg-page pg-detail" data-testid="public-governance-proposal" style={themeVars}>
+    <div className="public-read-page pg-page pg-detail" data-testid="public-governance-proposal" style={themeVars}>
       <Link className="pg-back" to="/governance/public">← All proposals</Link>
       {loading ? <p className="pg-count" role="status">Loading proposal…</p> : notFound ? (
         <WrfEmptyState variant="search" title="Proposal not found." description="There is no proposal with this id on the testnet." />
@@ -329,7 +329,7 @@ export function PublicGovernanceProposalPage() {
           </dl>
         </WrfCard>
       )}
-    </main>
+    </div>
   );
 }
 

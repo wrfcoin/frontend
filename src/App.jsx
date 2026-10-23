@@ -235,7 +235,9 @@ function AppContent() {
       {/* Start Menu Component - always visible on all routes */}
       <StartMenu darkMode={isDark} toggleDarkMode={toggleDarkMode} isFeatureEnabled={isFeatureEnabled} />
 
-      <div className="main-content" tabIndex={0} role="region" aria-label="Page content">
+      {/* The one <main> landmark: pages render plain containers inside it (axe landmark-one-main /
+          landmark-main-is-top-level). */}
+      <main className="main-content" tabIndex={0} aria-label="Page content">
         {allowOperatorPreview && (
           <div
             data-testid="operator-preview-banner"
@@ -257,7 +259,7 @@ function AppContent() {
             {publicRouteElements}
           </Routes>
         </Suspense>
-      </div>
+      </main>
     </div>
   );
 }
