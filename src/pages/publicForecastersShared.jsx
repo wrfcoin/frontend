@@ -4,7 +4,7 @@ import { WrfAlert } from '../components/DesignSystem';
 import { useIsDarkTheme } from '../theme/ThemeProvider';
 import { publicPageSurfaceVars } from '../theme/publicPageTheme';
 import {
-  bgPrimary, bgSecondary, borders, errorLight, fontFamily, infoLight, primaryLight, radii, shadows, successLight,
+  bgPrimary, bgSecondary, borders, errorLight, fontFamily, infoDark, infoLight, primaryLight, radii, shadows, successLight,
   textMuted, textPrimary, textSecondary, warningLight,
 } from '../components/DesignSystem/tokens';
 
@@ -41,6 +41,30 @@ export function useForecasterThemeVars() {
   const isDark = useIsDarkTheme();
   const surface = publicPageSurfaceVars('fc', isDark);
   return { ...TOKEN_VARS, ...surface, ...(isDark ? {} : { '--fc-info-light': surface['--fc-info'], '--fc-warning-light': '#92400E' }) };
+}
+
+/**
+ * Colours for the Recharts forecasts-per-day chart. Recharts takes colours as props, not CSS, so they come
+ * from the same publicPageSurfaceVars map the page's stylesheet uses: gridlines in the border token,
+ * ticks in the muted text token, the tooltip on the card surface with the page's text colours, and the
+ * hover band in the row tint. The bars keep sky-400 in the dark theme and use sky-600 in the light theme,
+ * where sky-400 is too faint against white.
+ */
+export function forecasterChartColors(isDark) {
+  const v = publicPageSurfaceVars('fc', isDark);
+  return {
+    grid: v['--fc-border'],
+    tick: v['--fc-text-muted'],
+    cursor: v['--fc-row-bg'],
+    bar: isDark ? infoLight : infoDark,
+    tooltip: {
+      background: v['--fc-bg-secondary'],
+      border: v['--fc-border'],
+      shadow: v['--fc-shadow-md'],
+      label: v['--fc-text-secondary'],
+      item: v['--fc-text'],
+    },
+  };
 }
 
 /** The forecaster kit and guide (docs repo `testnet/forecasting.md`, written by the forecast lane). */

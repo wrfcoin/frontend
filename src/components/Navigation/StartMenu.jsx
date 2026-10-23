@@ -6,6 +6,7 @@ import { getWebSocketClient } from '../../services/websocketService';
 import SearchBar from '../Search/SearchBar';
 import usePageNavigation from '../../hooks/usePageNavigation';
 import PageNavigator from './PageNavigator';
+import { pathTitle } from './pathTitle';
 import FEATURES from '../../config/features';
 import { isCapabilityRouteAvailable } from '../../config/capabilityRoutePolicy';
 import {
@@ -721,12 +722,8 @@ const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false })
       return menuItem.name;
     }
 
-    // Return formatted path name if no match found
-    return path
-      .substring(1)
-      .split('/')
-      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(' > ');
+    // Return formatted path name if no match found (opaque ids keep their case)
+    return pathTitle(path);
   };
 
   // Toggle submenu visibility

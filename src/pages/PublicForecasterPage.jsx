@@ -2,17 +2,18 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { WrfCard, WrfEmptyState, WrfStatCard } from '../components/DesignSystem';
-import { categoryColors, infoLight, primary, textMuted } from '../components/DesignSystem/tokens';
+import { categoryColors, infoLight, primary } from '../components/DesignSystem/tokens';
+import { useIsDarkTheme } from '../theme/ThemeProvider';
 import { forecasterPath, publicGet } from '../services/publicReadonlyApi';
 import {
-  BackLink, CopyButton, FORECASTING_GUIDE_HREF, GuideLink, NOT_YET_LABEL, useForecasterThemeVars, Unavailable, When, count,
+  BackLink, CopyButton, FORECASTING_GUIDE_HREF, GuideLink, NOT_YET_LABEL, forecasterChartColors, useForecasterThemeVars, Unavailable, When, count,
 } from './publicForecastersShared';
 import './PublicForecastersPage.css';
 
 /**
  * One forecaster's public track record (/forecasters/:profileKey; core4#3604 A4, [post-GO]).
  *
- * Reads GET /api/forecasters/<c_ key or 0x address> only. Shows what the chain exposes today (forecasts
+ * Reads GET /api/forecasters/<c_ key> only (a raw address is never a public segment). Shows what the chain exposes today (forecasts
  * decided, activity, a 30-day daily series, the recent decisions) and says "Not yet available" for skill,
  * by-variable and by-lead figures, with the backend's own reason, instead of drawing a line it cannot back.
  */
@@ -21,6 +22,7 @@ const SHORT_COMMIT = /^([0-9a-f]{8})[0-9a-f]+([0-9a-f]{6})$/i;
 const shortCommit = id => (typeof id === 'string' && SHORT_COMMIT.test(id) ? id.replace(SHORT_COMMIT, '$1…$2') : String(id ?? '—'));
 
 function SeriesChart({ series }) {
+  const colors = forecasterChartColors(useIsDarkTheme());
   const data = (Array.isArray(series) ? series : []).map(point => ({ day: point.day, forecasts: Number(point.forecasts) || 0 }));
   if (data.length === 0) {
     return <p className="fc-chart-note" role="note">No forecasts in the last 30 days.</p>;
@@ -29,11 +31,16 @@ function SeriesChart({ series }) {
     <div className="fc-chart" data-testid="forecaster-series">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke="rgba(51, 65, 85, 0.6)" vertical={false} />
-          <XAxis dataKey="day" tick={{ fill: textMuted, fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={d => String(d).slice(5)} />
-          <YAxis allowDecimals={false} width={28} tick={{ fill: textMuted, fontSize: 11 }} tickLine={false} axisLine={false} />
-          <Tooltip cursor={{ fill: 'rgba(51, 65, 85, 0.35)' }} contentStyle={{ background: '#1E293B', border: '1px solid rgba(51,65,85,.5)', borderRadius: 8, fontSize: 12 }} labelStyle={{ color: '#94A3B8' }} itemStyle={{ color: '#F8FAFC' }} />
-          <Bar dataKey="forecasts" name="Forecasts" fill={infoLight} radius={[3, 3, 0, 0]} maxBarSize={28} />
+          <CartesianGrid stroke={colors.grid} vertical={false} />
+          <XAxis dataKey="day" tick={{ fill: colors.tick, fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={d => String(d).slice(5)} />
+          <YAxis allowDecimals={false} width={28} tick={{ fill: colors.tick, fontSize: 11 }} tickLine={false} axisLine={false} />
+          <Tooltip
+            cursor={{ fill: colors.cursor }}
+            contentStyle={{ background: colors.tooltip.background, border: `1px solid ${colors.tooltip.border}`, borderRadius: 8, boxShadow: colors.tooltip.shadow, fontSize: 12 }}
+            labelStyle={{ color: colors.tooltip.label }}
+            itemStyle={{ color: colors.tooltip.item }}
+          />
+          <Bar dataKey="forecasts" name="Forecasts" fill={colors.bar} radius={[3, 3, 0, 0]} maxBarSize={28} />
         </BarChart>
       </ResponsiveContainer>
     </div>
