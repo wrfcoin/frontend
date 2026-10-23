@@ -90,6 +90,12 @@ export const PUBLIC_READONLY_PATHS = new Set([
   '/governance/public/:proposalId',
   '/weather/forecast',
   '/contributor/:key',
+  // Phase A item A4 of wrfcoin/core4#3604 ([post-GO], owner 2026-10-19): the public forecaster track record.
+  //   /forecasters                 reads GET /api/forecasters?period=7d|30d|all&limit=25
+  //   /forecasters/:profileKey     reads GET /api/forecasters/<c_ key> (never a raw address)
+  // Exact entries: no other /forecasters descendant is admitted.
+  '/forecasters',
+  '/forecasters/:profileKey',
 ]);
 
 // Owner ruling 2026-10-02 FULL WEB JOIN PATH, frontend#437: admit the exact

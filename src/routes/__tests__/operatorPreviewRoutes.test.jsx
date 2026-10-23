@@ -33,9 +33,11 @@ function visible(fullStudio, publicReadonly, operatorPreview) {
 // W18: the public build also mounts the onboarding loop (exact paths).
 // Owner ruling 2026-10-08 adds the exact public leaderboard page; its siblings stay hidden (baseline).
 // Website parity S4-S6 (owner ruling 2026-10-15) add four more exact public read-only pages.
+// core4#3604 A4 ([post-GO]) adds the exact forecaster track record pages (c_ key only).
 const PUBLIC_ONBOARDING = [
   '/onboarding', '/wallet', '/connect-station', '/earn', '/leaderboard/contributors',
   '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
+  '/forecasters', '/forecasters/:profileKey',
 ];
 
 // The baseline set for a flag combination, plus the onboarding loop when the

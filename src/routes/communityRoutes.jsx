@@ -12,6 +12,8 @@ const NearbyStations = lazy(() => import('../components/Leaderboard/NearbyStatio
 const CooperativeHub = lazy(() => import('../components/Leaderboard/CooperativeHub'));
 const ContributorLeaderboardPage = lazy(() => import('../pages/ContributorLeaderboardPage'));
 const PublicContributorProfilePage = lazy(() => import('../pages/PublicContributorProfilePage'));
+const PublicForecastersPage = lazy(() => import('../pages/PublicForecastersPage'));
+const PublicForecasterPage = lazy(() => import('../pages/PublicForecasterPage'));
 
 // Community & Social
 const CommunityForums = lazy(() => import('../components/CommunityForums'));
@@ -57,6 +59,10 @@ export default function communityRoutes({ isFeatureEnabled = () => false } = {})
 
     {/* Public contributor profile by opaque c_ key (S6); never a raw address */}
     <Route path="/contributor/:key" element={<PageWrapper tabType="community"><PublicContributorProfilePage /></PageWrapper>} />
+
+    {/* Forecaster track record (core4#3604 A4, [post-GO]); the public route policy decides reachability */}
+    <Route path="/forecasters" element={<PageWrapper tabType="community"><PublicForecastersPage /></PageWrapper>} />
+    <Route path="/forecasters/:profileKey" element={<PageWrapper tabType="community"><PublicForecasterPage /></PageWrapper>} />
 
     {/* Community */}
     {isFeatureEnabled('community') && <Route path="/community" element={<PageWrapper tabType="weather"><CommunityForums /></PageWrapper>} />}

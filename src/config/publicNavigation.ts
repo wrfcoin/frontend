@@ -29,6 +29,7 @@ export const PUBLIC_NAV_ENTRIES: readonly PublicNavEntry[] = [
   { name: 'Get started', path: '/onboarding', icon: 'bi-rocket-takeoff', group: 'main', description: 'Create or open a wallet and join the testnet.' },
   { name: 'Weather map', path: '/map', icon: 'bi-globe-americas', group: 'main', description: 'See weather stations and coverage on a map.' },
   { name: 'Explore', path: '/explore', icon: 'bi-boxes', group: 'main', description: 'Look through the latest blocks on the testnet.' },
+  { name: 'Forecasters', path: '/forecasters', icon: 'bi-graph-up-arrow', group: 'main', description: 'Who is forecasting on the testnet, and how their track record is building.' },
   { name: 'Search', path: '/search', icon: 'bi-search', group: 'main', description: 'Find a block, transaction, address or station.' },
   { name: 'Leaderboard', path: '/leaderboard/contributors', icon: 'bi-trophy', group: 'main', description: 'Top contributors and what they have earned.' },
   { name: 'Governance', path: '/governance/public', icon: 'bi-bank', group: 'main', description: 'Read proposals and the treasury (read-only).' },
@@ -49,6 +50,7 @@ export const PUBLIC_NON_MENU_PATHS: Readonly<Record<string, string>> = {
   '/earn': 'alias of /connect-station (same page)',
   '/governance/public/:proposalId': 'proposal detail reached from the governance list, not a destination',
   '/contributor/:key': 'profile reached from the leaderboard by opaque key, not a destination',
+  '/forecasters/:profileKey': 'track record reached from the forecasters page, not a destination',
 };
 
 /** Entries the public build can actually reach, in display order. */
