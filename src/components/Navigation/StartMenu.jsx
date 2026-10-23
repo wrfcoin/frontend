@@ -21,6 +21,7 @@ const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false })
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState(null);
   const menuRef = useRef(null);
+  const startButtonRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
   const allowShellHiddenFeatures = isFullStudioEnabled(
@@ -694,6 +695,22 @@ const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false })
     };
   }, []);
 
+  // Escape closes the open menu from anywhere (Start itself or a focused menu item) and hands focus
+  // back to Start, so a keyboard user is never left on a removed element. Closing with the Start button
+  // keeps focus there by itself; navigating moves on to the new page.
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    function handleEscape(event) {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      setMenuOpen(false);
+      setActiveSubmenu(null);
+      startButtonRef.current?.focus();
+    }
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [menuOpen]);
+
   // Close menu when navigating to a new route
   useEffect(() => {
     setMenuOpen(false);
@@ -856,6 +873,7 @@ const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false })
         <div className="taskbar-left">
           {/* A real button: the menu opens from the keyboard (Enter/Space) and reports its state. */}
           <button
+            ref={startButtonRef}
             type="button"
             className={`start-button ${menuOpen ? 'active' : ''}`}
             aria-expanded={menuOpen}
