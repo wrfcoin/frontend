@@ -97,7 +97,7 @@ function Row({ grant }) {
     <tr data-testid="bond-grant-row">
       <td>
         <Shortened value={grant.ownerAddress} re={ADDRESS_RE} head={6} tail={4} what="owner wallet" />
-        <div className="bga-sub bga-only-phone">Peer <span className="bga-mono">{typeof grant.peerId === 'string' && PEER_ID_RE.test(grant.peerId) ? shorten(grant.peerId, 6, 4) : '—'}</span></div>
+        <div className="bga-sub bga-only-phone">Peer <Shortened value={grant.peerId} re={PEER_ID_RE} head={6} tail={4} what="peer id" /></div>
         <div className="bga-sub bga-only-phone"><When value={grant.time} /></div>
         <div className="bga-sub bga-only-phone">Grant tx <GrantTx hash={grant.txHash} /></div>
       </td>

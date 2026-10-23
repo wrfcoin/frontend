@@ -56,7 +56,9 @@ test('requests the audit list once and renders one row per grant with shortened 
   expect(within(first).getByText('0xaaaa…aa01')).toBeInTheDocument();
   expect(within(first).getByRole('button', { name: `Copy owner wallet ${OWNER}` })).toBeInTheDocument();
   expect(within(first).getByText('12D3KooW…CVe2Xo')).toBeInTheDocument();
-  expect(within(first).getByRole('button', { name: `Copy peer id ${PEER}` })).toBeInTheDocument();
+  // Desktop peer column and the stacked phone line both offer Copy (CSS shows one of them per width).
+  expect(within(first).getAllByRole('button', { name: `Copy peer id ${PEER}` })).toHaveLength(2);
+  expect(within(first).getByText('12D3Ko…e2Xo')).toBeInTheDocument();
   // bonded: null is the faucet saying it cannot tell yet: never "No".
   expect(within(first).getByText('Not yet available')).toBeInTheDocument();
   expect(within(first).queryByText('No')).toBeNull();
