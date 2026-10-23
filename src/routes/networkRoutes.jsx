@@ -13,6 +13,7 @@ const UnifiedExplorer = lazy(() => import('../components/explorer/NetworkExplore
 const SearchResults = lazy(() => import('../components/Search/SearchResults'));
 const PublicReadOnlyExplorer = lazy(() => import('../components/explorer/PublicReadOnlyExplorer'));
 const PublicReadOnlySearch = lazy(() => import('../components/Search/PublicReadOnlySearch'));
+const PublicBondGrantsPage = lazy(() => import('../pages/PublicBondGrantsPage'));
 
 const PUBLIC_READONLY =
   isPublicReadonlyEnabled(import.meta.env?.VITE_PUBLIC_READONLY_PATHS) &&
@@ -63,6 +64,8 @@ export default function networkRoutes({ validatorOpsEnabled, networkInsightsEnab
     <Route path="/explorer" element={<Navigate to="/explore?tab=blocks" replace />} />
     <Route path="/dag-explorer" element={<Navigate to="/explore?tab=dag" replace />} />
     <Route path="/search" element={<PageWrapper tabType="search">{PUBLIC_READONLY ? <PublicReadOnlySearch /> : <SearchResults />}</PageWrapper>} />
+    {/* Faucet bond-grant audit list (read-only); the public route policy decides reachability */}
+    <Route path="/faucet/bond-grants" element={<PageWrapper tabType="explorer"><PublicBondGrantsPage /></PageWrapper>} />
 
     {/* Network */}
     {isFeatureEnabled('feeMarket') && <Route path="/network/fees" element={<PageWrapper tabType="network"><FeeMarketDashboard /></PageWrapper>} />}

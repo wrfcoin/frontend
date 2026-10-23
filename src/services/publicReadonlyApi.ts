@@ -55,6 +55,13 @@ export function governanceProposalPath(id: string): string | null {
 
 export const GOVERNANCE_TREASURY_PATH = '/governance/treasury';
 
+/**
+ * Faucet bond-grant audit list (self-serve bond grant spec section 4): the backend forwards the faucet's
+ * `GET /faucet/bond-grants` unchanged, `{ grants: [{ ownerAddress, peerId, serverKey, txHash, time, bonded }] }`,
+ * newest first, at most 100. No query parameters.
+ */
+export const BOND_GRANTS_PATH = '/faucet/bond-grants';
+
 export function contributorProfilePath(key: string): string | null {
   return CONTRIBUTOR_KEY_RE.test(key) ? `/operators/${key}/profile` : null;
 }

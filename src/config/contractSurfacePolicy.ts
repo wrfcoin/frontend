@@ -96,6 +96,9 @@ export const PUBLIC_READONLY_PATHS = new Set([
   // Exact entries: no other /forecasters descendant is admitted.
   '/forecasters',
   '/forecasters/:profileKey',
+  // Self-serve bond grant spec section 4: the read-only faucet bond-grant audit list
+  // (GET /api/faucet/bond-grants). Exact entry: no other /faucet path is admitted.
+  '/faucet/bond-grants',
 ]);
 
 // Owner ruling 2026-10-02 FULL WEB JOIN PATH, frontend#437: admit the exact
