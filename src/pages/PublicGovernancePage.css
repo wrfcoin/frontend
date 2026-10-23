@@ -10,12 +10,12 @@
 .pg-top { display: grid; grid-template-columns: 1fr 1.6fr; gap: 16px; margin-bottom: 16px; }
 .pg-treasury { position: relative; overflow: hidden; border-radius: var(--pg-r-lg); padding: 24px 32px; background: linear-gradient(135deg, var(--pg-purple-dark) 0%, #6D28D9 55%, #4C1D95 100%); box-shadow: var(--pg-shadow-lg), var(--pg-glow-purple); color: #fff; display: flex; flex-direction: column; justify-content: center; min-height: 150px; }
 .pg-treasury::after { content: ""; position: absolute; right: -50px; bottom: -70px; width: 220px; height: 220px; border-radius: 50%; background: rgba(255, 255, 255, 0.06); }
-.pg-treasury__label { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255, 255, 255, 0.8); }
+.pg-treasury__label { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 0.8125rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: rgba(255, 255, 255, 0.92); }
 .pg-treasury__value { margin: 10px 0 0; font-size: 2.25rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.pg-treasury__value .frac { font-size: 1.125rem; font-weight: 600; color: rgba(255, 255, 255, 0.8); }
+.pg-treasury__value .frac { font-size: 1.125rem; font-weight: 600; color: rgba(255, 255, 255, 0.92); }
 .pg-treasury__value .sym { font-size: 1rem; font-weight: 600; margin-left: 8px; color: rgba(255, 255, 255, 0.85); }
 .pg-treasury__value--un { font-size: 1.375rem; color: rgba(255, 255, 255, 0.92); }
-.pg-treasury__sub { margin: 10px 0 0; font-size: 0.8125rem; color: rgba(255, 255, 255, 0.8); }
+.pg-treasury__sub { margin: 10px 0 0; font-size: 0.8125rem; color: rgba(255, 255, 255, 0.92); }
 .pg-treasury__sub .pg-link { color: #fff; font-weight: 600; }
 .pg-treasury--plain { background: var(--pg-bg-secondary); border: 1px solid var(--pg-border); box-shadow: var(--pg-shadow-md); color: var(--pg-text); }
 .pg-treasury--plain .pg-treasury__label, .pg-treasury--plain .pg-treasury__sub { color: var(--pg-text-secondary); }
@@ -39,6 +39,8 @@
 .pg-table .pg-title { color: var(--pg-text); font-weight: 600; text-decoration: none; font-size: 0.9375rem; }
 .pg-table .pg-title:hover { color: var(--pg-primary-light); }
 .pg-table .pg-sub { font-size: 0.75rem; color: var(--pg-text-muted); margin-top: 3px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+/* On the light theme's slate-100 phone rows slate-500 muted text is 4.3:1; the secondary slate-600 holds 6.9:1. */
+body.light-mode .pg-table .pg-id, body.light-mode .pg-table .pg-sub { color: var(--pg-text-secondary); }
 .pg-table .pg-votes { width: 220px; }
 .pg-table .pg-ends { color: var(--pg-text-secondary); white-space: nowrap; }
 .pg-vbar { height: 6px; border-radius: 3px; background: rgba(239, 68, 68, 0.35); overflow: hidden; }

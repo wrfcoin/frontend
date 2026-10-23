@@ -564,11 +564,12 @@ const StationReportPage: React.FC = () => {
             ) : anomalies.length > 0 ? (
               <TableContainer>
                 <Table size="small">
+                  {/* Head text comes from the theme's table-head token (slate-300 on the dark slate-700 head). */}
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ color: palette.textSecondary, borderBottomColor: palette.border }}>Time</TableCell>
-                      <TableCell sx={{ color: palette.textSecondary, borderBottomColor: palette.border }}>Summary</TableCell>
-                      <TableCell sx={{ color: palette.textSecondary, borderBottomColor: palette.border }}>Quality</TableCell>
+                      <TableCell sx={{ borderBottomColor: palette.border }}>Time</TableCell>
+                      <TableCell sx={{ borderBottomColor: palette.border }}>Summary</TableCell>
+                      <TableCell sx={{ borderBottomColor: palette.border }}>Quality</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
