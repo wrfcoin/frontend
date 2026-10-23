@@ -37,7 +37,8 @@ describe('station detail route (Stage 1.5)', () => {
     const paths = collectRoutePaths(mounted(true));
     expect(paths.filter(p => !CORE.includes(p)).sort()).toEqual(
       [...PRIOR_READONLY, STATION, '/leaderboard/contributors', '/onboarding', '/wallet', '/connect-station', '/earn',
-        '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key'].sort(),
+        '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
+        '/forecasters', '/forecasters/:profileKey'].sort(),
     );
     expect(paths).not.toContain('/earnings');
   });

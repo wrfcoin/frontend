@@ -10,6 +10,7 @@ describe('Stage 1.5 public route policy', () => {
     const candidates = [
       '/explore', '/explorer', '/map', '/search', '/weather/station/:stationId', '/leaderboard/contributors',
       '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
+      '/forecasters', '/forecasters/:profileKey',
       '/wallet', '/onboarding', '/governance', '/nfts', '/miner', '/dashboard',
       '/earnings', '/weather/dashboard', '/connect-station', '/earn', '/connect-station/x', '/earn/x',
       '/leaderboard', '/leaderboard/contributors/x', '/leaderboard/nearby', '/leaderboard/profile/:address',
@@ -27,6 +28,9 @@ describe('Stage 1.5 public route policy', () => {
     expect(isPublicTestnetPath('/contributor', false, true)).toBe(false);
     expect(isPublicTestnetPath('/contributor/:key/edit', false, true)).toBe(false);
     expect(isPublicTestnetPath('/impact/:address', false, true)).toBe(false);
+    // core4#3604 A4: two exact forecaster entries; no other descendant rides along.
+    expect(isPublicTestnetPath('/forecasters/:profileKey/edit', false, true)).toBe(false);
+    expect(isPublicTestnetPath('/forecasters/abc', false, true)).toBe(false);
     expect([...PUBLIC_ONBOARDING_PATHS]).toEqual(['/onboarding', '/wallet', '/connect-station', '/earn']);
   });
 
@@ -54,6 +58,7 @@ describe('Stage 1.5 station detail', () => {
     expect([...PUBLIC_READONLY_PATHS]).toEqual([
       '/explore', '/explorer', '/map', '/search', STATION, '/leaderboard/contributors',
       '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
+      '/forecasters', '/forecasters/:profileKey',
     ]);
   });
 

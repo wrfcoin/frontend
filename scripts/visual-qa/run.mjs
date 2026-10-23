@@ -289,6 +289,17 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log('FAIL downloads-unpublished', suffix, String(e).slice(0, 160)); report.push({ name: 'downloads-unpublished', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    for (const [name, mode, route] of [['forecasters-empty', 'empty', '/forecasters'], ['forecaster-empty', 'empty', '/forecasters/c_0123456789abcdef01234567'], ['forecasters-unavailable', 'unavailable', '/forecasters']]) {
+      if (!want(name)) continue;
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { forecasters: mode });
+        await loadRoute(page, route, errors);
+        await capture(page, errors, name, `${route} (${mode})`, suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     if (want('wallet-unlocked') || want('connect-station-unlocked') || want('wallet-send-review')) {
       try {
         await createWallet(page, errors);

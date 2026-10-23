@@ -71,3 +71,22 @@ export const FORECAST_DAILY_QUERY = 'days=14';
 export function weatherForecastPath(segment: string, kind: 'hourly' | 'daily'): string {
   return `/weather/forecast/${segment}?${kind === 'hourly' ? FORECAST_HOURLY_QUERY : FORECAST_DAILY_QUERY}`;
 }
+
+// ---- Forecaster track record (wrfcoin/core4#3604 A4, [post-GO]) -------------------------------------------
+// backend forecasters-routes.ts: GET /api/forecasters?period=7d|30d|all&limit=1..100 and
+// GET /api/forecasters/:profileKey (opaque c_ key only: the backend answers a raw-address lookup with the
+// unknown-key 404 for every public caller, and own-profile-by-address is a pending owner decision). Both are 503 while the chain-rewards
+// index is off on a network; the pages show that as "not available on this network yet".
+export const FORECASTER_PERIODS = ['7d', '30d', 'all'] as const;
+export type ForecasterPeriod = (typeof FORECASTER_PERIODS)[number];
+export const FORECASTERS_PAGE_SIZE = 25;
+export function forecastersPath(period: ForecasterPeriod = '7d', limit: number = FORECASTERS_PAGE_SIZE): string {
+  const safePeriod = FORECASTER_PERIODS.includes(period) ? period : '7d';
+  const safeLimit = Math.min(Math.max(Math.trunc(Number(limit) || FORECASTERS_PAGE_SIZE), 1), 100);
+  return `/forecasters?period=${safePeriod}&limit=${safeLimit}`;
+}
+/** A c_ profile key (CONTRIBUTOR_KEY_RE) only; a raw 0x address or anything else makes no request. */
+export const FORECASTER_SEGMENT_RE = CONTRIBUTOR_KEY_RE;
+export function forecasterPath(segment: string): string | null {
+  return FORECASTER_SEGMENT_RE.test(segment) ? `/forecasters/${segment}` : null;
+}

@@ -88,7 +88,32 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
   const SUBMISSIONS = Array.from({ length: 8 }, (_, i) => ({ id: `sub-${i}`, createdAt: iso((i + 1) * 20 * 60_000), status: 'revealed', chainStatus: i === 0 ? 'pending' : 'reward_finalized', blockHeight: 44812 - i * 15, txId: `0x${hex(64)}` }));
   const PROFILE = { profileKey: 'c_0123456789abcdef01234567', displayName: 'Hilltop', walletAddress: '0xa1a1…a1a1', rank: 1, badgeLevel: 'gold', stationCount: 3, totalSubmissions: 4812, currentStreak: 21, longestStreak: 63, qualityScore: 0.93, weatherStatisticsAvailable: true, roleEarnings: { amountUnits: { available: true }, roles: [{ role: 'weather', earningsBaseUnits: '1241000000000' }, { role: 'node', earningsBaseUnits: '342978588754' }] }, updatedAt: iso(3_600_000) };
 
-  return { PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, downloadsManifest: readFixture('downloads-manifest.json') };
+  // Forecaster track record (core4#3604 A4), in the exact shape backend forecasters-routes.ts serves an
+  // anonymous caller: opaque c_ keys, short addresses only (`address: null`), st_ station aliases, and
+  // skill / paid WRF per forecaster as `not_yet_available` (the node does not expose receipts yet).
+  // Addresses are visibly synthetic (repeated nibbles) so no capture resembles a real wallet.
+  const SKILL = { status: 'not_yet_available', reason: 'The node does not expose revealed forecast receipts in block reads yet.' };
+  const PAID = { status: 'not_yet_available', reason: 'Per-forecaster paid totals need finalized receipts.' };
+  const day = msAgo => new Date(now - msAgo).toISOString().replace(/Z$/, '000Z'); // the backend's microsecond form
+  const forecastHeader = { coverage: { fromHeight: '1', throughHeight: '44812', complete: true, skippedRecords: '0' }, asOf: { height: '44812', hash: 'ab'.repeat(32), time: day(60_000), checkedAt: new Date(now - 55_000).toISOString() } };
+  const FORECASTER_ROWS = [
+    ['c_0123456789abcdef01234567', '0xaaaa…aaaa', '41', '33'], ['c_89abcdef0123456789abcdef', '0xbbbb…bbbb', '37', '40'],
+    ['c_0123456789abcdef0123456a', '0xcccc…cccc', '29', '18'], ['c_0123456789abcdef0123456b', '0xdddd…dddd', '22', '22'],
+    ['c_0123456789abcdef0123456c', '0xeeee…eeee', '15', '0'], ['c_0123456789abcdef0123456d', '0x1111…1111', '9', '12'],
+  ].map(([profileKey, shortAddress, forecasts, prev], i) => ({ rank: i + 1, profileKey, shortAddress, address: null, isYou: false, forecasts, forecastsPrevious: prev, forecastsDelta: String(Number(forecasts) - Number(prev)), firstActiveAt: day((30 + i) * 86_400_000), lastActiveAt: day((i + 1) * 47 * 60_000), skill: SKILL, paid: PAID }));
+  const forecastNetwork = (forecasters, forecasts, minted) => ({ forecasters, forecasts, rewardsMintedCount: forecasts, rewardsMintedBaseUnits: minted, rewardsMintedDisplay: `${minted.slice(0, -8) || '0'}.${minted.slice(-8).padStart(8, '0')}`, rewardsWithReceiptCount: '0', rewardsBaselineCount: forecasts, blocks: '7854', blocksWithoutCounters: '0', meanSkill: SKILL });
+  const FORECASTERS = period => ({ success: true, ...forecastHeader, period, window: { from: period === 'all' ? null : day((period === '30d' ? 30 : 7) * 86_400_000), through: forecastHeader.asOf.time }, status: 'available', complete: true, network: forecastNetwork('6', '153', '48217500000'), rows: FORECASTER_ROWS });
+  const FORECASTERS_EMPTY = period => ({ ...FORECASTERS(period), network: forecastNetwork('0', '0', '0'), rows: [] });
+  const FORECASTER = {
+    success: true, ...forecastHeader, status: 'available', complete: true,
+    totals: { forecasts: '41', byProvenance: { real: '38', synthetic: '3', unclassified: '0' }, firstActiveAt: day(30 * 86_400_000), lastActiveAt: day(47 * 60_000), meanSkill: SKILL, paid: PAID },
+    skill: SKILL, byVariable: [], byLead: [],
+    series: Array.from({ length: 30 }, (_, i) => ({ day: new Date(now - (29 - i) * 86_400_000).toISOString().slice(0, 10), forecasts: String([1, 2, 0, 1, 3, 1, 2][i % 7]), meanSkill: null })).filter(r => r.forecasts !== '0'),
+    recent: Array.from({ length: 8 }, (_, i) => ({ commitId: `${'f00dcafe'.repeat(7)}${String(i).padStart(8, '0')}`, blockHeight: String(44790 - i * 37), lastHeight: String(44792 - i * 37), timesSeen: String(1 + (i % 3)), decidedAt: day((i + 1) * 5 * 3_600_000), stationId: `st_${['7d29a4c1e0b8', '3f81c0d2a9e4'][i % 2]}`, stationIdIsAlias: true, provenanceClass: i === 5 ? 'synthetic' : 'real', skill: null, rmse: null, mae: null, bias: null, horizonHours: null, variables: null, receipt: 'not_exposed' })),
+    profileKey: 'c_0123456789abcdef01234567', shortAddress: '0xaaaa…aaaa', address: null, isYou: false,
+  };
+
+  return { PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -96,11 +121,14 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * Only backend paths are intercepted: a glob like `**\/api/**` would also catch
  * the app's own /src/hooks/api/* modules. `options.manifest`: 'populated'
  * (default) serves the fixture manifest; 'shipped' lets the app's own
- * public/downloads/manifest.json through.
+ * public/downloads/manifest.json through. `options.forecasters`: 'populated'
+ * (default), 'empty' (no rows: the honest empty state) or 'unavailable' (the
+ * backend's 503 while the chain-reward index is off on a network).
  */
 export async function installRoutes(page, fx, options = {}) {
   const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
   const manifestMode = options.manifest || 'populated';
+  const forecastersMode = options.forecasters || 'populated';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -129,6 +157,14 @@ export async function installRoutes(page, fx, options = {}) {
     if ((m = /^\/api\/stations\/([^/]+)\/(observations|quality|submissions)$/.exec(p))) return json(route, m[2] === 'observations' ? { observations: fx.OBSERVATIONS, source: 'backend-db', unavailable: [] } : m[2] === 'quality' ? { overall: 0.93, dimensions: [{ name: 'completeness', score: 0.97 }, { name: 'timeliness', score: 0.91 }, { name: 'plausibility', score: 0.9 }], advisory: false, unavailable: [] } : { submissions: fx.SUBMISSIONS, source: 'backend-db', limit: 25, offset: 0 });
     if ((m = /^\/api\/weather\/stations\/([^/]+)$/.exec(p))) { const st = fx.STATIONS.find(x => x.stationId === decodeURIComponent(m[1])); return st ? json(route, { station: st, ...st }) : json(route, { error: 'not found' }, 404); }
     if ((m = /^\/api\/operators\/(c_[0-9a-f]{24})\/profile$/.exec(p))) return json(route, { profile: fx.PROFILE });
+    if (p === '/api/forecasters' || p.startsWith('/api/forecasters/')) {
+      if (forecastersMode === 'unavailable') return json(route, { status: 'unavailable', error: { code: 'FORECASTERS_DISABLED' }, reason: 'The forecast index is not enabled on this network.' }, 503);
+      const period = ['7d', '30d', 'all'].includes(url.searchParams.get('period')) ? url.searchParams.get('period') : '7d';
+      if (p === '/api/forecasters' || p === '/api/forecasters/') return json(route, forecastersMode === 'empty' ? fx.FORECASTERS_EMPTY(period) : fx.FORECASTERS(period));
+      // c_ key only, like the backend for every public caller; the record answers for the fixture rows' keys.
+      if ((m = /^\/api\/forecasters\/(c_[0-9a-f]{24})$/.exec(p)) && fx.FORECASTERS('7d').rows.some(r => r.profileKey === m[1])) return json(route, forecastersMode === 'empty' ? { ...fx.FORECASTER, totals: { ...fx.FORECASTER.totals, forecasts: '0', byProvenance: { real: '0', synthetic: '0', unclassified: '0' }, firstActiveAt: null, lastActiveAt: null }, series: [], recent: [] } : { ...fx.FORECASTER, profileKey: m[1] });
+      return json(route, { error: { code: 'FORECASTER_NOT_FOUND' } }, 404);
+    }
     return json(route, { error: 'visual-qa stub: not provided' }, 404);
   });
 }
