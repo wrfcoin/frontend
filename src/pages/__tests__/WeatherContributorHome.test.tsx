@@ -168,6 +168,28 @@ describe('WeatherContributorHome', () => {
     expect(screen.getAllByText('91/100').length).toBeGreaterThan(0);
   });
 
+  it('labels a registered station chip Registered (no recent data) and keeps Stale as is', () => {
+    const station = (id: string, status: string) => ({ id, name: `Station ${id}`, status, location: 'Rooftop' });
+    mockUseWeatherStations.mockReturnValue(
+      queryResult({ data: [station('reg', 'registered'), station('old', 'stale')] }),
+    );
+    mockUseWeatherStationSnapshots.mockReturnValue(
+      queryResult({
+        data: [station('reg', 'registered'), station('old', 'stale')].map((s) => ({
+          station: s,
+          observations: [],
+          quality: null,
+          earnings: null,
+          submissions: [],
+        })),
+      }),
+    );
+    renderHome();
+
+    expect(screen.getAllByText('Registered (no recent data)').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Stale').length).toBeGreaterThan(0);
+  });
+
   it('renders exact u128 totals without routing them through a chart number', () => {
     const u128 = '340282366920938463463374607431768211455';
     mockUseWeatherStationSnapshots.mockReturnValue(
