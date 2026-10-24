@@ -1,5 +1,6 @@
 import ApiError, { ApiErrorCode } from '../../utils/apiError';
 import { getAuthToken } from '../authTokenStore';
+import { shouldAttachBearer } from './authScope';
 import { parseJsonPreservingBigInts } from './losslessJson';
 import type { ApiEnvelope } from './types';
 
@@ -108,8 +109,8 @@ export class ApiClient {
     return `${this.baseUrl}${normalizedPath}`;
   }
 
-  private buildHeaders(hasBody: boolean): HeadersInit {
-    const token = readAuthToken();
+  private buildHeaders(method: string, url: string, hasBody: boolean): HeadersInit {
+    const token = shouldAttachBearer(method, url) ? readAuthToken() : '';
     return hasBody
       ? {
         'Content-Type': 'application/json',
@@ -131,7 +132,7 @@ export class ApiClient {
     try {
       return await fetch(url, {
         method,
-        headers: this.buildHeaders(body !== undefined),
+        headers: this.buildHeaders(method, url, body !== undefined),
         signal: controller.signal,
         ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       });
