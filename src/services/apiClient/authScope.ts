@@ -30,10 +30,14 @@ const AUTHENTICATED_ROUTES: readonly AuthenticatedRoute[] = [
   { method: 'POST', path: /^(?:\/api)?\/(?:weather\/)?stations$/ },
   { method: 'POST', path: /^(?:\/api)?\/(?:weather\/)?stations\/verify-key$/ },
   { method: 'GET', path: new RegExp(`^(?:/api)?/weather/stations/${STATION_ID}/reward-progress$`) },
+  // Optional token (backend peekWalletSubject): the owner wallet gets the lifetime address total.
+  { method: 'GET', path: new RegExp(`^(?:/api)?/(?:weather/)?stations/${STATION_ID}/earnings$`) },
   // Governance writes (backend requireAuth; the voter is the JWT subject).
   { method: 'POST', path: /^(?:\/api)?\/governance\/proposals$/ },
   { method: 'POST', path: new RegExp(`^(?:/api)?/governance/proposals/${PROPOSAL_ID}/vote$`) },
   { method: 'POST', path: /^(?:\/api)?\/governance\/delegate$/ },
+  // Operator preview builds: the miner panel's node poll (backend /api/mining requireAuth).
+  { method: 'GET', path: /^(?:\/api)?\/mining\/node-stats$/ },
   // Compute job submission (backend requireAuth), including its fallback paths.
   { method: 'POST', path: /^(?:\/api)?\/compute\/(?:tasks|submit|submit-job)$/ },
 ];

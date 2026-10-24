@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import { clearAuthToken, setAuthToken } from '../../authTokenStore';
 import { shouldAttachBearer } from '../authScope';
 import { ApiClient } from '../client';
+import { EarningsService } from '../earningsService';
 
 const ADDRESS = `0x${'ab'.repeat(20)}`;
 const TOKEN = 'session-token';
@@ -45,6 +46,9 @@ describe('Bearer scope', () => {
     ['POST', '/weather/stations/verify-key'],
     ['POST', '/stations/verify-key'],
     ['GET', '/weather/stations/st_0123456789ab/reward-progress'],
+    ['GET', '/stations/st_0123456789ab/earnings'],
+    ['GET', '/weather/stations/st_0123456789ab/earnings'],
+    ['GET', '/mining/node-stats'],
     ['POST', '/governance/proposals'],
     ['POST', '/governance/proposals/p-1/vote'],
     ['POST', '/governance/delegate'],
@@ -54,6 +58,15 @@ describe('Bearer scope', () => {
     if (method === 'GET') await client.get(path);
     else await client.post(path, {});
 
+    expect(authorizationOf(global.fetch.mock.calls[0])).toBe(`Bearer ${TOKEN}`);
+  });
+
+  it('sends the token on the station earnings read so the owner keeps the lifetime total', async () => {
+    const earnings = new EarningsService({ earnings: 'https://api.example.com/api' });
+    await earnings.getStationRewardEvidence('st_0123456789ab').catch(() => undefined);
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(global.fetch.mock.calls[0][0]).toBe('https://api.example.com/api/stations/st_0123456789ab/earnings');
     expect(authorizationOf(global.fetch.mock.calls[0])).toBe(`Bearer ${TOKEN}`);
   });
 
@@ -82,6 +95,10 @@ describe('Bearer scope', () => {
     ['POST', '/api/weather/stations/mobile'],
     ['GET', '/api/governance/proposals'],
     ['POST', '/api/compute/tasksx'],
+    ['GET', '/api/stations/st_0123456789ab/earnings/extra'],
+    ['GET', '/api/stations/a/b/earnings'],
+    ['POST', '/api/stations/st_0123456789ab/earnings'],
+    ['GET', '/api/mining/node-statsx'],
   ])('does not attach the token to %s %s', (method, path) => {
     expect(shouldAttachBearer(method, `https://api.example.com${path}`)).toBe(false);
     expect(shouldAttachBearer(method, path)).toBe(false);
