@@ -1,0 +1,51 @@
+# pr-gate.yml — the one check to require on `main`. (no `paths:` filter, on purpose)
+#
+# test.yml, typecheck.yml and fabrication-ratchet.yml are path-filtered, so a
+# docs-only PR never receives them; requiring them directly would block such PRs
+# forever. This workflow runs on EVERY pull request to main and decides which of
+# those workflows should have run for the PR's changed files (reading their
+# `paths:` lists from the workflow files at run time), then waits for them on the
+# PR head SHA and fails if any concluded with anything but success. If none apply,
+# it passes. Logic and tests: .github/scripts/pr-gate.mjs, pr-gate.test.mjs.
+#
+# Read-only token, no secrets, no pull_request_target.
+
+name: Frontend PR Gate
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: read
+  actions: read
+
+concurrency:
+  group: pr-gate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-gate:
+    name: frontend PR gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Test the gate logic
+        run: node --test .github/scripts/pr-gate.test.mjs
+
+      - name: Require the workflows that apply to this PR
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node .github/scripts/pr-gate.mjs
