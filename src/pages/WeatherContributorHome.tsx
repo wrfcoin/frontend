@@ -76,6 +76,14 @@ function NetworkStatusStrip() {
   );
 }
 
+// A long status label (Registered (no recent data)) wraps inside the chip instead of
+// overflowing a narrow card.
+export const STATUS_CHIP_WRAP_SX = {
+  height: 'auto',
+  maxWidth: '100%',
+  '& .MuiChip-label': { whiteSpace: 'normal', py: 0.25 },
+} as const;
+
 const statusColor = (status: string) => stationStatusPresentation(status).color;
 
 const qualityColor = (score: number) => {
@@ -294,8 +302,10 @@ export default function WeatherContributorHome() {
                     key={station.id}
                     sx={{
                       display: 'flex',
-                      alignItems: 'center',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      alignItems: { xs: 'flex-start', sm: 'center' },
                       justifyContent: 'space-between',
+                      gap: 1,
                       py: 1.5,
                       borderBottom: '1px solid',
                       borderColor: 'divider',
@@ -304,17 +314,18 @@ export default function WeatherContributorHome() {
                     }}
                     onClick={() => navigate(`/weather/station/${encodeURIComponent(station.id)}`)}
                   >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0, maxWidth: '100%' }}>
                       <Box
                         sx={{
+                          flexShrink: 0,
                           width: 10,
                           height: 10,
                           borderRadius: '50%',
                           bgcolor: statusColor(station.status),
                         }}
                       />
-                      <Box>
-                        <Typography variant="body1" fontWeight={500}>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="body1" fontWeight={500} noWrap>
                           {station.name}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -323,7 +334,7 @@ export default function WeatherContributorHome() {
                         </Typography>
                       </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2, minWidth: 0, maxWidth: '100%', pl: { xs: 3.5, sm: 0 } }}>
                       <Chip
                         label={station.quality == null ? '--' : Math.round(station.quality)}
                         size="small"
@@ -333,7 +344,12 @@ export default function WeatherContributorHome() {
                           fontWeight: 600,
                         }}
                       />
-                      <Chip label={stationStatusPresentation(station.status).label} size="small" variant="outlined" />
+                      <Chip
+                        label={stationStatusPresentation(station.status).label}
+                        size="small"
+                        variant="outlined"
+                        sx={STATUS_CHIP_WRAP_SX}
+                      />
                     </Box>
                   </Box>
                 ))}

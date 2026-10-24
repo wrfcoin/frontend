@@ -64,7 +64,7 @@ jest.unstable_mockModule('../../services/api', () => ({
   blockchainAPI: { getInfo: mockGetInfo },
 }));
 
-const { default: WeatherContributorHome } = await import('../WeatherContributorHome');
+const { default: WeatherContributorHome, STATUS_CHIP_WRAP_SX } = await import('../WeatherContributorHome');
 
 function renderHome() {
   const queryClient = new QueryClient({
@@ -188,6 +188,12 @@ describe('WeatherContributorHome', () => {
 
     expect(screen.getAllByText('Registered (no recent data)').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Stale').length).toBeGreaterThan(0);
+  });
+
+  it('lets the long status label wrap inside its chip instead of overflowing a narrow card', () => {
+    expect(STATUS_CHIP_WRAP_SX.height).toBe('auto');
+    expect(STATUS_CHIP_WRAP_SX.maxWidth).toBe('100%');
+    expect(STATUS_CHIP_WRAP_SX['& .MuiChip-label'].whiteSpace).toBe('normal');
   });
 
   it('renders exact u128 totals without routing them through a chart number', () => {
