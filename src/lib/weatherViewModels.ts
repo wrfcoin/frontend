@@ -20,7 +20,7 @@ export type WeatherDisplayStatus =
  * One label and colour per display status, shared by every station surface
  * (map pins and badges, popup, station page chip, contributor home), so the
  * wording cannot drift between them. Owner ruling: neutral labels. A station
- * that has not reported yet is "Registered" in a neutral slate, never red.
+ * that has not reported yet is "Registered (no recent data)" in a neutral slate, never red.
  */
 export const STATION_STATUS_PRESENTATION: Record<
   WeatherDisplayStatus,
@@ -28,7 +28,7 @@ export const STATION_STATUS_PRESENTATION: Record<
 > = {
   online: { label: 'Online', color: '#22C55E' },
   stale: { label: 'Stale', color: '#F59E0B' },
-  registered: { label: 'Registered', color: '#94A3B8' },
+  registered: { label: 'Registered (no recent data)', color: '#94A3B8' },
   degraded: { label: 'Degraded', color: '#EAB308' },
   offline: { label: 'Offline', color: '#EF4444' },
   unknown: { label: 'Status unknown', color: '#94A3B8' },

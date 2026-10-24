@@ -374,7 +374,7 @@ const StationReportPage: React.FC = () => {
         <CardContent sx={{ p: 3 }}>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
             <Box>
-              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
+              <Stack direction="row" spacing={1.5} useFlexGap flexWrap="wrap" alignItems="center" sx={{ mb: 1 }}>
                 <Typography variant="h5" component="h1" sx={{ color: palette.text, fontWeight: 800 }}>
                   {stationView.name}
                 </Typography>
@@ -388,6 +388,9 @@ const StationReportPage: React.FC = () => {
                       : (LIGHT_STATUS_TEXT[stationStatusPresentation(stationView.status).color] ?? stationStatusPresentation(stationView.status).color),
                     fontWeight: 700,
                     textTransform: 'uppercase',
+                    height: 'auto',
+                    maxWidth: '100%',
+                    '& .MuiChip-label': { whiteSpace: 'normal', py: 0.25 },
                   }}
                 />
               </Stack>

@@ -146,10 +146,10 @@ describe('station status labels', () => {
   const label = (raw: unknown) =>
     stationStatusPresentation(mapWeatherStatus(normalizeStationStatus(raw))).label;
 
-  it('maps the three freshness states to Online, Stale and Registered', () => {
+  it('maps the three freshness states to Online, Stale and Registered (no recent data)', () => {
     expect(label('live')).toBe('Online');
     expect(label('stale')).toBe('Stale');
-    expect(label('registered')).toBe('Registered');
+    expect(label('registered')).toBe('Registered (no recent data)');
     expect(label(' LIVE ')).toBe('Online');
   });
 

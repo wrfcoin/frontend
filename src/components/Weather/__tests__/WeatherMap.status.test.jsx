@@ -52,10 +52,10 @@ describe('dashboard WeatherMap station status', () => {
     expect(markerFills()).toEqual([GREEN, AMBER, SLATE, SLATE]);
   });
 
-  it('labels the popup badge Online, Stale, Registered and Status unknown', () => {
+  it('labels the popup badge Online, Stale, Registered (no recent data) and Status unknown', () => {
     stations = [at('a', 'live'), at('b', 'stale'), at('c', 'registered'), at('d', 'unknown')];
     render(<WeatherMap />);
-    for (const label of ['Online', 'Stale', 'Registered', 'Status unknown']) {
+    for (const label of ['Online', 'Stale', 'Registered (no recent data)', 'Status unknown']) {
       expect(screen.getAllByText(label).some((node) => node.className.includes('status-badge'))).toBe(true);
     }
     expect(screen.queryByText('offline')).toBeNull();

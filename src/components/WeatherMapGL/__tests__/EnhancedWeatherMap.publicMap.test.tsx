@@ -192,7 +192,7 @@ describe('Stage 1.5 public map', () => {
 
   // frontend#415: backend#1263 reports freshness (live / stale / registered).
   // A station that never reported is neutral "Registered", never red "Offline".
-  it('labels live, stale and registered stations Online, Stale and Registered', async () => {
+  it('labels live, stale and registered stations Online, Stale and Registered (no recent data)', async () => {
     backend([
       { ...ONE, status: 'live' },
       { ...TWO, status: 'stale' },
@@ -203,13 +203,13 @@ describe('Stage 1.5 public map', () => {
     // Popup badges: one per station.
     expect(screen.getAllByText('Online').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Stale').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Registered').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Registered (no recent data)').length).toBeGreaterThanOrEqual(1);
     // Legend: every status counts once and nothing is counted offline.
     const legend = (label: string) =>
       screen.getAllByText(label).map(node => node.parentElement?.textContent ?? '');
     expect(legend('Online')).toContain('1Online');
     expect(legend('Stale')).toContain('1Stale');
-    expect(legend('Registered')).toContain('1Registered');
+    expect(legend('Registered (no recent data)')).toContain('1Registered (no recent data)');
     expect(legend('Offline')).toEqual(['0Offline']);
     expect(document.body.textContent).not.toMatch(/\bOFFLINE\b|\boffline\b/);
   });

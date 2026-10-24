@@ -77,7 +77,7 @@ describe('/explore map station status', () => {
   it.each([
     ['live', 'Online'],
     ['stale', 'Stale'],
-    ['registered', 'Registered'],
+    ['registered', 'Registered (no recent data)'],
     ['unknown', 'Status unknown'],
   ])('the detail panel labels %s as "%s"', (status, label) => {
     renderMap([at('x', status)]);
