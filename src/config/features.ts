@@ -29,6 +29,10 @@ const WALLET_SEND = isWalletSendEnabled(
   import.meta.env?.VITE_DISABLE_WALLET_SEND,
 );
 
+// Passkey (WebAuthn) wallet preview: exact string "true" only; default OFF. Needs the backend's
+// WRFCOIN_ENABLE_PASSKEY_SEND and core4's passkey_p256_auth (h3400 on chain 888).
+const PASSKEY_WALLET = import.meta.env?.VITE_ENABLE_PASSKEY_WALLET === 'true';
+
 /**
  * Opt-IN gate for surfaces that render fabricated data. (frontend#214)
  *
@@ -64,6 +68,8 @@ export const FEATURES = {
   wallet: true,
   // Public wallet Send requires the exact public flag and an unlocked vault identity.
   walletSend: WALLET_SEND,
+  /** Passkey wallet preview at /wallet/passkey. Default FALSE. */
+  passkeyWallet: PASSKEY_WALLET,
   explorer: true,
   pop: true,
   mining: true,
