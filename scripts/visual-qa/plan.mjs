@@ -22,6 +22,7 @@ export const ROUTES = [
   { name: 'governance-proposal', route: '/governance/public/WIP-12' },
   { name: 'forecast', route: '/weather/forecast' },
   { name: 'wallet-locked', route: '/wallet' },
+  { name: 'wallet-passkey', route: '/wallet/passkey' },
   { name: 'connect-station-locked', route: '/connect-station' },
   { name: 'downloads', route: '/downloads' },
   { name: 'terms', route: '/terms' },

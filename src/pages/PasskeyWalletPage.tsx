@@ -75,7 +75,7 @@ export default function PasskeyWalletPage() {
         <WrfBadge status="info" label="Preview" />
       </Box>
       <Typography sx={{ color: palette.text.secondary, mb: 3 }}>
-        Your account is a passkey on this device, unlocked with your fingerprint, face or screen lock. There is no recovery phrase to write down. This passkey stays on this device, and the account cannot be recovered if you lose it.
+        Your account is a passkey on this device, unlocked with your fingerprint, face or screen lock. There is no recovery phrase to write down. The passkey is tied to this site ("{window.location.hostname}"): another address, such as www versus the bare domain, is a different account. If you lose the passkey, the account cannot be recovered.
       </Typography>
 
       {!record && (
