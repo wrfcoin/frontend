@@ -52,6 +52,7 @@ export const PUBLIC_NON_MENU_PATHS: Readonly<Record<string, string>> = {
   '/contributor/:key': 'profile reached from the leaderboard by opaque key, not a destination',
   '/forecasters/:profileKey': 'track record reached from the forecasters page, not a destination',
   '/faucet/bond-grants': 'bond-grant audit list linked from the node operator guide, not a destination',
+  '/wallet/passkey': 'flagged preview (VITE_ENABLE_PASSKEY_WALLET, default off); reached by direct link, not a destination',
 };
 
 /** Entries the public build can actually reach, in display order. */
