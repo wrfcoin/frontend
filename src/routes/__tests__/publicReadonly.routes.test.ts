@@ -35,7 +35,7 @@ describe('Stage 1.5 public route policy', () => {
     // Bond-grant audit list: one exact entry; the faucet's other paths never ride along.
     expect(isPublicTestnetPath('/faucet', false, true)).toBe(false);
     expect(isPublicTestnetPath('/faucet/bond-grants/x', false, true)).toBe(false);
-    expect([...PUBLIC_ONBOARDING_PATHS]).toEqual(['/onboarding', '/wallet', '/connect-station', '/earn']);
+    expect([...PUBLIC_ONBOARDING_PATHS]).toEqual(['/onboarding', '/wallet', '/wallet/passkey', '/connect-station', '/earn']);
   });
 
   it('leaves the default public route set unchanged when disabled', () => {

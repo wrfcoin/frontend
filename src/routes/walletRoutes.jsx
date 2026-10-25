@@ -9,12 +9,14 @@ import FEATURES from '../config/features';
 
 const OwnWalletAddress = lazy(() => import('../pages/OwnWalletAddress'));
 const OnboardingPage = lazy(() => import('../pages/OnboardingPage'));
+const PasskeyWalletPage = lazy(() => import('../pages/PasskeyWalletPage'));
 
 export default function walletRoutes() {
   const OnboardingProvider = FEATURES.publicReadonly && !FEATURES.fullStudio
     ? PublicWalletSetupProvider : WalletProvider;
   return <>
     <Route path="/wallet" element={<PageWrapper tabType="wallet"><FirstPartyWalletProvider><OwnWalletAddress /></FirstPartyWalletProvider></PageWrapper>} />
+    {FEATURES.passkeyWallet && <Route path="/wallet/passkey" element={<PageWrapper tabType="wallet"><PasskeyWalletPage /></PageWrapper>} />}
     <Route path="/onboarding" element={<PageWrapper tabType="wallet"><OnboardingProvider><OnboardingPage /></OnboardingProvider></PageWrapper>} />
   </>;
 }
