@@ -37,6 +37,7 @@ await jest.unstable_mockModule('react-leaflet', () => {
     Marker,
     Popup: Element,
     Tooltip: Element,
+    Rectangle: Element,
     useMap: () => ({
       setView: jest.fn(),
       invalidateSize: jest.fn(),

@@ -9,6 +9,8 @@ import TemperatureOverlay from './TemperatureOverlay';
 import StationPopup from './StationPopup';
 import LayerControls from './LayerControls';
 import MapLegend from './MapLegend';
+import ScarcityCellsLayer from './ScarcityCellsLayer';
+import { useScarcityRule } from '../../hooks/useScarcityRule';
 import { useCompactMapLayout } from './useCompactMapLayout';
 import type { LayerState, LayerOpacity } from './LayerControls';
 import type { StationData } from './StationPopup';
@@ -357,6 +359,7 @@ const EnhancedWeatherMap: React.FC = () => {
     precipitation: false,
     pressure: false,
     stationNames: false,
+    scarcity: true,
   });
   const [opacity, setOpacity] = useState<LayerOpacity>({
     wind: 0.7,
@@ -454,6 +457,8 @@ const EnhancedWeatherMap: React.FC = () => {
       );
   }, [coarsenPublicPositions, snapshotsQuery.data, stationsQuery.data]);
 
+  const scarcity = useScarcityRule();
+
   const activeLayers = useMemo(() => {
     const active: string[] = [];
     if (layers.stations) active.push('stations');
@@ -461,6 +466,7 @@ const EnhancedWeatherMap: React.FC = () => {
     if (layers.temperature) active.push('temperature');
     if (layers.precipitation) active.push('precipitation');
     if (layers.pressure) active.push('pressure');
+    if (layers.scarcity) active.push('scarcity');
     return active;
   }, [layers]);
 
@@ -717,6 +723,7 @@ const EnhancedWeatherMap: React.FC = () => {
             onViewFleet={handleViewFleet}
             showEarnings={!coarsenPublicPositions}
           />
+          {layers.scarcity && <ScarcityCellsLayer scarcity={scarcity} />}
           {!compactLayout && <ZoomControlsInner />}
         </MapContainer>
 
@@ -732,6 +739,7 @@ const EnhancedWeatherMap: React.FC = () => {
 
         <MapLegend
           activeLayers={activeLayers}
+          scarcity={scarcity}
           compact={compactLayout}
           collapsed={compactLayout ? compactPanel !== 'legend' : undefined}
           onToggle={compactLayout ? () => toggleCompactPanel('legend') : undefined}

@@ -44,8 +44,6 @@ const SAMPLE_REWARD_STATS = {
     recentRewards: [52.1, 48.8, 44.4, 0, 0, 0, 0],
     topForecaster: {
       nodeId: 'amazon_forecaster',
-      region: 'Amazon Rainforest',
-      scarcityMultiplier: 3.0,
       accuracy: 78.0,
     },
   },
@@ -388,8 +386,7 @@ function EnvironmentalForecastingSample({ rewardStats }) {
       <div className="section-header">
         <h3>Environmental Forecasting Rewards</h3>
         <p>
-          High-value rewards for WRF model forecasting with geographic
-          scarcity bonuses
+          High-value rewards for WRF model forecasting
         </p>
       </div>
 
@@ -437,18 +434,6 @@ function EnvironmentalForecastingSample({ rewardStats }) {
               </div>
               <div className="contributor-stats">
                 <div className="stat-row">
-                  <div className="stat-name">Region:</div>
-                  <div className="stat-figure">
-                    {rewardStats.dataAnalyzers.topForecaster.region}
-                  </div>
-                </div>
-                <div className="stat-row">
-                  <div className="stat-name">Scarcity Multiplier:</div>
-                  <div className="stat-figure">
-                    {rewardStats.dataAnalyzers.topForecaster.scarcityMultiplier}x
-                  </div>
-                </div>
-                <div className="stat-row">
                   <div className="stat-name">Forecast Accuracy:</div>
                   <div className="stat-figure">
                     {rewardStats.dataAnalyzers.topForecaster.accuracy.toFixed(1)}%
@@ -463,29 +448,6 @@ function EnvironmentalForecastingSample({ rewardStats }) {
           </div>
         </Grid>
       </Grid>
-
-      <div className="geographic-bonuses">
-        <h4>Geographic Scarcity Bonuses</h4>
-        <TableContainer component={Paper} variant="outlined">
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Region</TableCell>
-                <TableCell>Scarcity Multiplier</TableCell>
-                <TableCell>Active Nodes</TableCell>
-                <TableCell>Base Reward (WRF)</TableCell>
-                <TableCell>Enhanced Reward (WRF)</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow><TableCell>Amazon Rainforest</TableCell><TableCell>3.0x</TableCell><TableCell>1</TableCell><TableCell>15.0</TableCell><TableCell>45.0</TableCell></TableRow>
-              <TableRow><TableCell>Arctic Circle</TableCell><TableCell>2.5x</TableCell><TableCell>1</TableCell><TableCell>15.0</TableCell><TableCell>37.5</TableCell></TableRow>
-              <TableRow><TableCell>Sahara Desert</TableCell><TableCell>2.0x</TableCell><TableCell>1</TableCell><TableCell>15.0</TableCell><TableCell>30.0</TableCell></TableRow>
-              <TableRow><TableCell>North America</TableCell><TableCell>1.0x</TableCell><TableCell>0</TableCell><TableCell>15.0</TableCell><TableCell>15.0</TableCell></TableRow>
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </div>
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   PopOverviewPanel,
   PopWeatherStationsPanel,
 } from './PopDashboardSamples';
+import ScarcityRulePanel from './ScarcityRulePanel';
 import ValidationForm from './ValidationForm';
 import './PopDashboard.css';
 
@@ -69,6 +70,7 @@ const PopDashboard = () => {
 
   const tabItems = [
     { label: 'Overview', value: 'overview' },
+    { label: 'Data Scarcity', value: 'scarcity' },
     { label: 'Weather Stations', value: 'weatherStations' },
     { label: 'Environmental Forecasting', value: 'environmentalForecasting' },
     { label: 'Algorithm Developers', value: 'algorithmDevelopers' },
@@ -146,6 +148,11 @@ const PopDashboard = () => {
           {/* Overview Tab */}
           <WrfTabPanel value="overview" activeValue={activeTab}>
             <PopOverviewPanel />
+          </WrfTabPanel>
+
+          {/* Data Scarcity Tab: the rule the chain pays, read live (core4#28) */}
+          <WrfTabPanel value="scarcity" activeValue={activeTab}>
+            <ScarcityRulePanel />
           </WrfTabPanel>
 
           {/* Weather Stations Tab */}
