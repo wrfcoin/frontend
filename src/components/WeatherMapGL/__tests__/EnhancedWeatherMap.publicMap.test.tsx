@@ -43,6 +43,7 @@ await jest.unstable_mockModule('react-leaflet', () => {
     Marker: Element,
     Popup: Element,
     Tooltip: Element,
+    Rectangle: Element,
     useMap: () => map,
   };
 });
@@ -121,7 +122,7 @@ describe('Stage 1.5 public map', () => {
     renderMap();
     await screen.findByText('Station report');
     expect(screen.getByText('Data Layers')).toBeTruthy();
-    expect(screen.getAllByRole('switch')).toHaveLength(6);
+    expect(screen.getAllByRole('switch')).toHaveLength(7);
     expect(screen.queryByText(/time control/i)).toBeNull();
     expect(screen.queryByTitle('Play')).toBeNull();
     expect(screen.queryByText('-24h')).toBeNull();

@@ -20,6 +20,7 @@ const LAYERS: LayerState = {
   precipitation: false,
   pressure: false,
   stationNames: false,
+  scarcity: false,
 };
 const OPACITY: LayerOpacity = { wind: 0.7, temperature: 0.5, precipitation: 0.5, pressure: 0.4 };
 
@@ -120,7 +121,7 @@ describe('LayerControls', () => {
     expect(panel).toHaveAttribute('data-collapsed', 'false');
     expect(panel).toHaveStyle({ left: '12px', right: '12px' });
     expect(screen.getByText('Data Layers')).toBeInTheDocument();
-    expect(screen.getAllByRole('switch')).toHaveLength(6);
+    expect(screen.getAllByRole('switch')).toHaveLength(7);
     fireEvent.click(screen.getByRole('button', { name: 'Hide map layers' }));
     expect(onToggle).toHaveBeenCalledTimes(1);
   });

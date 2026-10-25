@@ -314,3 +314,97 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Data scarcity panel (core4#28): the bonus the chain pays, per ~2 degree cell */
+.scarcity-panel h3,
+.scarcity-panel .section-header h3 {
+  color: var(--text-color);
+}
+
+.scarcity-panel .scarcity-rule {
+  color: var(--text-color);
+  max-width: 70ch;
+}
+
+.scarcity-map {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  max-height: 60vh;
+  margin: 16px 0;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+}
+
+.scarcity-map-bg {
+  fill: var(--card-background);
+}
+
+.scarcity-grid {
+  stroke: var(--border-color);
+  vector-effect: non-scaling-stroke;
+  stroke-width: 1;
+}
+
+.scarcity-cell-bonus {
+  fill: var(--warning-color);
+  fill-opacity: 0.55;
+  stroke: var(--warning-color);
+}
+
+.scarcity-cell-base {
+  fill: var(--primary-color);
+  fill-opacity: 0.35;
+  stroke: var(--primary-color);
+}
+
+rect.scarcity-cell {
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.scarcity-cell-label {
+  fill: var(--text-color);
+  font-size: 0.6px;
+  font-weight: 600;
+}
+
+.scarcity-legend {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  padding: 0;
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+}
+
+.scarcity-swatch {
+  border: 1px solid var(--border-color);
+  background: var(--card-background);
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  vertical-align: -2px;
+  opacity: 0.8;
+}
+
+.scarcity-table {
+  width: 100%;
+  max-width: 720px;
+  border-collapse: collapse;
+  color: var(--text-color);
+}
+
+.scarcity-table th,
+.scarcity-table td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.scarcity-table th {
+  color: var(--text-secondary);
+  font-weight: 600;
+}

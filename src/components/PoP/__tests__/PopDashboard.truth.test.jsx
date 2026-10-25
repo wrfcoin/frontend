@@ -177,6 +177,47 @@ describe('PoP Submit Data tab', () => {
   });
 });
 
+// core4#28 (owner answer A1): the scarcity display is the rule the chain pays, read live; the
+// former invented region table (Amazon 3.0x, Arctic 2.5x, Sahara 2.0x) is gone from every build.
+describe('PoP Data Scarcity tab', () => {
+  const body = {
+    source: 'chain',
+    observedAtHeight: 77,
+    rule: { gridKm: 222, cellSizeDegrees: 2, minStationDensity: 3, desertBonusMultiplier: 1.5, baselineMultiplier: 1, activationHeight: 0, active: true },
+    zones: [{ lat: 47, lng: -93, radius: 111, type: 'sparse', rewardMultiplier: 1.5, stationCount: 2 }],
+  };
+
+  it('shows the served rule in the default build, not a sample', async () => {
+    const base = global.fetch;
+    global.fetch = jest.fn(async (input, init) =>
+      String(input).includes('/api/weather/coverage-zones')
+        ? new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } })
+        : base(input, init),
+    );
+    await renderPop();
+    fireEvent.click(screen.getByRole('tab', { name: 'Data Scarcity' }));
+    expect((await screen.findByTestId('scarcity-rule')).textContent).toMatch(/fewer than 3 active registered stations/);
+    expect(screen.queryByTestId('pop-scarcity-sample-badge')).toBeNull();
+  });
+
+  it('is unavailable, with no rule, when the API cannot say', async () => {
+    await renderPop();
+    fireEvent.click(screen.getByRole('tab', { name: 'Data Scarcity' }));
+    expect(await screen.findByTestId('scarcity-unavailable')).not.toBeNull();
+  });
+
+  it.each([false, true])('no invented region multipliers (demoSurfaces=%s)', async demo => {
+    featureFlags.demoSurfaces = demo;
+    await renderPop();
+    fireEvent.click(screen.getByRole('tab', { name: 'Environmental Forecasting' }));
+    await screen.findByTestId(demo ? 'pop-forecasting-sample-badge' : 'pop-forecasting-not-live');
+    const page = document.body.textContent ?? '';
+    for (const literal of ['Geographic Scarcity Bonuses', 'Sahara Desert', 'Arctic Circle', 'Scarcity Multiplier']) {
+      expect(page).not.toContain(literal);
+    }
+  });
+});
+
 describe('PoP dashboard, demo build', () => {
   it('shows the sample only under a sample badge', async () => {
     featureFlags.demoSurfaces = true;

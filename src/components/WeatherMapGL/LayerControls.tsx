@@ -12,6 +12,7 @@ export interface LayerState {
   precipitation: boolean;
   pressure: boolean;
   stationNames: boolean;
+  scarcity: boolean;
 }
 
 export interface LayerOpacity {
@@ -187,6 +188,7 @@ const LAYER_DEFS: LayerDef[] = [
   { key: 'precipitation', label: 'Precipitation', color: '#3B82F6', icon: '\uD83C\uDF27\uFE0F', hasOpacity: true },
   { key: 'pressure', label: 'Pressure', color: '#8B5CF6', icon: '\uD83D\uDCCA', hasOpacity: true },
   { key: 'stationNames', label: 'Station Names', color: '#94A3B8', icon: 'Aa', hasOpacity: false },
+  { key: 'scarcity', label: 'Paid scarcity bonus', color: '#F59E0B', icon: '\u00D7', hasOpacity: false },
 ];
 
 // ---------------------------------------------------------------------------

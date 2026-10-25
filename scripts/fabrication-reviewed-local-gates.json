@@ -47,7 +47,7 @@
   },
   "src/components/PoP/PopDashboardSamples.jsx": {
     "reason": "All four runtime tab exports wrap their named sample body and SAMPLE_REWARD_STATS in DemoSurfaceGate; default tabs mount no sample. Production tab tests and all four gate-removal controls verify containment. No child import exemption.",
-    "sha256": "dc4df9ff09e05e99d678529e013a55b0ba3f8bec1ae2468419e602f44ae00af7"
+    "sha256": "d097446a9b001529e4a53bb42c758c1c0f4a102fd22e08dea44a106a7dc05df0"
   },
   "src/components/AIMarketplace/ModelDetail.jsx": {
     "reason": "The default export wraps ModelDetailSample in DemoSurfaceGate; the only ungated action is the props.onBack Back button. Existing real component default-build and Back tests verify containment. No child import exemption.",

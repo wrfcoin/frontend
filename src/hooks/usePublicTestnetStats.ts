@@ -110,11 +110,10 @@ export function readLatestBlockTime(payload: unknown): string | null {
 export function readCoverageZoneCount(payload: unknown): number | null {
   const zones = asRecord(payload)?.zones;
   if (!Array.isArray(zones) || zones.length === 0) {
-    // The backend answers HTTP 200 `{ zones: [] }` both for "no active
-    // stations" and for a database failure (weather-routes.js coverage-zones
-    // handler initialises `zones = []` and still responds 200 on a caught DB
-    // error). The two cannot be told apart from the client, so an empty list
-    // is treated as unavailable rather than shown as a known zero.
+    // Since core4#28 the route reads the chain's scarcity rule and answers 503 when the node
+    // cannot report it, so a failure never arrives here as an empty list. An empty list is still
+    // shown as unavailable rather than as a known zero: a count of cells with stations is not
+    // a statement about coverage.
     return null;
   }
   return zones.length;

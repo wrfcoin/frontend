@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { mapOverlayTextMuted } from '../../theme/tokens';
+import type { ScarcityRuleState } from '../../hooks/useScarcityRule';
+import { SCARCITY_BASE_COLOR, SCARCITY_BONUS_COLOR } from './ScarcityCellsLayer';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,6 +35,8 @@ interface MapLegendProps {
    * top of the map.
    */
   compact?: boolean;
+  /** The paid scarcity rule read from the chain; the 'scarcity' layer's legend is built from it. */
+  scarcity?: ScarcityRuleState;
 }
 
 // ---------------------------------------------------------------------------
@@ -229,8 +233,44 @@ const LegendSectionBlock: React.FC<{ section: LegendSection }> = ({
 // MapLegend component
 // ---------------------------------------------------------------------------
 
+const ScarcityLegendBlock: React.FC<{ scarcity: ScarcityRuleState }> = ({ scarcity }) => {
+  const title = (
+    <div style={{ fontSize: 11, fontWeight: 600, color: '#E2E8F0', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+      Paid scarcity bonus
+    </div>
+  );
+  if (scarcity.state === 'loading') return null;
+  if (scarcity.state === 'unavailable') {
+    return (
+      <div style={{ marginBottom: 12 }} data-testid="map-legend-scarcity">
+        {title}
+        <div style={{ fontSize: 11, color: '#CBD5E1', marginTop: 6 }}>Unavailable: the node did not report the rule.</div>
+      </div>
+    );
+  }
+  const { rule } = scarcity;
+  const x = (m: number) => `\u00D7${Number(m.toFixed(2))}`;
+  return (
+    <div style={{ marginBottom: 12 }} data-testid="map-legend-scarcity">
+      {title}
+      <SwatchList
+        stops={[
+          { color: SCARCITY_BONUS_COLOR, label: `${x(rule.desertBonusMultiplier)}: fewer than ${rule.minStationDensity} active registered stations in the ~${rule.cellSizeDegrees}\u00B0 cell` },
+          { color: SCARCITY_BASE_COLOR, label: `${x(rule.baselineMultiplier)}: otherwise` },
+        ]}
+      />
+      {!rule.active && (
+        <div style={{ fontSize: 10, color: mapOverlayTextMuted, marginTop: 4 }}>
+          Not active until block {rule.activationHeight.toLocaleString('en-US')}.
+        </div>
+      )}
+    </div>
+  );
+};
+
 const MapLegend: React.FC<MapLegendProps> = ({
   activeLayers,
+  scarcity,
   defaultCollapsed = false,
   collapsed: controlledCollapsed,
   onToggle,
@@ -251,7 +291,8 @@ const MapLegend: React.FC<MapLegendProps> = ({
     .map((l) => LAYER_TO_LEGEND[l])
     .filter(Boolean);
 
-  if (sections.length === 0) return null;
+  const showScarcity = activeLayers.includes('scarcity') && scarcity !== undefined && scarcity.state !== 'loading';
+  if (sections.length === 0 && !showScarcity) return null;
   // Phones: the chip lives in the map toolbar; nothing to draw while collapsed.
   if (compact && collapsed) return null;
 
@@ -323,6 +364,7 @@ const MapLegend: React.FC<MapLegendProps> = ({
           {sections.map((s) => (
             <LegendSectionBlock key={s.id} section={s} />
           ))}
+          {showScarcity && scarcity && <ScarcityLegendBlock scarcity={scarcity} />}
         </div>
       )}
     </div>
