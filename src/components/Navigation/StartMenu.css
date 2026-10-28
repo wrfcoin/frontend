@@ -554,8 +554,11 @@ body.light-mode .current-location span { color: #475569; }
     gap: 6px;
   }
 
+  /* The search box cannot share 390 px with Start, the page label, the theme
+     toggle and the clock (it overlapped the clock). Search stays one tap away:
+     the Start menu has a Search entry. */
   .search-container {
-    max-width: 120px;
+    display: none;
   }
 
   .time-display {
