@@ -250,7 +250,8 @@ body.dark-mode.wallet-v2 {
  * Clean light palette for wallet page
  * =========================================== */
 
-body.wallet-v2:not(.dark-mode) {
+body.wallet-v2:not(.dark-mode),
+body.dashboard-v2:not(.dark-mode) {
   /* Light Mode Backgrounds */
   --bg-primary: #F8FAFC;        /* Slate 50 - Main background */
   --bg-secondary: #FFFFFF;      /* White - Card backgrounds */
