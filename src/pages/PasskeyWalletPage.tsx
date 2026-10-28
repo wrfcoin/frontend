@@ -1,11 +1,16 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { WrfButton } from '../components/DesignSystem/WrfButton';
 import { WrfInput } from '../components/DesignSystem/WrfInput';
 import { WrfAlert } from '../components/DesignSystem/WrfAlert';
 import { WrfBadge } from '../components/DesignSystem/WrfBadge';
+import { WrfModal } from '../components/DesignSystem/WrfModal';
 import { palette } from '../components/DesignSystem/tokens';
+import { AddressQr } from '../components/wallet/WalletEarningsPanel';
+import { walletService } from '../services/apiClient';
+import { formatBaseUnitsToWrf } from '../services/apiClient/number';
+import usePublicTestnetStats from '../hooks/usePublicTestnetStats';
 import { WRFCOIN_CHAIN_ID } from '../config/network';
 import { registerPasskey, signPasskeyTransfer, passkeyRecordAddress, type PasskeyCredentialRecord } from '../services/walletCrypto/passkey';
 import { wrfToBaseUnits } from '../services/walletCrypto/transferPayload';
@@ -15,12 +20,46 @@ import { clearStoredPasskey, getPasskeyNonce, loadStoredPasskey, saveStoredPassk
 const mono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
 const LAUNCH_ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 
-export const NOT_ACTIVE_MESSAGE = 'Passkey transfers are not active on the chain yet (they switch on at block 3400). Nothing was sent.';
+export type PasskeyBalanceView = { kind: 'loading' } | { kind: 'unavailable' } | { kind: 'ready'; units: string };
+
+/** Last four characters of the address, lower-cased: what a person types to confirm forgetting the account. */
+export function addressTail(address: string): string {
+  return address.slice(-4).toLowerCase();
+}
+
+/**
+ * Read the account's own balance through the existing wallet client. The node only answers for a
+ * signed-in own address, so a passkey account (no login) often gets "unavailable": that is shown as
+ * such and never replaced by a number.
+ */
+export function usePasskeyBalance(address: string | null): PasskeyBalanceView {
+  const [view, setView] = useState<PasskeyBalanceView>({ kind: 'loading' });
+  const latest = useRef(0);
+  useEffect(() => {
+    if (!address) return undefined;
+    const mine = ++latest.current;
+    setView({ kind: 'loading' });
+    Promise.resolve()
+      .then(() => walletService.getBalance(address))
+      .then(wallet => { if (latest.current === mine) setView({ kind: 'ready', units: wallet.balance }); })
+      .catch(() => { if (latest.current === mine) setView({ kind: 'unavailable' }); });
+    return () => { latest.current += 1; };
+  }, [address]);
+  return view;
+}
+
+function unitsOf(amount: string): bigint | null {
+  try { const v = wrfToBaseUnits(amount); return v > 0n ? v : null; } catch { return null; }
+}
+
+export const NOT_ACTIVE_MESSAGE = 'Passkey transfers are not active on the chain yet. Nothing was sent.';
 export const UNSUPPORTED_MESSAGE = 'This browser or device cannot create a passkey that stays on the device. Try a recent Chrome, Safari or Edge with a screen lock enabled.';
 
 function describeError(error: unknown): string {
   const message = error instanceof Error ? error.message : '';
   if (message === 'PASSKEY_NOT_ACTIVE') return NOT_ACTIVE_MESSAGE;
+  if (message === 'NO_FUNDS') return 'This account has no funds yet. Nothing was sent.';
+  if (message === 'EXCEEDS_AVAILABLE') return 'That is more than the available balance. Nothing was sent.';
   if (message === 'PASSKEY_AUTHORIZATION_INVALID') return 'The chain rejected the passkey signature. Nothing was sent.';
   if (message === 'PASSKEY_WALLET_UNAVAILABLE') return 'The passkey wallet is switched off.';
   if (/NotAllowed|cancel/i.test(`${(error as any)?.name ?? ''} ${message}`)) return 'The passkey prompt was cancelled.';
@@ -36,6 +75,22 @@ export default function PasskeyWalletPage() {
   const [amount, setAmount] = useState('');
   const [sent, setSent] = useState<string | null>(null);
   const address = useMemo(() => (record ? passkeyRecordAddress(record) : null), [record]);
+  const balance = usePasskeyBalance(address);
+  const chain = usePublicTestnetStats();
+  const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [typedTail, setTypedTail] = useState('');
+  const availableUnits = balance.kind === 'ready' ? BigInt(balance.units) : null;
+  const requested = unitsOf(amount);
+  const noFunds = availableUnits === 0n;
+  const exceeds = availableUnits !== null && requested !== null && requested > availableUnits;
+  const balanceText = balance.kind === 'ready' ? formatBaseUnitsToWrf(balance.units) : null;
+
+  const copyAddress = useCallback(async () => {
+    if (!address) return;
+    try { await navigator.clipboard.writeText(address); setCopied('copied'); setTimeout(() => setCopied('idle'), 2000); }
+    catch { setCopied('failed'); }
+  }, [address]);
 
   const create = useCallback(async () => {
     setBusy(true); setError(null);
@@ -52,6 +107,8 @@ export default function PasskeyWalletPage() {
     if (!record || !address) return;
     setBusy(true); setError(null); setSent(null);
     try {
+      if (noFunds) throw new Error('NO_FUNDS');
+      if (exceeds) throw new Error('EXCEEDS_AVAILABLE');
       if (!LAUNCH_ADDRESS.test(to.trim()) || recipientStatus(to.trim()) === 'known-legacy-receive-only') throw new Error('bad recipient');
       if (!WRFCOIN_CHAIN_ID) throw new Error('Signing chain is not configured');
       const amountBaseUnits = wrfToBaseUnits(amount);
@@ -64,9 +121,10 @@ export default function PasskeyWalletPage() {
       setSent(result.txHash);
       setAmount('');
     } catch (e) { setError(describeError(e)); } finally { setBusy(false); }
-  }, [record, address, to, amount]);
+  }, [record, address, to, amount, noFunds, exceeds]);
 
-  const forget = useCallback(() => { clearStoredPasskey(); setRecord(null); setSent(null); setError(null); }, []);
+  const forget = useCallback(() => { clearStoredPasskey(); setRecord(null); setSent(null); setError(null); setConfirmOpen(false); setTypedTail(''); }, []);
+  const tailOk = address !== null && typedTail.trim().toLowerCase() === addressTail(address);
 
   return (
     <Box component="section" aria-label="Passkey wallet" sx={{ maxWidth: 640, mx: 'auto', px: { xs: 2, md: 3 }, py: { xs: 2, md: 3 } }}>
@@ -91,18 +149,74 @@ export default function PasskeyWalletPage() {
           <Box>
             <Typography variant="overline" sx={{ color: palette.text.secondary }}>Your address</Typography>
             <Typography data-testid="passkey-address" sx={{ fontFamily: mono, fontSize: '0.8125rem', wordBreak: 'break-all' }}>{address}</Typography>
-            <Typography variant="caption" sx={{ color: palette.text.secondary }}>Fund this address to start. Sending with it switches on at block 3400.</Typography>
+            <Typography variant="caption" sx={{ color: palette.text.secondary }}>Fund this address to start.</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', mt: 1.5 }}>
+              <AddressQr value={address} size={132} />
+              <Box sx={{ display: 'grid', gap: 0.75 }}>
+                <WrfButton variant="outline" size="sm" onClick={() => void copyAddress()} data-testid="passkey-copy">
+                  {copied === 'copied' ? 'Copied' : 'Copy address'}
+                </WrfButton>
+                <Typography role="status" variant="caption" sx={{ color: palette.text.secondary }}>
+                  {copied === 'copied' ? 'Address copied to the clipboard.' : copied === 'failed' ? 'Copy is not available here: select the address and copy it.' : 'Scan the code or copy the address to receive.'}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+          <Box data-testid="passkey-balance">
+            <Typography variant="overline" sx={{ color: palette.text.secondary }}>Available balance</Typography>
+            <Typography sx={{ fontWeight: 600 }}>
+              {balance.kind === 'loading' ? 'Loading…' : balanceText !== null ? `${balanceText} WRF` : 'Unavailable'}
+            </Typography>
+            {balance.kind === 'unavailable' && (
+              <Typography variant="caption" sx={{ color: palette.text.secondary }}>
+                The balance could not be read right now. Nothing is guessed: the chain checks the amount when you send.
+              </Typography>
+            )}
+            <Typography variant="caption" component="p" sx={{ color: palette.text.secondary, m: 0 }} data-testid="passkey-activation">
+              Sending is active once the chain reports it active.{' '}
+              {chain.blockHeight !== null ? `Current block: ${chain.blockHeight.toLocaleString('en-US')}.` : 'Current block: unavailable.'}
+            </Typography>
           </Box>
           <WrfInput label="Recipient address" value={to} onChange={(e) => setTo(e.target.value)} placeholder="0x…" autoComplete="off" inputProps={{ style: { fontFamily: mono } }} />
           <WrfInput label="Amount (WRF)" value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" autoComplete="off" />
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-            <WrfButton variant="primary" onClick={() => void send()} disabled={busy || !to.trim() || !amount.trim()}>
+            <WrfButton variant="primary" onClick={() => void send()} disabled={busy || !to.trim() || !amount.trim() || noFunds || exceeds}>
               {busy ? 'Waiting for your device…' : 'Send with passkey'}
             </WrfButton>
-            <WrfButton variant="outline" onClick={forget} disabled={busy}>Forget on this device</WrfButton>
+            <WrfButton variant="outline" onClick={() => { setTypedTail(''); setConfirmOpen(true); }} disabled={busy}>Forget on this device</WrfButton>
           </Box>
+          {noFunds && <Typography role="status" variant="caption" sx={{ color: palette.text.secondary }}>This account has no funds yet, so sending is off.</Typography>}
+          {exceeds && <WrfAlert severity="error" role="alert">That is more than the available balance.</WrfAlert>}
         </Box>
       )}
+
+      <WrfModal
+        open={confirmOpen && address !== null}
+        onClose={() => { setConfirmOpen(false); setTypedTail(''); }}
+        maxWidth="sm"
+        fullWidth
+        title="Forget this passkey account?"
+        actions={(
+          <>
+            <WrfButton variant="ghost" onClick={() => { setConfirmOpen(false); setTypedTail(''); }}>Keep it</WrfButton>
+            <WrfButton variant="primary" onClick={forget} disabled={!tailOk} data-testid="passkey-forget-confirm">Forget this account</WrfButton>
+          </>
+        )}
+      >
+        <Typography sx={{ mb: 1.5 }}>
+          This removes the pointer to your passkey account from this device. Without it this device can no longer open the account, and it cannot be recovered here afterwards. Any funds sent to it stay on the chain but you will not be able to spend them from here.
+        </Typography>
+        <Typography sx={{ mb: 1.5 }}>
+          To confirm, type the last 4 characters of your address: <strong data-testid="passkey-forget-hint" style={{ fontFamily: mono }}>{address ? addressTail(address) : ''}</strong>
+        </Typography>
+        <WrfInput
+          label="Last 4 characters"
+          value={typedTail}
+          onChange={(e) => setTypedTail(e.target.value)}
+          autoComplete="off"
+          inputProps={{ 'data-testid': 'passkey-forget-tail', maxLength: 8, style: { fontFamily: mono } }}
+        />
+      </WrfModal>
 
       {error && <WrfAlert severity="error" sx={{ mt: 2 }}>{error}</WrfAlert>}
       {sent && <WrfAlert severity="success" sx={{ mt: 2 }}>Submitted. Reference: <span style={{ fontFamily: mono, wordBreak: 'break-all' }}>{sent}</span></WrfAlert>}
