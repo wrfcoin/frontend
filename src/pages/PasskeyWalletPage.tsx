@@ -8,7 +8,6 @@ import { WrfBadge } from '../components/DesignSystem/WrfBadge';
 import { WrfModal } from '../components/DesignSystem/WrfModal';
 import { palette } from '../components/DesignSystem/tokens';
 import { AddressQr } from '../components/wallet/WalletEarningsPanel';
-import { walletService } from '../services/apiClient';
 import { formatBaseUnitsToWrf } from '../services/apiClient/number';
 import usePublicTestnetStats from '../hooks/usePublicTestnetStats';
 import { WRFCOIN_CHAIN_ID } from '../config/network';
@@ -16,11 +15,12 @@ import { registerPasskey, signPasskeyTransfer, passkeyRecordAddress, type Passke
 import { wrfToBaseUnits } from '../services/walletCrypto/transferPayload';
 import { recipientStatus } from '../services/walletCrypto/recipientStatus';
 import { clearStoredPasskey, getPasskeyNonce, loadStoredPasskey, saveStoredPasskey, submitPasskeyTransfer } from '../services/walletCrypto/passkeySend';
+import { getPasskeyPublicBalance } from '../services/walletCrypto/passkeyBalance';
 
 const mono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
 const LAUNCH_ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 
-export type PasskeyBalanceView = { kind: 'loading' } | { kind: 'unavailable' } | { kind: 'ready'; units: string };
+export type PasskeyBalanceView = { kind: 'loading' } | { kind: 'unavailable' } | { kind: 'ready'; units: string; height: number };
 
 /** Last four characters of the address, lower-cased: what a person types to confirm forgetting the account. */
 export function addressTail(address: string): string {
@@ -28,11 +28,11 @@ export function addressTail(address: string): string {
 }
 
 /**
- * Read the account's own balance through the existing wallet client. The node only answers for a
- * signed-in own address, so a passkey account (no login) often gets "unavailable": that is shown as
- * such and never replaced by a number.
+ * Read the account's spendable balance from the public balance route (no login). Any failure, including
+ * the route being switched off (404), is "unavailable" and never replaced by a number. Each read (a new
+ * address or `refreshKey`) clears the previous number first, so an old balance is never shown as current.
  */
-export function usePasskeyBalance(address: string | null): PasskeyBalanceView {
+export function usePasskeyBalance(address: string | null, refreshKey = 0): PasskeyBalanceView {
   const [view, setView] = useState<PasskeyBalanceView>({ kind: 'loading' });
   const latest = useRef(0);
   useEffect(() => {
@@ -40,11 +40,11 @@ export function usePasskeyBalance(address: string | null): PasskeyBalanceView {
     const mine = ++latest.current;
     setView({ kind: 'loading' });
     Promise.resolve()
-      .then(() => walletService.getBalance(address))
-      .then(wallet => { if (latest.current === mine) setView({ kind: 'ready', units: wallet.balance }); })
+      .then(() => getPasskeyPublicBalance(address))
+      .then(read => { if (latest.current === mine) setView({ kind: 'ready', units: read.units, height: read.height }); })
       .catch(() => { if (latest.current === mine) setView({ kind: 'unavailable' }); });
     return () => { latest.current += 1; };
-  }, [address]);
+  }, [address, refreshKey]);
   return view;
 }
 
@@ -75,7 +75,8 @@ export default function PasskeyWalletPage() {
   const [amount, setAmount] = useState('');
   const [sent, setSent] = useState<string | null>(null);
   const address = useMemo(() => (record ? passkeyRecordAddress(record) : null), [record]);
-  const balance = usePasskeyBalance(address);
+  const [balanceRead, setBalanceRead] = useState(0);
+  const balance = usePasskeyBalance(address, balanceRead);
   const chain = usePublicTestnetStats();
   const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle');
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -120,6 +121,7 @@ export default function PasskeyWalletPage() {
       const result = await submitPasskeyTransfer(body);
       setSent(result.txHash);
       setAmount('');
+      setBalanceRead(n => n + 1);
     } catch (e) { setError(describeError(e)); } finally { setBusy(false); }
   }, [record, address, to, amount, noFunds, exceeds]);
 
@@ -167,6 +169,11 @@ export default function PasskeyWalletPage() {
             <Typography sx={{ fontWeight: 600 }}>
               {balance.kind === 'loading' ? 'Loading…' : balanceText !== null ? `${balanceText} WRF` : 'Unavailable'}
             </Typography>
+            {balance.kind === 'ready' && (
+              <Typography variant="caption" component="p" sx={{ color: palette.text.secondary, m: 0 }} data-testid="passkey-balance-height">
+                Read at block {balance.height.toLocaleString('en-US')}.
+              </Typography>
+            )}
             {balance.kind === 'unavailable' && (
               <Typography variant="caption" sx={{ color: palette.text.secondary }}>
                 The balance could not be read right now. Nothing is guessed: the chain checks the amount when you send.
