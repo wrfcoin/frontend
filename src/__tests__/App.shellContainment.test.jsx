@@ -4,6 +4,10 @@
 import React from 'react';
 import { jest } from '@jest/globals';
 
+// Timing budget, not a behavior limit: measured 0.4-0.6 s per test in isolation on origin/main (2026-10-28),
+// but 6.5 s for the NotificationCenter test that timed out in a full-suite run (frontend-archive#553), over Jest's 5000 ms default.
+jest.setTimeout(30000);
+
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 function routeFixture(path, testId) {

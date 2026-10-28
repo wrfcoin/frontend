@@ -14,6 +14,10 @@ import { MemoryRouter, Routes } from 'react-router-dom';
 import weatherRoutes from '../weatherRoutes';
 import { POP_ROUTES_SERVED, POP_SUBMISSION_UNAVAILABLE } from '../../services/popRoutes';
 
+// Timing budget, not a behavior limit: measured 0.9-1.0 s for the slowest test (3.0-3.3 s on the issue's slower sample) in isolation on origin/main (2026-10-28),
+// but 5 s+ (timed out) and 9.4 s for the suite in a full-suite run (frontend-archive#553), over Jest's 5000 ms default.
+jest.setTimeout(30000);
+
 beforeEach(() => {
   global.fetch = jest.fn(async () => new Response('Not found', { status: 404 }));
   jest.spyOn(console, 'error').mockImplementation(() => {});
