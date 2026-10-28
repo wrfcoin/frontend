@@ -39,6 +39,26 @@ const LinkOutlined = () => <span className="icon">&#x1F517;</span>;
 const PlusOutlined = () => <span className="icon">&#x2795;</span>;
 
 /**
+ * Map one row of the backend's public /api/iotex/devices projection
+ * ({ id, name, type, attestationStatus, lastSeen, ... }) onto the fields this
+ * component reads. Only public fields are carried over; owner, publicKey and
+ * other private metadata are never copied even if a response includes them.
+ */
+export const normalizeDevice = row => ({
+  deviceId: row?.id ?? row?.deviceId ?? '',
+  name: row?.name ?? '',
+  deviceType: row?.type ?? row?.deviceType ?? '',
+  attestationStatus: row?.attestationStatus ?? '',
+  lastSeen: row?.lastSeen ?? null,
+});
+
+/** The list response is { success, data: [...], pagination }; accept a bare array too. */
+export const unwrapDeviceList = body => {
+  const rows = Array.isArray(body) ? body : body?.data;
+  return Array.isArray(rows) ? rows.map(normalizeDevice) : [];
+};
+
+/**
  * IoTeX Device Manager Component
  *
  * This component provides an interface for managing IoTeX device attestation,
@@ -72,7 +92,7 @@ const DeviceManager = () => {
     setLoading(true);
     try {
       const response = await axios.get('/api/iotex/devices');
-      setDevices(response.data);
+      setDevices(unwrapDeviceList(response.data));
     } catch (error) {
       console.error('Error fetching devices:', error);
       notification.error({
