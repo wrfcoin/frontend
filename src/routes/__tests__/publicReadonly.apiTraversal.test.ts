@@ -259,9 +259,9 @@ describe('Stage 1.5 API traversal', () => {
     expect(lastTargets.filter(target => !edgeAdmits(target))).toEqual([]);
   });
 
-  it('S9 allowlist admits exactly the infra#1319 send routes, and every regex is well formed', () => {
+  it('POST allowlist admits exactly the infra#1319 send route and the Wolfram reading check, and every regex is well formed', () => {
     const post = (edge as unknown as { post: Array<{ path: string; query: string[]; requiresBearer: boolean }> }).post;
-    expect(post.map(r => r.path)).toEqual(['^/api/wallet/send$']);
+    expect(post.map(r => r.path)).toEqual(['^/api/wallet/send$', '^/api/integrations/wolfram/reading-check$']);
     expect(post[0].requiresBearer).toBe(true);
     const own = '0x' + 'ab'.repeat(20);
     expect(edgeAdmits(`/api/wallet/${own}/nonce`)).toBe(true);

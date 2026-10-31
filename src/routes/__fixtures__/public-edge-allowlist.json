@@ -1,5 +1,5 @@
 {
-  "source": "infra testnet/edge/public_onboarding.caddy (public_onboarding_api), GET matchers plus the S9 send routes from infra#1319 (head 07cc748d, not yet merged); infraCommit = infra main ac481c06 for the GET set; public_balance_read from wrfcoin/infra main 3a4f3658 (@public_balance_read, infra#67); public_proof_card from the wrfcoin/infra proof-card edge PR (@public_readonly_proof_card, backend#229); public_network_nodes from wrfcoin/infra#72 (@public_readonly_network_nodes)",
+  "source": "infra testnet/edge/public_onboarding.caddy (public_onboarding_api), GET matchers plus the S9 send routes from infra#1319 (head 07cc748d, not yet merged); infraCommit = infra main ac481c06 for the GET set; public_balance_read from wrfcoin/infra main 3a4f3658 (@public_balance_read, infra#67); public_proof_card from the wrfcoin/infra proof-card edge PR (@public_readonly_proof_card, backend#229); public_network_nodes from wrfcoin/infra#72 (@public_readonly_network_nodes); wolfram_reading_check from wrfcoin/infra#74 (@wolfram_reading_check, owner ruling 2026-11-01)",
   "infraCommit": "ac481c06974e298ed17ddbbae0a3a745b6602850",
   "readonlyApi": "on",
   "note": "PUBLIC_READONLY_API=on is the Stage 1.5 edge state. `query: null` admits any query string; an array admits exactly those query strings (\"\" = none); `queryPattern` (optional) additionally admits any query matching that regex (the edge `{query}.matches(...)` expression, public_readonly_weather_leaderboard). `requiresBearer: true` marks a matcher that also requires an `Authorization: Bearer *` request header. Refresh this file whenever the edge allowlist changes.",
@@ -36,6 +36,7 @@
     { "name": "public_weather_forecast", "path": "^/api/weather/forecast/-?[0-9]{1,2}\\.[0-9],-?[0-9]{1,3}\\.[0-9]$", "query": ["type=hourly&days=1", "days=14"] }
   ],
   "post": [
-    { "name": "public_wallet_send", "path": "^/api/wallet/send$", "query": [""], "requiresBearer": true, "contentType": "application/json", "maxBytes": 4096, "gate": "PUBLIC_READONLY_API=on" }
+    { "name": "public_wallet_send", "path": "^/api/wallet/send$", "query": [""], "requiresBearer": true, "contentType": "application/json", "maxBytes": 4096, "gate": "PUBLIC_READONLY_API=on" },
+    { "name": "wolfram_reading_check", "path": "^/api/integrations/wolfram/reading-check$", "query": [""], "requiresBearer": false, "contentType": "application/json", "maxBytes": 2048, "gate": "PUBLIC_READONLY_API=on" }
   ]
 }

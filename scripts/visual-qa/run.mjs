@@ -333,6 +333,20 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    if (want('proof-card-wolfram')) {
+      const name = 'proof-card-wolfram';
+      try {
+        // A saved AppID (fixture value, never a real key) as a returning visitor's browser would hold it.
+        await loadRoute(page, `/proof/${fx.PROOF_COMMIT}`, errors);
+        await page.evaluate(() => { try { window.localStorage.setItem('wrfcoin.wolfram.appId', 'QAFIXT-0000000000'); } catch { /* storage blocked */ } });
+        await loadRoute(page, `/proof/${fx.PROOF_COMMIT}`, errors);
+        await page.getByRole('button', { name: 'Check with Wolfram|Alpha' }).click();
+        await page.getByTestId('wolfram-answer').waitFor({ timeout: 10_000 });
+        await page.getByTestId('wolfram-reading-check').scrollIntoViewIfNeeded();
+        await capture(page, errors, name, `/proof/<commit> (Wolfram check)`, suffix);
+        await page.evaluate(() => { try { window.localStorage.removeItem('wrfcoin.wolfram.appId'); } catch { /* storage blocked */ } });
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     for (const [name, mode] of [['explore-address', 'populated'], ['explore-address-off', 'off']]) {
       if (!want(name)) continue;
       try {

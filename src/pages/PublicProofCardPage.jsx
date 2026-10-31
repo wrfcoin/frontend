@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import { WrfAlert, WrfCard, WrfEmptyState } from '../components/DesignSystem';
 import { proofCardPath, proofPagePath, publicGet } from '../services/publicReadonlyApi';
 import { CopyButton, When, splitBaseUnits, useForecasterThemeVars } from './publicForecastersShared';
+import ReadingUnusualCheck from '../components/Wolfram/ReadingUnusualCheck';
 import './PublicForecastersPage.css';
 import './PublicProofCardPage.css';
 
@@ -173,6 +174,10 @@ export default function PublicProofCardPage() {
           <span>{attestationLine(card)}</span>
         </div>
       </WrfCard>
+
+      {reading ? (
+        <ReadingUnusualCheck stationAlias={card.stationAlias} observedAt={reading.observedAt} temperatureC={reading.temperatureC} />
+      ) : null}
 
       <div className="fc-grid-2 pc-grid">
         <WrfCard component="section" aria-label="Block" className="fc-section" header={<div className="fc-section-head"><h2>The block it landed in</h2></div>} noPadding>
