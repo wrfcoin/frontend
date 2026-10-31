@@ -14,6 +14,9 @@ import WebWalletSetup from '../components/wallet/WebWalletSetup';
 // @ts-ignore - WalletContext is a .jsx file
 import { useWallet } from '../contexts/WalletContext.jsx';
 import { readVault, vaultSupported, VAULT_UNSUPPORTED_MESSAGE } from '../services/walletVault.ts';
+import { registerPasskey, passkeyRpId, type PasskeyAuthenticatorChoice } from '../services/walletCrypto/passkey';
+import { loadStoredPasskey, saveStoredPasskey } from '../services/walletCrypto/passkeySend';
+import { SECURITY_KEY_UNSUPPORTED_MESSAGE, UNSUPPORTED_MESSAGE } from './passkeyMessages';
 
 interface WalletContextValue {
   isConnected: boolean;
@@ -89,23 +92,77 @@ function FaucetTermsNotice() {
   );
 }
 
+/** Headline and copy for the passkey path, exported so tests and the wallet page say the same thing. */
+export const PASSKEY_PRIMARY_TITLE = 'Create your wallet with Face ID, fingerprint or a security key';
+export const PASSKEY_PRIMARY_POINTS = [
+  'No recovery phrase is created, so there are no words to write down, store or lose.',
+  'Your wallet key is a passkey. It stays on this device or in your Apple, Google or Microsoft passkey manager, and it unlocks the same way your device does.',
+  'WRFCoin never sees the passkey, and we never ask for your email or name. The wallet is the account.',
+] as const;
+export const PASSKEY_PRIMARY_NOTE =
+  'For now this browser keeps the link to your wallet address, so come back in the same browser. There is no recovery yet if the passkey is lost: keep test-sized amounts on it.';
+export const PHRASE_ADVANCED_LABEL = 'Advanced: a wallet with a 12-word recovery phrase';
+export const PHRASE_ADVANCED_HINT =
+  'For people who want a written backup they control, or who already have 12 words. You will have to keep the words safe yourself.';
+
 /**
- * The passkey wallet as the alternative to the 12-word wallet. Only offered when the build serves
- * /wallet/passkey (FEATURES.passkeyWallet); otherwise the link would land on nothing.
+ * The passkey wallet, offered first (owner GO 2026-11-01): a new person creates it here with one tap, and the
+ * 12-word wallet moves to the Advanced section below. The click itself calls WebAuthn so the browser still
+ * sees the user's gesture; the public credential record is saved and the passkey page takes over.
+ * Only offered when the build serves /wallet/passkey (FEATURES.passkeyWallet).
  */
-function PasskeyWalletOption() {
+function PasskeyWalletPrimary() {
   const navigate = useNavigate();
+  const [existing] = useState(() => loadStoredPasskey());
+  const [busy, setBusy] = useState<false | PasskeyAuthenticatorChoice>(false);
+  const [error, setError] = useState('');
+  const create = useCallback(async (choice: PasskeyAuthenticatorChoice) => {
+    setBusy(choice); setError('');
+    try {
+      const record = await registerPasskey(passkeyRpId(window.location.hostname), 'WRFCoin passkey wallet', undefined, choice);
+      saveStoredPasskey(record);
+      console.info('[onboarding]', 'onboarding_passkey_created');
+      navigate('/wallet/passkey');
+    } catch (e) {
+      const cancelled = /NotAllowed|cancel/i.test(`${(e as { name?: string })?.name ?? ''} ${(e as Error)?.message ?? ''}`);
+      setError(cancelled ? 'The passkey prompt was closed. Nothing was created; you can try again.'
+        : choice === 'security-key' ? SECURITY_KEY_UNSUPPORTED_MESSAGE : UNSUPPORTED_MESSAGE);
+    } finally { setBusy(false); }
+  }, [navigate]);
+
   if (!FEATURES.passkeyWallet) return null;
+  if (existing) {
+    return (
+      <section data-testid="onboarding-passkey-primary" aria-label="Passkey wallet" style={{ marginBottom: 16 }}>
+        <WrfCard variant="outlined" headerTitle="You already have a passkey wallet on this device">
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            Open it to see your address and balance. No phrase or password is needed.
+          </Typography>
+          <WrfButton variant="primary" onClick={() => navigate('/wallet/passkey')} data-testid="onboarding-passkey-open">
+            Open my passkey wallet
+          </WrfButton>
+        </WrfCard>
+      </section>
+    );
+  }
   return (
-    <section data-testid="onboarding-passkey-option" aria-label="Passkey wallet" style={{ marginBottom: 16 }}>
-      <WrfCard variant="outlined" headerTitle="Or use a passkey wallet: no 12 words to write down">
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-          Your device&apos;s passkey (fingerprint, face or PIN) or a security key such as a YubiKey holds
-          the wallet. The passkey page has its own Get test coins button.
+    <section data-testid="onboarding-passkey-primary" aria-label="Passkey wallet" style={{ marginBottom: 16 }}>
+      <WrfCard variant="outlined" headerTitle={PASSKEY_PRIMARY_TITLE}>
+        <Box component="ul" sx={{ m: 0, mb: 1.5, pl: 2.5 }}>
+          {PASSKEY_PRIMARY_POINTS.map(point => <li key={point}><Typography variant="body2" component="span">{point}</Typography></li>)}
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', mb: 1.5 }}>
+          <WrfButton variant="primary" onClick={() => void create('any')} disabled={busy !== false} data-testid="onboarding-passkey-create">
+            {busy === 'any' ? 'Waiting for your device…' : 'Create with Face ID or fingerprint'}
+          </WrfButton>
+          <WrfButton variant="outline" onClick={() => void create('security-key')} disabled={busy !== false} data-testid="onboarding-passkey-create-security-key">
+            {busy === 'security-key' ? 'Touch your security key…' : 'Use a security key (YubiKey)'}
+          </WrfButton>
+        </Box>
+        <Typography variant="body2" color="text.secondary" data-testid="onboarding-passkey-note">
+          {PASSKEY_PRIMARY_NOTE} The passkey page has its own Get test coins button.
         </Typography>
-        <WrfButton variant="outline" onClick={() => navigate('/wallet/passkey')}>
-          Use a passkey wallet instead
-        </WrfButton>
+        {error && <WrfAlert severity="error" sx={{ mt: 1.5 }}>{error}</WrfAlert>}
       </WrfCard>
     </section>
   );
@@ -912,6 +969,9 @@ export default function OnboardingPage() {
 
   const { isConnected, account, chainId } = useWallet();
   const [webWalletReady, setWebWalletReady] = useState(false);
+  // The 12-word wallet is Advanced when the passkey wallet is served; open at once if this browser holds one.
+  const [phraseOpen, setPhraseOpen] = useState(() => !FEATURES.passkeyWallet || Boolean(readSavedVaultAddress()));
+  const walletStep = (isPublicBuild() && !webWalletReady) || currentStep === 0;
 
   // --- Auto-advance: if wallet already connected on mount, skip step 0 ---
   const [autoAdvanced, setAutoAdvanced] = useState(false);
@@ -1004,16 +1064,37 @@ export default function OnboardingPage() {
         ))}
       </Stepper>
 
-      {/* Before a wallet exists: the faucet's terms, and the passkey wallet as the alternative. */}
-      {((isPublicBuild() && !webWalletReady) || currentStep === 0) && (
+      {/* Before a wallet exists: the passkey wallet first (owner 2026-11-01), then the faucet's terms. */}
+      {walletStep && (
         <>
+          <PasskeyWalletPrimary />
           <FaucetTermsNotice />
-          <PasskeyWalletOption />
         </>
       )}
 
-      {/* Step content */}
-      <Box sx={{ mt: 2 }}>{renderStepContent()}</Box>
+      {/* Step content. With the passkey wallet on, the 12-word wallet is the Advanced path; it starts open
+          only when this browser already holds one (so its owner can unlock it without hunting). */}
+      {walletStep && FEATURES.passkeyWallet ? (
+        <Box sx={{ mt: 2 }} data-testid="onboarding-phrase-advanced">
+          <WrfButton
+            variant="ghost"
+            onClick={() => setPhraseOpen(open => !open)}
+            endIcon={phraseOpen ? <ExpandLess /> : <ExpandMore />}
+            fullWidth
+            sx={{ justifyContent: 'space-between' }}
+            aria-expanded={phraseOpen}
+            data-testid="onboarding-phrase-toggle"
+          >
+            {PHRASE_ADVANCED_LABEL}
+          </WrfButton>
+          <Collapse in={phraseOpen}>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>{PHRASE_ADVANCED_HINT}</Typography>
+            {phraseOpen && renderStepContent()}
+          </Collapse>
+        </Box>
+      ) : (
+        <Box sx={{ mt: 2 }}>{renderStepContent()}</Box>
+      )}
     </Box>
   );
 }

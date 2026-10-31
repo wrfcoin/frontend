@@ -151,7 +151,12 @@ async function dismissBanner(page) {
 }
 async function createWallet(page, errors) {
   await loadRoute(page, '/onboarding', errors);
-  await page.getByRole('button', { name: 'Create New Wallet' }).click();
+  // With the passkey wallet on, the 12-word wallet sits behind the Advanced toggle (owner 2026-11-01).
+  const advanced = page.getByRole('button', { name: /^Advanced: a wallet with a 12-word recovery phrase/ });
+  const createNew = page.getByRole('button', { name: 'Create New Wallet' });
+  await advanced.or(createNew).first().waitFor({ timeout: 30_000 });
+  if (await advanced.count() && !(await createNew.count())) await advanced.click();
+  await createNew.click();
   await page.getByLabel('Browser password', { exact: true }).fill('qa-password-123');
   await page.getByLabel('Confirm browser password', { exact: true }).fill('qa-password-123');
   await page.getByRole('button', { name: 'Generate Recovery Words' }).click();
@@ -325,10 +330,28 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
-    if (want('wallet-unlocked') || want('connect-station-unlocked') || want('wallet-send-review')) {
+    if (want('onboarding-advanced')) {
+      try {
+        await loadRoute(page, '/onboarding', errors);
+        const advanced = page.getByRole('button', { name: /^Advanced: a wallet with a 12-word recovery phrase/ });
+        await advanced.waitFor({ timeout: 30_000 }).catch(() => undefined);
+        if (await advanced.count()) await advanced.click();
+        await page.waitForTimeout(800);
+        await capture(page, errors, 'onboarding-advanced', '/onboarding (Advanced open)', suffix);
+      } catch (e) { console.log('FAIL onboarding-advanced', suffix, String(e).slice(0, 160)); report.push({ name: 'onboarding-advanced', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
+    if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review')) {
       try {
         await createWallet(page, errors);
         if (want('wallet-unlocked')) { await goClientSide(page, '/wallet'); await page.getByText('Recent activity').first().waitFor({ timeout: 20_000 }).catch(() => undefined); await capture(page, errors, 'wallet-unlocked', '/wallet', suffix); }
+        if (want('wallet-backup-warning')) {
+          await goClientSide(page, '/wallet');
+          await page.getByRole('button', { name: 'Back up recovery phrase' }).click();
+          await page.waitForTimeout(800);
+          await capture(page, errors, 'wallet-backup-warning', '/wallet (backup warning)', suffix);
+          await page.keyboard.press('Escape');
+          await page.waitForTimeout(500);
+        }
         if (want('connect-station-unlocked')) {
           await goClientSide(page, '/connect-station');
           await capture(page, errors, 'connect-station-unlocked', '/connect-station', suffix);

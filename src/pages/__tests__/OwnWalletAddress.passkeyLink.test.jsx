@@ -18,7 +18,7 @@ await jest.unstable_mockModule('../../contexts/WalletContext.jsx', () => ({
   useWallet: () => ({ account: null, activeProvider: null, isConnected: false, receiveOnly: false }),
 }));
 await jest.unstable_mockModule('../../components/wallet/WalletEarningsPanel', () => ({ default: () => null }));
-const { default: OwnWalletAddress, PASSKEY_PROMPT, PASSKEY_LINK_LABEL, PASSKEY_WALLET_PATH } = await import('../OwnWalletAddress');
+const { default: OwnWalletAddress, PASSKEY_PROMPT, PASSKEY_LINK_LABEL, PASSKEY_WALLET_PATH, PASSKEY_LOCKED_TITLE, PASSKEY_LOCKED_DESCRIPTION } = await import('../OwnWalletAddress');
 
 const mount = () => render(
   <MemoryRouter initialEntries={['/wallet']}>
@@ -32,24 +32,23 @@ const mount = () => render(
 beforeEach(() => { passkeyOn = false; });
 afterEach(cleanup);
 
-describe('wallet page link to the passkey wallet', () => {
-  it('flag on: a link "Use a passkey wallet" to /wallet/passkey, after "Prefer no 12 words?"', () => {
+describe('wallet page and the passkey wallet', () => {
+  it('flag on, locked: the passkey wallet is the first choice and the 12-word wallet is Advanced', () => {
     passkeyOn = true;
     mount();
-    expect(screen.getByTestId('wallet-passkey-link').textContent).toContain(PASSKEY_PROMPT);
-    expect(PASSKEY_PROMPT).toBe('Prefer no 12 words?');
-    const link = screen.getByRole('link', { name: PASSKEY_LINK_LABEL });
-    expect(link.getAttribute('href')).toBe('/wallet/passkey');
-    expect(PASSKEY_WALLET_PATH).toBe('/wallet/passkey');
-    fireEvent.click(link);
+    const panel = screen.getByTestId('wallet-locked-passkey-first');
+    expect(screen.getByText(PASSKEY_LOCKED_TITLE)).toBeTruthy();
+    expect(PASSKEY_LOCKED_DESCRIPTION).toContain('no recovery phrase to write down');
+    const buttons = Array.from(panel.querySelectorAll('button')).map(b => b.textContent);
+    expect(buttons[0]).toContain('Create with Face ID or fingerprint');
+    expect(buttons).toContain('Advanced: 12-word wallet');
+    // No vault in this browser: no unlock button, and nothing offers to import a phrase.
+    expect(buttons).not.toContain('Unlock 12-word wallet');
+    expect(screen.queryByText('Import recovery phrase')).toBeNull();
+    // The "Prefer no 12 words?" row is for an unlocked phrase wallet; locked, the panel already leads with passkeys.
+    expect(screen.queryByTestId('wallet-passkey-link')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Create with Face ID or fingerprint/ }));
     expect(screen.getByText('passkey page')).toBeTruthy();
-  });
-
-  it('flag on: a modified click (new tab) is left to the browser', () => {
-    passkeyOn = true;
-    mount();
-    fireEvent.click(screen.getByRole('link', { name: PASSKEY_LINK_LABEL }), { ctrlKey: true });
-    expect(screen.queryByText('passkey page')).toBeNull();
   });
 
   it('flag off: no passkey link at all', () => {
@@ -57,5 +56,7 @@ describe('wallet page link to the passkey wallet', () => {
     expect(screen.queryByTestId('wallet-passkey-link')).toBeNull();
     expect(screen.queryByRole('link', { name: PASSKEY_LINK_LABEL })).toBeNull();
     expect(screen.getByText('Create, import or unlock your wallet')).toBeTruthy();
+    expect(PASSKEY_PROMPT).toBe('Prefer no 12 words?');
+    expect(PASSKEY_WALLET_PATH).toBe('/wallet/passkey');
   });
 });

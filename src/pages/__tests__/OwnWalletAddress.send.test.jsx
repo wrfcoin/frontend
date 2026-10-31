@@ -53,3 +53,16 @@ it('Send off (kill switch) hides Send but keeps the address (Receive) visible', 
   expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   expect(screen.getByLabelText('Your WRFCoin address').textContent).toBe(address);
 });
+
+it('the recovery phrase is a cold backup: offered only to the unlocked owner of this browser\'s vault', () => {
+  mount();
+  expect(screen.getByRole('button', { name: 'Back up recovery phrase' })).toBeTruthy();
+  cleanup();
+  vault = { address: '0x' + '2'.repeat(40) };
+  mount();
+  expect(screen.queryByRole('button', { name: 'Back up recovery phrase' })).toBeNull();
+  cleanup();
+  identity = null;
+  mount();
+  expect(screen.queryByRole('button', { name: 'Back up recovery phrase' })).toBeNull();
+});

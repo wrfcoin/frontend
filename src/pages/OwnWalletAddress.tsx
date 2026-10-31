@@ -13,6 +13,8 @@ import { walletProviderManager } from '../services/walletProviders/WalletProvide
 import PhoneStationStatusCard from '../components/wallet/PhoneStationStatusCard';
 import WalletEarningsPanel from '../components/wallet/WalletEarningsPanel';
 import VaultSend from '../components/wallet/VaultSend';
+import RecoveryPhraseBackup from '../components/wallet/RecoveryPhraseBackup';
+import { loadStoredPasskey } from '../services/walletCrypto/passkeySend';
 import { readVault } from '../services/walletVault';
 import { FEATURES } from '../config/features';
 import { recipientStatus } from '../services/walletCrypto/recipientStatus';
@@ -36,6 +38,10 @@ export const PASSKEY_PROMPT = 'Prefer no 12 words?';
 export const PASSKEY_LINK_LABEL = 'Use a passkey wallet';
 export const LOCKED_DESCRIPTION =
   'Your wallet lives in this browser. Unlock it with your password, or create or import one to see your address and activity.';
+/** With the passkey wallet served, it is the first choice and the 12-word wallet is Advanced (owner 2026-11-01). */
+export const PASSKEY_LOCKED_TITLE = 'Open or create your wallet';
+export const PASSKEY_LOCKED_DESCRIPTION =
+  'Create one with Face ID, fingerprint or a security key: no recovery phrase to write down, no email, no password. A 12-word wallet saved in this browser opens with its browser password, never with the words.';
 
 /** Only the first-party signing account can supply this page's address. */
 export default function OwnWalletAddress() {
@@ -58,6 +64,10 @@ export default function OwnWalletAddress() {
     navigate(PASSKEY_WALLET_PATH);
   }, [navigate]);
   const [copied, setCopied] = useState(false);
+  // Read once per mount: public material only (the passkey pointer) and whether a 12-word vault exists.
+  const [hasPasskey] = useState(() => Boolean(FEATURES.passkeyWallet && loadStoredPasskey()));
+  const hasVault = Boolean(readVault());
+  const ownsVault = Boolean(ownerAddress && readVault()?.address.toLowerCase() === ownerAddress.toLowerCase());
   // Exact base units the earnings panel last read for this owner; null = unknown (Send then does not gate).
   const [availableUnits, setAvailableUnits] = useState<string | null>(null);
   const copyAddress = useCallback(async () => {
@@ -102,14 +112,16 @@ export default function OwnWalletAddress() {
             <WrfButton variant="outline" size="md" startIcon={<QrCode2Icon fontSize="small" />} onClick={showReceive}>
               Receive
             </WrfButton>
-            {FEATURES.walletSend && readVault()?.address.toLowerCase() === ownerAddress.toLowerCase()
+            {FEATURES.walletSend && ownsVault
               && <VaultSend key={ownerAddress} address={ownerAddress} availableUnits={availableUnits} />}
+            {/* The words are a cold backup: never needed to sign in or send, shown only behind a warning. */}
+            {ownsVault && <RecoveryPhraseBackup key={`backup-${ownerAddress}`} address={ownerAddress} />}
           </Box>
         )}
       </Box>
 
       {/* Only in a build with the passkey flag on, where /wallet/passkey is a route. */}
-      {FEATURES.passkeyWallet && (
+      {FEATURES.passkeyWallet && ownerAddress && (
         <Box data-testid="wallet-passkey-link" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 2 }}>
           <Typography sx={{ color: palette.text.secondary }}>{PASSKEY_PROMPT}</Typography>
           <WrfButton variant="outline" size="sm" startIcon={<FingerprintIcon fontSize="small" />} href={PASSKEY_WALLET_PATH} onClick={openPasskey}>
@@ -130,12 +142,27 @@ export default function OwnWalletAddress() {
           }}
           data-testid="wallet-locked"
         >
-          <WrfEmptyState icon={LockOutlinedIcon} title={LOCKED_TITLE} description={LOCKED_DESCRIPTION} sx={{ pb: 3, background: 'transparent' }} />
-          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', justifyContent: 'center', pt: 0, pb: 5, px: 3 }}>
-            <WrfButton variant="primary" onClick={openSetup}>Unlock wallet</WrfButton>
-            <WrfButton variant="outline" onClick={openSetup}>Create new wallet</WrfButton>
-            <WrfButton variant="outline" onClick={openSetup}>Import recovery phrase</WrfButton>
-          </Box>
+          <WrfEmptyState
+            icon={FEATURES.passkeyWallet ? FingerprintIcon : LockOutlinedIcon}
+            title={FEATURES.passkeyWallet ? PASSKEY_LOCKED_TITLE : LOCKED_TITLE}
+            description={FEATURES.passkeyWallet ? PASSKEY_LOCKED_DESCRIPTION : LOCKED_DESCRIPTION}
+            sx={{ pb: 3, background: 'transparent' }}
+          />
+          {FEATURES.passkeyWallet ? (
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', justifyContent: 'center', pt: 0, pb: 5, px: 3 }} data-testid="wallet-locked-passkey-first">
+              <WrfButton variant="primary" startIcon={<FingerprintIcon fontSize="small" />} onClick={() => navigate(PASSKEY_WALLET_PATH)}>
+                {hasPasskey ? 'Open my passkey wallet' : 'Create with Face ID or fingerprint'}
+              </WrfButton>
+              {hasVault && <WrfButton variant="outline" onClick={openSetup}>Unlock 12-word wallet</WrfButton>}
+              <WrfButton variant="ghost" onClick={openSetup}>Advanced: 12-word wallet</WrfButton>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', justifyContent: 'center', pt: 0, pb: 5, px: 3 }}>
+              <WrfButton variant="primary" onClick={openSetup}>Unlock wallet</WrfButton>
+              <WrfButton variant="outline" onClick={openSetup}>Create new wallet</WrfButton>
+              <WrfButton variant="outline" onClick={openSetup}>Import recovery phrase</WrfButton>
+            </Box>
+          )}
         </Box>
       )}
 
