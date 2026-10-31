@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryClient';
 import {
+  calibrationService,
   earningsService,
   weatherService,
   type EarningsSummary,
@@ -12,6 +13,7 @@ import {
 } from '../../services/apiClient';
 import type { WeatherStationSnapshot } from '../../lib/weatherViewModels';
 import { STATION_OBSERVATIONS_NOT_LIVE, STATION_QUALITY_NOT_LIVE } from '../../services/apiClient/weatherService';
+import ApiError from '../../utils/apiError';
 
 // "No live quality score yet" is the backend's answer, not a transport
 // failure: retrying it only spends the public edge's per-IP read budget.
@@ -125,5 +127,26 @@ export function useSubmissionLog(stationId: string | undefined) {
     },
     enabled: Boolean(stationId),
     staleTime: 30_000,
+  });
+}
+
+/**
+ * Calibration certificate status for one station (backend calibration-certificate-routes.ts). A 404
+ * means the feature is off on this network: not retried, and the page shows nothing for it.
+ */
+export function retryStationCalibration(failureCount: number, error: unknown): boolean {
+  // Only a server or network failure is worth one more try; 404 (feature off), other 4xx and a body
+  // this app cannot read are answers, and retrying them only spends the edge's per-IP read budget.
+  if (!(error instanceof ApiError)) return false;
+  return (error.status === 0 || error.status >= 500) && failureCount < 1;
+}
+
+export function useStationCalibration(stationId: string | undefined) {
+  return useQuery({
+    queryKey: ['weather', 'calibration', stationId ?? ''] as const,
+    queryFn: () => calibrationService.getStationCalibration(stationId as string),
+    enabled: Boolean(stationId),
+    retry: retryStationCalibration,
+    staleTime: 60_000,
   });
 }

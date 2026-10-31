@@ -1,6 +1,6 @@
 {
-  "backendCommit": "dbd7cdf579fcc94609bcbabf6129b731e53827bf",
-  "backendShortSha": "dbd7cdf579fc",
+  "backendCommit": "ec43ab8e9e74618c23dfa871f5d59853cc4aadd5",
+  "backendShortSha": "ec43ab8e9e74",
   "sourcePath": "server/enhanced_unified_api_optimized.ts",
   "families": [
     "achievement",
@@ -10,8 +10,10 @@
     "bridges",
     "build",
     "cache",
+    "calibration-certificates",
     "capabilities",
     "chain",
+    "competitions",
     "cross-chain",
     "dashboard",
     "defi",
@@ -26,6 +28,7 @@
     "health",
     "icp",
     "ingestion",
+    "integrations",
     "integrity",
     "iotex",
     "keys",
@@ -34,14 +37,17 @@
     "mining",
     "modules",
     "n8n",
+    "network",
     "nft",
     "node-control",
     "node-os",
+    "notifications",
     "onboarding",
     "operators",
     "oracle",
     "performance",
     "privacy",
+    "proofs",
     "public",
     "pythia",
     "quality",
@@ -68,5 +74,5 @@
     "wallet-auth",
     "weather"
   ],
-  "checksum": "a9de0233b28b629ad7af38feed0a82b3c82bcb98f97bb32188a7e337018058e9"
+  "checksum": "6958964412dd43220e5138b87dca03bc465d0632dea7747bb64bb7301be66811"
 }

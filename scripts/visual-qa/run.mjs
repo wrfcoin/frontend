@@ -367,6 +367,17 @@ async function runViewport(browser, vp, tall, theme) {
         await page.evaluate(() => { try { window.localStorage.removeItem('wrfcoin.wolfram.appId'); } catch { /* storage blocked */ } });
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    for (const [name, mode] of [['station-detail-calibration-revoked', 'revoked'], ['station-detail-calibration-off', 'off']]) {
+      if (!want(name)) continue;
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { calibration: mode });
+        await loadRoute(page, '/weather/station/st-0', errors);
+        await capture(page, errors, name, `/weather/station/st-0 (calibration ${mode})`, suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     for (const [name, mode] of [['explore-address', 'populated'], ['explore-address-off', 'off']]) {
       if (!want(name)) continue;
       try {
