@@ -7,8 +7,8 @@
       "kind": "git",
       "repo": "wrfcoin/core4",
       "url": "https://github.com/wrfcoin/core4",
-      "tag": null,
-      "commit": null,
+      "tag": "v888-h3000",
+      "commit": "de9d0d268e1a914109444c1d49b2dcfffe896d80",
       "published": true
     },
     {
@@ -25,8 +25,8 @@
       "kind": "git",
       "repo": "wrfcoin/core4",
       "url": "https://github.com/wrfcoin/core4",
-      "tag": null,
-      "commit": null,
+      "tag": "v888-h3000",
+      "commit": "de9d0d268e1a914109444c1d49b2dcfffe896d80",
       "published": true
     },
     {
@@ -42,11 +42,11 @@
       "id": "node-windows-x86_64",
       "kind": "file",
       "repo": "wrfcoin/core4",
-      "url": "https://github.com/wrfcoin/core4/releases/download/v888-windows-preview-2/wrfcoin-node-0.1.0-g68f6d291-windows-x86_64-setup.exe",
-      "size": 8279046,
-      "sha256": "1d358de726770a02c85c63a9c362a94f41de1a57bc3ce3fd07284f70a45be416",
-      "tag": "v888-windows-preview-2",
-      "commit": "68f6d291af7b0d680256386a5870737e81491d5c",
+      "url": "https://github.com/wrfcoin/core4/releases/download/v888-windows-preview-3/wrfcoin-node-0.3.0-g0c6e0fbb-windows-x86_64-setup.exe",
+      "size": 11052313,
+      "sha256": "9ae02d6d3f058b140fd84ffbaa26f6a0f1b76a20bb4921ebd70f4468226c1d4e",
+      "tag": "v888-windows-preview-3",
+      "commit": "0c6e0fbba667d329ddd07b4057c27f4e01a77e9c",
       "signedBy": null,
       "published": true
     }
