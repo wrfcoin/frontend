@@ -221,6 +221,9 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * (the 404 while NETWORK_NODES_READ_ENABLED is not true).
  * `options.competitions`: 'populated' (default), 'empty' (a new week, no points
  * yet) or 'unavailable' (the 503 while the index or the competition flag is off).
+ * `options.sessionKeys`: 'off' (default: feature_active false, as on chain 888 today) or 'on'.
+ * With 'on', a device registered through POST /api/wallet/session-keys is listed back as an active
+ * key with that grant's limits (2.5 WRF already used today), so the setup flow can be driven for real.
  */
 export async function installRoutes(page, fx, options = {}) {
   const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
@@ -232,6 +235,8 @@ export async function installRoutes(page, fx, options = {}) {
   const proofCardMode = options.proofCard || 'populated';
   const networkNodesMode = options.networkNodes || 'populated';
   const competitionsMode = options.competitions || 'populated';
+  const sessionKeysMode = options.sessionKeys || 'off';
+  fx.sessionKeyRecords ??= new Map();
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -251,6 +256,28 @@ export async function installRoutes(page, fx, options = {}) {
     if (p === '/api/governance/treasury') return json(route, fx.TREASURY);
     if (/^\/api\/weather\/current\//.test(p)) return json(route, fx.CURRENT);
     if (/^\/api\/weather\/forecast\//.test(p)) return json(route, { forecast: { periods: url.search.includes('hourly') ? fx.hourly : fx.daily } });
+    if ((m = /^\/api\/wallet\/(0x[0-9a-fA-F]{40})\/session-keys$/.exec(p))) {
+      const owner = m[1].toLowerCase();
+      return json(route, { success: true, data: { owner, feature_active: sessionKeysMode === 'on', next_height: 48913, next_registration_nonce: (fx.sessionKeyRecords.get(owner) || []).length, chain_id: '777', session_keys: sessionKeysMode === 'on' ? (fx.sessionKeyRecords.get(owner) || []) : [] } });
+    }
+    if (p === '/api/wallet/session-keys' && req.method() === 'POST') {
+      if (sessionKeysMode !== 'on') return json(route, { ok: false, error: { code: 'FEATURE_NOT_ACTIVE', message: 'session_keys is not active' } }, 503);
+      const action = JSON.parse(req.postData() || '{}').action || {};
+      const reg = action.Register;
+      if (reg) {
+        const owner = `0x${reg.owner.map(b => b.toString(16).padStart(2, '0')).join('')}`;
+        const g = reg.grant; const sc = g.scope;
+        const any = sc.allowed_targets.some(t => t.every(b => b === 255));
+        const used = 250_000_000;
+        const record = { session_key: `0x${hex(40)}`, public_key: g.public_key, registration_nonce: reg.registration_nonce, status: 'active', allowed_methods: sc.allowed_methods, any_target: any,
+          allowed_targets: any ? [] : sc.allowed_targets.map(t => `0x${t.map(b => b.toString(16).padStart(2, '0')).join('')}`),
+          max_value_per_use: String(sc.max_value_per_use), max_total_value: String(sc.max_total_value), total_remaining: String(sc.max_total_value - used),
+          window: sc.window ? { blocks: sc.window.blocks, max_value: String(sc.window.max_value), remaining: String(sc.window.max_value - used), window_ends_at_height: g.valid_from + sc.window.blocks - 1 } : null,
+          valid_from: g.valid_from, valid_until: g.valid_until, max_uses: g.max_uses, uses_so_far: 1, cumulative_value_used: String(used), revoked: false };
+        fx.sessionKeyRecords.set(owner, [record]);
+      }
+      return json(route, { hash: `0x${hex(64)}`, action: reg ? 'register' : 'revoke', status: 'submitted', settled: false }, 202);
+    }
     if ((m = /\/wallet\/(0x[0-9a-fA-F]{40})$/.exec(p))) return json(route, fx.wallet(m[1].toLowerCase()).balance);
     if ((m = /\/wallet\/(0x[0-9a-fA-F]{40})\/transactions$/.exec(p))) return json(route, fx.wallet(m[1].toLowerCase()).history);
     if ((m = /\/(0x[0-9a-fA-F]{40})\/nonce$/.exec(p))) return json(route, fx.wallet(m[1].toLowerCase()).nonce);

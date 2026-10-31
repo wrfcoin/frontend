@@ -5,6 +5,7 @@ import { sha3_256 } from '@noble/hashes/sha3.js';
 import {
   ED25519_WALLET_LOGIN_DOMAIN,
   assertEd25519LoginChallenge,
+  assertSessionKeyLoginChallenge,
   resolveEd25519LoginExpectations,
   type Ed25519LoginExpectations,
 } from './walletCrypto/loginChallenge';
@@ -22,7 +23,7 @@ export interface WalletLoginResponse {
 
 export type WalletSignMessage = (message: string) => Promise<string> | string;
 
-export type WalletLoginScheme = 'evm' | 'ed25519';
+export type WalletLoginScheme = 'evm' | 'ed25519' | 'session_key';
 
 export { ED25519_WALLET_LOGIN_DOMAIN };
 
@@ -160,7 +161,20 @@ export class WalletAuthService {
   async requestNonce(
     address: string,
     scheme: WalletLoginScheme = 'evm',
+    sessionPublicKey?: string,
   ): Promise<WalletLoginChallenge> {
+    if (scheme === 'session_key') {
+      const owner = normalizeEvmAddress(address).toLowerCase();
+      const key = stripHexPrefix(readRequiredString(sessionPublicKey, 'session public key')).toLowerCase();
+      const response = await this.client.get<NonceResponse>(
+        `/auth/nonce/${encodeURIComponent(owner)}?scheme=session_key&session_public_key=${encodeURIComponent(key)}`,
+      );
+      return {
+        nonce: readRequiredString(response?.nonce, 'nonce'),
+        message: readRequiredString(response?.message, 'message'),
+        scheme: typeof response?.scheme === 'string' ? response.scheme : undefined,
+      };
+    }
     const isEd25519 = scheme === 'ed25519';
     // ed25519 chain addresses carry no EIP-55 checksum; the backend binds the
     // challenge and the JWT sub to the lowercase address.
@@ -189,7 +203,7 @@ export class WalletAuthService {
     scheme?: WalletLoginScheme;
     pubkey?: string;
   }): Promise<WalletLoginResponse> {
-    const isEd25519 = params.scheme === 'ed25519';
+    const isEd25519 = params.scheme === 'ed25519' || params.scheme === 'session_key';
     const address = isEd25519
       ? normalizeEvmAddress(params.address).toLowerCase()
       : normalizeEvmAddress(params.address);
@@ -199,7 +213,7 @@ export class WalletAuthService {
     // The EVM body is unchanged byte for byte; ed25519 adds scheme + pubkey.
     const body = isEd25519
       ? {
-        scheme: 'ed25519' as const,
+        scheme: params.scheme,
         address,
         pubkey: readRequiredString(params.pubkey, 'pubkey'),
         signature,
@@ -263,6 +277,43 @@ export class WalletAuthService {
       address: normalizedAddress,
       pubkey,
       signature,
+      nonce: challenge.nonce,
+    });
+  }
+
+  /**
+   * Sign in for `ownerAddress` with a device session key, without the
+   * recovery phrase. The device key signs only a validated session_key login
+   * challenge that names this owner, this origin/chain/network and this exact
+   * device key. The backend then requires the node to list the key as active
+   * with wallet_login; the JWT subject is the owner address.
+   */
+  async loginWithSessionKey(
+    ownerAddress: string,
+    sessionPublicKeyHex: string,
+    sign: (message: Uint8Array) => Promise<Uint8Array> | Uint8Array,
+    expectations?: Omit<Ed25519LoginExpectations, 'address'>,
+  ): Promise<WalletLoginResponse> {
+    const owner = normalizeEvmAddress(ownerAddress).toLowerCase();
+    const sessionPublicKey = stripHexPrefix(readRequiredString(sessionPublicKeyHex, 'pubkey')).toLowerCase();
+    const expected = expectations
+      ? { ...expectations, address: owner }
+      : resolveEd25519LoginExpectations(owner);
+    const challenge = await this.requestNonce(owner, 'session_key', sessionPublicKey);
+    if (challenge.scheme !== 'session_key') {
+      throw new Error('Wallet login challenge is not a session_key challenge.');
+    }
+    const message = assertSessionKeyLoginChallenge(challenge.message, {
+      ...expected,
+      nonce: challenge.nonce,
+      sessionPublicKey,
+    });
+    const signature = await sign(new TextEncoder().encode(message));
+    return this.loginWithSignature({
+      scheme: 'session_key',
+      address: owner,
+      pubkey: sessionPublicKey,
+      signature: Array.from(signature, b => b.toString(16).padStart(2, '0')).join(''),
       nonce: challenge.nonce,
     });
   }

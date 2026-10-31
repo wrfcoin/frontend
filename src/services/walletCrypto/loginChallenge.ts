@@ -181,3 +181,63 @@ export function assertEd25519LoginChallenge(
 
   return message;
 }
+
+/**
+ * Device session-key sign-in (backend buildSessionKeyWalletLoginMessage).
+ * The ed25519 challenge's fields for the OWNER's address under its own domain
+ * tag, plus a `Session Key:` line naming the device key:
+ *   wrfcoin_wallet_login_session_key_v1
+ *   <host> wants you to sign in with your WRFCoin account using a device key:
+ *   <lowercase owner address>
+ *   (blank) / Sign in to WRFCoin Testnet. / (blank)
+ *   URI, Version: 1, Scheme: session_key, Chain ID, Network,
+ *   Session Key: <device public key hex>, Nonce, Issued At, Expiration Time
+ * The device key signs nothing else through this path.
+ */
+export const SESSION_KEY_WALLET_LOGIN_DOMAIN = 'wrfcoin_wallet_login_session_key_v1';
+
+export function assertSessionKeyLoginChallenge(
+  message: unknown,
+  expected: Ed25519LoginExpectations & { sessionPublicKey: string },
+): string {
+  if (typeof message !== 'string') refuse('challenge is not text');
+  if (!message.startsWith(`${SESSION_KEY_WALLET_LOGIN_DOMAIN}\n`)) {
+    refuse(`challenge does not start with ${SESSION_KEY_WALLET_LOGIN_DOMAIN}`);
+  }
+  const address = String(expected.address).trim().toLowerCase();
+  if (!/^0x[0-9a-f]{40}$/.test(address)) refuse('expected address is not a chain address');
+  const sessionKey = String(expected.sessionPublicKey).trim().toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(sessionKey)) refuse('expected session key is not a 32-byte key');
+  const origin = normalizeOrigin(expected.origin);
+  const host = new URL(origin).host;
+  const lines = message.split('\n');
+  if (lines.length !== 15) refuse('challenge does not have the expected shape');
+  const [domain, statement, addressLine, blank1, purpose, blank2, uri, version, scheme,
+    chainLine, networkLine, sessionLine, nonceLine, issuedLine, expiryLine] = lines;
+  if (domain !== SESSION_KEY_WALLET_LOGIN_DOMAIN) refuse('wrong domain line');
+  if (statement !== `${host} wants you to sign in with your WRFCoin account using a device key:`) {
+    refuse('challenge names a different relying party');
+  }
+  if (addressLine !== address) refuse('challenge is for a different address');
+  if (blank1 !== '' || blank2 !== '' || purpose !== 'Sign in to WRFCoin Testnet.') {
+    refuse('challenge does not have the expected shape');
+  }
+  if (uri !== `URI: ${origin}`) refuse('challenge names a different origin');
+  if (version !== 'Version: 1') refuse('unsupported challenge version');
+  if (scheme !== 'Scheme: session_key') refuse('challenge is not for the session_key scheme');
+  if (chainLine !== `Chain ID: ${expected.chainId}`) refuse('challenge names a different chain');
+  if (networkLine !== `Network: ${expected.network}`) refuse('challenge names a different network');
+  if (sessionLine !== `Session Key: ${sessionKey}`) refuse('challenge names a different device key');
+  const nonceMatch = /^Nonce: ([A-Za-z0-9_-]{8,128})$/.exec(nonceLine);
+  if (!nonceMatch) refuse('challenge nonce is malformed');
+  if (expected.nonce !== undefined && nonceMatch[1] !== expected.nonce) {
+    refuse('challenge nonce does not match the issued nonce');
+  }
+  const issued = /^Issued At: (.+)$/.exec(issuedLine)?.[1] ?? '';
+  const expiry = /^Expiration Time: (.+)$/.exec(expiryLine)?.[1] ?? '';
+  if (!ISO_8601.test(issued) || !ISO_8601.test(expiry) || Date.parse(expiry) <= Date.parse(issued)) {
+    refuse('challenge times are malformed');
+  }
+  if (Date.parse(expiry) <= (expected.nowMs ?? Date.now())) refuse('challenge has expired');
+  return message;
+}

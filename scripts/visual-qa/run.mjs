@@ -481,6 +481,54 @@ async function runViewport(browser, vp, tall, theme) {
         report.push({ name: 'wallet-unlocked', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] });
       }
     }
+    const deviceScenarios = ['wallet-device-off', 'wallet-device-setup', 'wallet-device-on', 'wallet-send-device', 'wallet-send-over-limit'];
+    if (deviceScenarios.some(want)) {
+      // Runs last: it creates its own wallet in this context.
+      // Session keys ("This device"): off as on chain 888 today, then on, driving the real setup.
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { sessionKeys: 'off' });
+        await createWallet(page, errors);
+        await goClientSide(page, '/wallet');
+        const card = page.getByTestId('device-key-card');
+        const showCard = async () => { await card.waitFor({ timeout: 20_000 }); await card.scrollIntoViewIfNeeded(); await page.waitForTimeout(300); };
+        if (want('wallet-device-off')) {
+          await page.getByText('Device keys turn on when the network enables them.').waitFor({ timeout: 20_000 });
+          await showCard();
+          await capture(page, errors, 'wallet-device-off', '/wallet (This device, session keys off)', suffix);
+        }
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { sessionKeys: 'on' });
+        await card.getByRole('button', { name: 'Refresh' }).click();
+        await card.getByRole('button', { name: 'Set up this device' }).click();
+        await card.getByLabel('Wallet password').waitFor({ timeout: 10_000 });
+        await showCard();
+        if (want('wallet-device-setup')) await capture(page, errors, 'wallet-device-setup', '/wallet (Set up this device)', suffix);
+        await card.getByLabel('Wallet password').fill('qa-password-123');
+        await card.getByRole('button', { name: 'Set up', exact: true }).click();
+        await card.getByText('Small sends from this browser need no password.').waitFor({ timeout: 60_000 });
+        await showCard();
+        if (want('wallet-device-on')) await capture(page, errors, 'wallet-device-on', '/wallet (This device set up)', suffix);
+        for (const [name, amount, waitFor] of [['wallet-send-device', '2', 'device-signs'], ['wallet-send-over-limit', '25', 'device-fallback']]) {
+          if (!want(name)) continue;
+          await page.locator('.page-content').evaluate(el => el.scrollTo(0, 0)).catch(() => undefined);
+          await page.getByRole('button', { name: /^Send$/ }).click();
+          await page.getByLabel('Recipient address').fill(fx.PEER);
+          await page.getByLabel('Amount in WRF').fill(amount);
+          await page.getByRole('button', { name: 'Review transfer' }).click();
+          await page.getByTestId(waitFor).waitFor({ timeout: 20_000 });
+          await capture(page, errors, name, `/wallet (Send ${amount} WRF reviewed)`, suffix);
+          await page.getByRole('button', { name: 'Back', exact: true }).click();
+          await page.getByRole('button', { name: 'Cancel' }).click();
+        }
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) {
+        console.log('FAIL device flow', suffix, String(e).slice(0, 200));
+        await page.screenshot({ path: path.join(outDir, `wallet-device-FAILED-${suffix}.png`), fullPage: false }).catch(() => undefined);
+        report.push({ name: 'wallet-device', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] });
+      }
+    }
   } finally {
     await context.close();
   }

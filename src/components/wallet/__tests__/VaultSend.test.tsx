@@ -5,9 +5,21 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 const p = { from: '0x' + '1'.repeat(40), to: '0x' + '2'.repeat(40), amountBaseUnits: '9007199254740991', nonce: '9007199254740993', chainId: '777', networkId: 'testnet' };
 const prepare = jest.fn<() => Promise<typeof p>>();
 const submit = jest.fn<(...args: unknown[]) => Promise<{ txHash: string }>>();
+const deviceCheck = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+const deviceSubmit = jest.fn<(...args: unknown[]) => Promise<{ txHash: string }>>();
 await jest.unstable_mockModule('../../../services/walletCrypto/vaultTransfer', () => ({ previewVaultTransfer: prepare, submitVaultTransfer: submit }));
+const realDeviceSession = { errorCode: (e: any) => (typeof e?.details?.code === 'string' ? e.details.code : null) };
+await jest.unstable_mockModule('../../../services/walletCrypto/deviceSession', () => ({
+  checkThisDeviceCanSend: deviceCheck,
+  submitDeviceTransfer: deviceSubmit,
+  errorCode: realDeviceSession.errorCode,
+  deviceFallbackMessage: (d: any) => (d && !d.ok && d.reason === 'daily' ? "Over this device's 10 WRF daily limit. Confirm with your recovery phrase password." : d && !d.ok && d.reason === 'refused' ? 'REFUSED-NOTE' : null),
+}));
 const { default: VaultSend } = await import('../VaultSend');
-beforeEach(() => { cleanup(); prepare.mockReset().mockResolvedValue(p); submit.mockReset().mockResolvedValue({ txHash: 'submitted-id' }); });
+beforeEach(() => {
+  cleanup(); prepare.mockReset().mockResolvedValue(p); submit.mockReset().mockResolvedValue({ txHash: 'submitted-id' });
+  deviceCheck.mockReset().mockResolvedValue({ ok: false, reason: 'no-key' }); deviceSubmit.mockReset().mockResolvedValue({ txHash: 'device-id' });
+});
 const review = async () => {
   render(<VaultSend address={p.from} />);
   fireEvent.click(screen.getByRole('button', { name: /^Send$/ }));
@@ -93,4 +105,42 @@ it('does not gate the amount when the balance is unknown', async () => {
   await review();
   expect(screen.queryByText('No WRF to send')).toBeNull();
   expect(prepare).toHaveBeenCalledTimes(1);
+});
+
+it('device key: a send inside this device\'s limits needs no password and is signed by the device', async () => {
+  deviceCheck.mockResolvedValue({ ok: true });
+  await review();
+  expect(screen.getByTestId('device-signs').textContent).toContain('No password needed');
+  expect(screen.queryByLabelText('Wallet password for this send')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm & Send' }));
+  await screen.findByText('Submitted; settlement is not yet confirmed.');
+  expect(deviceSubmit).toHaveBeenCalledWith(p);
+  expect(submit).not.toHaveBeenCalled();
+});
+
+it('device key: over the daily limit falls back to the password with a short reason', async () => {
+  deviceCheck.mockResolvedValue({ ok: false, reason: 'daily' });
+  await review();
+  expect(screen.getByTestId('device-fallback').textContent).toContain('daily limit');
+  expect(screen.getByLabelText('Wallet password for this send')).toBeTruthy();
+  expect(deviceSubmit).not.toHaveBeenCalled();
+});
+
+it('device key: if the node refuses the device signature, nothing is sent and the password path opens', async () => {
+  deviceCheck.mockResolvedValue({ ok: true });
+  deviceSubmit.mockRejectedValueOnce(Object.assign(new Error('limit'), { details: { code: 'SESSION_KEY_LIMIT' } }));
+  await review();
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm & Send' }));
+  await screen.findByTestId('device-fallback');
+  fireEvent.change(screen.getByLabelText('Wallet password for this send'), { target: { value: 'pw' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm & Send' }));
+  await screen.findByText('Submitted; settlement is not yet confirmed.');
+  expect(submit).toHaveBeenCalledWith(p, 'pw');
+});
+
+it('device key: no device key (or the feature off) keeps the password flow unchanged', async () => {
+  await review();
+  expect(screen.queryByTestId('device-signs')).toBeNull();
+  expect(screen.queryByTestId('device-fallback')).toBeNull();
+  expect(screen.getByLabelText('Wallet password for this send')).toBeTruthy();
 });

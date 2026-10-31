@@ -10,6 +10,13 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { previewVaultTransfer, submitVaultTransfer, type TransferPreview } from '../../services/walletCrypto/vaultTransfer';
 import { wrfToBaseUnits } from '../../services/walletCrypto/transferPayload';
 import { recipientStatus, LEGACY_RECIPIENT_MESSAGE, UNKNOWN_RECIPIENT_MESSAGE } from '../../services/walletCrypto/recipientStatus';
+import {
+  checkThisDeviceCanSend,
+  deviceFallbackMessage,
+  errorCode,
+  submitDeviceTransfer,
+  type DeviceSendDecision,
+} from '../../services/walletCrypto/deviceSession';
 import { WrfModal } from '../DesignSystem/WrfModal';
 import { WrfInput } from '../DesignSystem/WrfInput';
 import { WrfButton } from '../DesignSystem/WrfButton';
@@ -33,6 +40,7 @@ function amountUnits(amount: string): bigint | null {
 }
 export const PREPARE_FAILED_MESSAGE =
   'Unable to prepare transfer. Check the full address, amount (up to 8 decimals), and wallet connection.';
+export const DEVICE_SIGNS_MESSAGE = 'This device signs this send. No password needed.';
 export const NOT_CONFIRMED_MESSAGE =
   'Transfer was not confirmed. Check activity before retrying; review again and re-enter your password.';
 
@@ -73,6 +81,8 @@ export default function VaultSend({ address, availableUnits }: { address: string
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [hash, setHash] = useState('');
+  // Whether this browser's device key (a session key with limits) can sign the reviewed send by itself.
+  const [device, setDevice] = useState<DeviceSendDecision | null>(null);
   const password = useRef<HTMLInputElement>(null);
   const inFlight = useRef(false);
   const knownLegacy = recipientStatus(recipient) === 'known-legacy-receive-only';
@@ -92,15 +102,36 @@ export default function VaultSend({ address, availableUnits }: { address: string
     if (zeroBalance) { setError(ZERO_BALANCE_MESSAGE); return; }
     if (exceedsAvailable) { setError(EXCEEDS_AVAILABLE_MESSAGE); return; }
     inFlight.current = true; setBusy(true); setError('');
-    try { setPreview(await previewVaultTransfer(address.toLowerCase(), recipient, amount)); }
+    try {
+      const next = await previewVaultTransfer(address.toLowerCase(), recipient, amount);
+      setDevice(await checkThisDeviceCanSend(next).catch(() => null));
+      setPreview(next);
+    }
     catch { setError(PREPARE_FAILED_MESSAGE); }
     finally { inFlight.current = false; setBusy(false); }
   };
+  const confirmWithDevice = async () => {
+    if (!preview || inFlight.current) return;
+    inFlight.current = true; setBusy(true); setError('');
+    try { setHash((await submitDeviceTransfer(preview)).txHash); setPreview(null); }
+    catch (e) {
+      const code = errorCode(e);
+      if (code === 'SESSION_KEY_LIMIT' || code === 'FEATURE_NOT_ACTIVE' || code === 'AUTHORIZATION_INVALID') {
+        // The node said no to the device key: nothing was sent. Keep the review; ask for the password.
+        setDevice({ ok: false, reason: 'refused', record: device?.record ?? null });
+      } else {
+        setError(NOT_CONFIRMED_MESSAGE);
+        setPreview(null);
+      }
+    } finally { inFlight.current = false; setBusy(false); }
+  };
   const confirm = async () => {
-    if (!preview || inFlight.current || !password.current?.value) return;
-    // Checked again at the moment of signing: the allowlist may have been turned on since the review.
+    if (!preview || inFlight.current) return;
+    // Checked again at the moment of signing (device key or password): the allowlist may have been turned on since the review.
     const refusal = guard.refusal(preview.to, Date.now());
-    if (refusal) { password.current.value = ''; setPreview(null); setError(refusal); return; }
+    if (refusal) { if (password.current) password.current.value = ''; setPreview(null); setError(refusal); return; }
+    if (device?.ok) { await confirmWithDevice(); return; }
+    if (!password.current?.value) return;
     inFlight.current = true; setBusy(true); setError('');
     const pending = submitVaultTransfer(preview, password.current.value);
     password.current.value = '';
@@ -114,7 +145,9 @@ export default function VaultSend({ address, availableUnits }: { address: string
     if (busy) return;
     setOpen(false); setPreview(null);
   };
-  const openSend = () => { setOpen(true); setHash(''); setError(''); };
+  const openSend = () => { setOpen(true); setHash(''); setError(''); setDevice(null); };
+  const deviceSigns = device?.ok === true;
+  const fallbackNote = deviceFallbackMessage(device);
 
   const stage: 'form' | 'review' | 'submitted' = hash ? 'submitted' : preview ? 'review' : 'form';
   const title = stage === 'submitted' ? 'Transfer submitted' : stage === 'review' ? 'Review transfer' : 'Send WRF';
@@ -211,7 +244,12 @@ export default function VaultSend({ address, availableUnits }: { address: string
             <WrfAlert severity="warning" role="note" sx={{ mb: 2 }}>
               This transparent transfer reveals the sender, recipient and amount. Verify the full address; transfers cannot be reversed.
             </WrfAlert>
-            <WrfInput
+            {deviceSigns ? (
+              <WrfAlert severity="success" role="status" data-testid="device-signs">{DEVICE_SIGNS_MESSAGE}</WrfAlert>
+            ) : (
+              <>
+                {fallbackNote && <WrfAlert severity="info" role="note" sx={{ mb: 2 }} data-testid="device-fallback">{fallbackNote}</WrfAlert>}
+                <WrfInput
               ref={password}
               type="password"
               label="Wallet password for this send"
@@ -219,7 +257,9 @@ export default function VaultSend({ address, availableUnits }: { address: string
               disabled={busy}
               prefixIcon={<LockOutlinedIcon fontSize="small" />}
               helperText="Your password signs this one transfer and is not stored."
-            />
+                />
+              </>
+            )}
           </Box>
         )}
 
