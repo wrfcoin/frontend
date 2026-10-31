@@ -228,6 +228,7 @@ export async function installRoutes(page, fx, options = {}) {
   const forecastersMode = options.forecasters || 'populated';
   const bondGrantsMode = options.bondGrants || 'populated';
   const publicBalanceMode = options.publicBalance || 'populated';
+  const notificationsMode = options.notifications || 'off';
   const proofCardMode = options.proofCard || 'populated';
   const networkNodesMode = options.networkNodes || 'populated';
   const competitionsMode = options.competitions || 'populated';
@@ -238,7 +239,7 @@ export async function installRoutes(page, fx, options = {}) {
     let m;
     if (p === '/downloads/manifest.json') return manifestMode === 'shipped' ? route.continue() : json(route, fx.downloadsManifest);
     if ((m = /^\/api\/auth\/nonce\/(0x[0-9a-fA-F]{40})$/.exec(p))) { const nonce = `qa-${hex(16)}`; return json(route, { nonce, message: fx.challengeFor(m[1], nonce), scheme: 'ed25519' }); }
-    if (p === '/api/auth/wallet-login' && req.method() === 'POST') { const body = JSON.parse(req.postData() || '{}'); return json(route, { jwt: fx.jwtFor(body.address), refreshToken: `r-${hex(16)}`, expiresIn: 3600 }); }
+    if (p === '/api/auth/wallet-login' && req.method() === 'POST') { const body = JSON.parse(req.postData() || '{}'); fx.lastLoginAddress = String(body.address || '').toLowerCase(); return json(route, { jwt: fx.jwtFor(body.address), refreshToken: `r-${hex(16)}`, expiresIn: 3600 }); }
     if (p === '/api/capabilities') return json(route, { features: { leaderboard: { status: 'configured', reasonCode: 'unverified' } }, readiness: {} });
     if (p === '/api/blockchain/status') return json(route, { success: true, blockHeight: 44812, height: 44812, status: 'synced', network: 'testnet' });
     if (p === '/api/blockchain/blocks') return json(route, { success: true, blocks: fx.BLOCKS, data: fx.BLOCKS, total: 44813, pagination: { page: 1, limit: 25, offset: 0, total: 44813, hasNext: true, hasPrev: false } });
@@ -274,6 +275,14 @@ export async function installRoutes(page, fx, options = {}) {
       const body = fx.COMPETITION(week);
       if (!body) return json(route, { error: { code: 'COMPETITION_NOT_FOUND' } }, 404);
       return json(route, competitionsMode === 'empty' ? { ...body, entrants: 0, forecasts: '0', rows: [] } : body);
+    }
+    // Payout notifications (backend#389). Default 'off': the config read 404s and the explore page shows no
+    // "Notify me" box, so every other capture is unchanged. 'on': both channels, one ntfy topic already added.
+    if (p.startsWith('/api/notifications/')) {
+      if (notificationsMode !== 'on') return json(route, { error: 'Not found' }, 404);
+      if (p === '/api/notifications/config') return json(route, { enabled: true, events: ['payout.credited'], checkEveryMinutes: 5, webPush: { available: true, publicKey: 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U' }, ntfy: { available: true, server: 'https://ntfy.sh' }, stores: 'An address and a browser push subscription or an ntfy topic. No email, name or IP address.' });
+      if ((m = /^\/api\/notifications\/subscriptions\/(0x[0-9a-f]{40})$/.exec(p))) return json(route, { success: true, address: m[1], subscriptions: [{ id: '0b0b0b0b-1c1c-4d4d-8e8e-9f9f9f9f9f9f', address: m[1], channel: 'ntfy', label: 'wrfcoin-pay-7f3a9c41d2e8b605', targetHash: 'ab'.repeat(32), createdAt: new Date(Date.now() - 86_400_000).toISOString(), lastDeliveredAt: null }], lastCheck: null });
+      return json(route, { error: { code: 'NOTIFICATIONS_UNAVAILABLE' } }, 503);
     }
     if ((m = /^\/api\/public\/balance\/(0x[0-9a-fA-F]{40})$/.exec(p))) {
       if (publicBalanceMode === 'off') return json(route, { error: 'Not found' }, 404);

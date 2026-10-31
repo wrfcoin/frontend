@@ -6,6 +6,7 @@ import { WrfCard } from '../DesignSystem/WrfCard';
 import { WrfInput } from '../DesignSystem/WrfInput';
 import { WrfButton } from '../DesignSystem/WrfButton';
 import { WrfSkeleton } from '../DesignSystem/WrfSkeleton';
+import NotifyMe from './NotifyMe';
 import { palette, borderRadiusScale } from '../DesignSystem/tokens';
 import { formatBaseUnitsToWrf } from '../../services/apiClient/number';
 import {
@@ -64,7 +65,10 @@ const Message: React.FC<{ title: string; children: React.ReactNode }> = ({ title
 );
 
 export default function AddressLookup() {
-  const [input, setInput] = useState('');
+  // A payout notification links to /explore?address=0x…: start with that address looked up.
+  const [input, setInput] = useState(() => {
+    try { return new URLSearchParams(globalThis.location?.search ?? '').get('address') ?? ''; } catch { return ''; }
+  });
   const [touched, setTouched] = useState(false);
   const [view, setView] = useState<View>({ kind: 'idle' });
   const controller = useRef<InstanceType<typeof globalThis.AbortController> | null>(null);
@@ -74,15 +78,12 @@ export default function AddressLookup() {
   const normalized = normalizeLookupAddress(input);
   const showFormatError = touched && input.trim() !== '' && normalized === null;
 
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
-    setTouched(true);
-    if (!normalized) return;
+  const lookup = (address: string) => {
     controller.current?.abort();
     const current = new globalThis.AbortController();
     controller.current = current;
-    setView({ kind: 'loading', address: normalized });
-    lookupPublicAddress(normalized, current.signal).then(
+    setView({ kind: 'loading', address });
+    lookupPublicAddress(address, current.signal).then(
       result => {
         if (current.signal.aborted) return;
         setView(result.kind === 'ok' ? { kind: 'ready', value: result.value } : result);
@@ -92,6 +93,18 @@ export default function AddressLookup() {
       },
     );
   };
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    setTouched(true);
+    if (normalized) lookup(normalized);
+  };
+
+  useEffect(() => {
+    if (normalized) lookup(normalized);
+    // Once, on arrival from a notification link.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <WrfCard
@@ -166,6 +179,7 @@ export default function AddressLookup() {
             <Typography sx={{ mt: 1.5, fontSize: '0.8125rem', color: palette.text.muted }}>
               As of block {view.value.height.toLocaleString()}. Test coins have no value.
             </Typography>
+            <NotifyMe address={view.value.address} />
           </Box>
         )}
 

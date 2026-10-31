@@ -391,6 +391,32 @@ async function runViewport(browser, vp, tall, theme) {
         await capture(page, errors, 'onboarding-advanced', '/onboarding (Advanced open)', suffix);
       } catch (e) { console.log('FAIL onboarding-advanced', suffix, String(e).slice(0, 160)); report.push({ name: 'onboarding-advanced', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    if (want('explore-notify-visitor')) {
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { notifications: 'on' });
+        await loadRoute(page, `/explore?address=0x${'a1'.repeat(20)}`, errors);
+        await page.getByTestId('notify-me').waitFor({ timeout: 15_000 });
+        await page.getByTestId('notify-me').scrollIntoViewIfNeeded();
+        await capture(page, errors, 'explore-notify-visitor', '/explore (notify me, visitor)', suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log('FAIL explore-notify-visitor', suffix, String(e).slice(0, 160)); report.push({ name: 'explore-notify-visitor', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
+    if (want('explore-notify-owner')) {
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { notifications: 'on' });
+        await createWallet(page, errors);
+        if (!fx.lastLoginAddress) throw new Error('wallet login did not happen');
+        await goClientSide(page, `/explore?address=${fx.lastLoginAddress}`);
+        await page.getByTestId('notify-me-topic').waitFor({ timeout: 15_000 });
+        await page.getByTestId('notify-me').scrollIntoViewIfNeeded();
+        await capture(page, errors, 'explore-notify-owner', '/explore (notify me, signed-in owner)', suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log('FAIL explore-notify-owner', suffix, String(e).slice(0, 160)); report.push({ name: 'explore-notify-owner', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review') || want('wallet-address-book') || want('wallet-send-allowlist-refused')) {
       try {
         await createWallet(page, errors);

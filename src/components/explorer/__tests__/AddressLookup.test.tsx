@@ -105,15 +105,27 @@ describe('address helpers', () => {
 });
 
 describe('<AddressLookup />', () => {
+  it('a payout notification link (/explore?address=0x…) opens with that address looked up', async () => {
+    const calls = backend({ address: LOWER, balance: '1', height: 7, earned: '1' });
+    globalThis.history.pushState({}, '', `/explore?address=${LOWER}`);
+    try {
+      render(<AddressLookup />);
+      await waitFor(() => expect(screen.getByTestId('address-lookup-result')).toBeInTheDocument());
+      expect(calls.some(c => c.url === `/api/public/balance/${LOWER}`)).toBe(true);
+    } finally { globalThis.history.pushState({}, '', '/'); }
+  });
+
   it('shows balance and earned total for a wrf address, asking the 0x form with no credential', async () => {
     const calls = backend({ address: LOWER, balance: '1250000000', height: 10114, earned: '37925925888' });
     render(<AddressLookup />);
     lookUp(`wrf${HEX}`);
     await waitFor(() => expect(screen.getByTestId('address-lookup-result')).toBeInTheDocument());
-    expect(calls).toHaveLength(1);
-    expect(calls[0].url).toBe(`/api/public/balance/${LOWER}`);
-    const headers = new Headers(calls[0].init?.headers);
-    expect(headers.get('authorization')).toBeNull();
+    // One balance read; the only other request is the public notification config (backend#389, no credential).
+    const balanceCalls = calls.filter(c => c.url.startsWith('/api/public/balance/'));
+    expect(balanceCalls).toHaveLength(1);
+    expect(calls.filter(c => !c.url.startsWith('/api/public/balance/')).map(c => c.url)).toEqual(['/api/notifications/config']);
+    expect(balanceCalls[0].url).toBe(`/api/public/balance/${LOWER}`);
+    for (const call of calls) expect(new Headers(call.init?.headers).get('authorization')).toBeNull();
     expect(screen.getByTestId('address-lookup-balance')).toHaveTextContent('12.50000000 WRF');
     expect(screen.getByTestId('address-lookup-earned')).toHaveTextContent('Earned in total');
     expect(screen.getByTestId('address-lookup-earned')).toHaveTextContent('379.25925888 WRF');
