@@ -15,6 +15,7 @@ import { WrfEmptyState } from '../DesignSystem/WrfEmptyState';
 import { WrfSkeleton } from '../DesignSystem/WrfSkeleton';
 import { palette, spacingScale, borderRadiusScale } from '../DesignSystem/tokens';
 import { publicReadonlyApi } from '../../config/publicReadonlyApi';
+import AddressLookup from './AddressLookup';
 
 /**
  * The public block explorer (/explore; /explorer redirects here).
@@ -22,7 +23,8 @@ import { publicReadonlyApi } from '../../config/publicReadonlyApi';
  * One read of the 25 most recent blocks from the public edge, shown as
  * cards (frontend#561): height, local time, transaction count, short hash
  * with copy, and a permalink to the card. Nothing here is fabricated: a
- * field the API did not send renders as "unavailable".
+ * field the API did not send renders as "unavailable". Above the blocks, an
+ * address box (AddressLookup) shows an address's balance and earned total.
  */
 
 type BlockRow = Record<string, unknown>;
@@ -293,6 +295,8 @@ export default function PublicReadOnlyExplorer() {
           Refresh
         </WrfButton>
       </Box>
+
+      <AddressLookup />
 
       {state === 'loading' && (
         <Box aria-busy="true" aria-label="Loading blocks" role="status" data-testid="explorer-loading">

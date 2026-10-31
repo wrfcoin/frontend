@@ -311,6 +311,20 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    for (const [name, mode] of [['explore-address', 'populated'], ['explore-address-off', 'off']]) {
+      if (!want(name)) continue;
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { publicBalance: mode });
+        await loadRoute(page, '/explore', errors);
+        await page.getByTestId('address-lookup-input').fill('wrfc37f4be1a2d93e08b6c75f1e0a4d82c9b3e6f710');
+        await page.getByRole('button', { name: /look up/i }).click();
+        await page.getByTestId(mode === 'off' ? 'address-lookup-message' : 'address-lookup-result').waitFor({ timeout: 10_000 });
+        await capture(page, errors, name, `/explore (address lookup, ${mode})`, suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     if (want('wallet-unlocked') || want('connect-station-unlocked') || want('wallet-send-review')) {
       try {
         await createWallet(page, errors);

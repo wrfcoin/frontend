@@ -43,6 +43,8 @@ export const SCENARIOS = [
   { name: 'forecasters-unavailable', route: '/forecasters', note: 'the backend 503 while the chain-reward index is off on a network' },
   { name: 'bond-grants-empty', route: '/faucet/bond-grants', note: 'no grants yet: the honest empty state' },
   { name: 'bond-grants-unavailable', route: '/faucet/bond-grants', note: 'the 503 a network without the public audit list answers' },
+  { name: 'explore-address', route: '/explore', note: 'a wrf address looked up: balance and earned total' },
+  { name: 'explore-address-off', route: '/explore', note: 'the 404 while the public balance read is switched off' },
 ];
 
 /** Public navigation paths with route params are reached through a fixture id. */
