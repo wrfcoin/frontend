@@ -1,0 +1,27 @@
+/* Producers and bonded nodes (/nodes). Builds on PublicForecastersPage.css; colours are the --fc-* design
+   tokens injected by useForecasterThemeVars, so both themes follow the body theme. */
+.nn-page { max-width: 1040px; }
+.nn-mono { font-family: var(--fc-mono); }
+.nn-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nn-frac { color: var(--fc-text-muted); }
+.nn-flag { margin-left: 8px; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fc-error-light); }
+
+.nn-ladder { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.nn-rung { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--fc-border); border-radius: var(--fc-r-lg); background: var(--fc-bg-secondary); }
+.nn-rung > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nn-rung strong { font-size: 0.9375rem; }
+.nn-step { flex: none; width: 26px; height: 26px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8125rem; font-weight: 700; border: 1px solid var(--fc-border); color: var(--fc-primary-light); }
+.nn-rung-body { font-size: 0.8125rem; color: var(--fc-text-secondary); }
+.nn-rung-value { font-size: 0.875rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.nn-attesters { padding: 12px 20px 16px; }
+.nn-attesters ul { margin: 8px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+.nn-attesters li { font-size: 0.8125rem; padding: 4px 10px; border: 1px solid var(--fc-border); border-radius: 999px; }
+
+@media (max-width: 900px) {
+  .nn-ladder { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .nn-ladder { grid-template-columns: 1fr; gap: 8px; }
+  .nn-attesters { padding: 12px 16px 16px; }
+}

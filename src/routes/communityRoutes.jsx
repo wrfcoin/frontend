@@ -15,6 +15,7 @@ const PublicContributorProfilePage = lazy(() => import('../pages/PublicContribut
 const PublicForecastersPage = lazy(() => import('../pages/PublicForecastersPage'));
 const PublicForecasterPage = lazy(() => import('../pages/PublicForecasterPage'));
 const PublicProofCardPage = lazy(() => import('../pages/PublicProofCardPage'));
+const PublicNetworkNodesPage = lazy(() => import('../pages/PublicNetworkNodesPage'));
 
 // Community & Social
 const CommunityForums = lazy(() => import('../components/CommunityForums'));
@@ -67,6 +68,8 @@ export default function communityRoutes({ isFeatureEnabled = () => false } = {})
 
     {/* Proof card for one station reading (backend#229, owner demo 2026-11-01); the public route policy decides reachability */}
     <Route path="/proof/:commitId" element={<PageWrapper tabType="community"><PublicProofCardPage /></PageWrapper>} />
+    {/* Producers and bonded nodes (owner demo 2026-11-01); /network/* is never public, so the page is /nodes */}
+    <Route path="/nodes" element={<PageWrapper tabType="community"><PublicNetworkNodesPage /></PageWrapper>} />
 
     {/* Community */}
     {isFeatureEnabled('community') && <Route path="/community" element={<PageWrapper tabType="weather"><CommunityForums /></PageWrapper>} />}

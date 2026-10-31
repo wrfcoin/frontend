@@ -29,6 +29,7 @@ export const PUBLIC_NAV_ENTRIES: readonly PublicNavEntry[] = [
   { name: 'Get started', path: '/onboarding', icon: 'bi-rocket-takeoff', group: 'main', description: 'Create or open a wallet and join the testnet.' },
   { name: 'Weather map', path: '/map', icon: 'bi-globe-americas', group: 'main', description: 'See weather stations and coverage on a map.' },
   { name: 'Explore', path: '/explore', icon: 'bi-boxes', group: 'main', description: 'Look through the latest blocks on the testnet.' },
+  { name: 'Nodes', path: '/nodes', icon: 'bi-hdd-network', group: 'main', description: 'Who produces blocks, who is bonded, and who checks readings.' },
   { name: 'Forecasters', path: '/forecasters', icon: 'bi-graph-up-arrow', group: 'main', description: 'Who is forecasting on the testnet, and how their track record is building.' },
   { name: 'Search', path: '/search', icon: 'bi-search', group: 'main', description: 'Find a block, transaction, address or station.' },
   { name: 'Leaderboard', path: '/leaderboard/contributors', icon: 'bi-trophy', group: 'main', description: 'Top contributors and what they have earned.' },

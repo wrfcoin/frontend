@@ -322,6 +322,17 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    for (const [name, mode] of [['nodes-partial', 'partial'], ['nodes-off', 'off']]) {
+      if (!want(name)) continue;
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { networkNodes: mode });
+        await loadRoute(page, '/nodes', errors);
+        await capture(page, errors, name, `/nodes (${mode})`, suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     for (const [name, mode] of [['explore-address', 'populated'], ['explore-address-off', 'off']]) {
       if (!want(name)) continue;
       try {

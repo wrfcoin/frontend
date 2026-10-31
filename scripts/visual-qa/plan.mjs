@@ -22,6 +22,7 @@ export const ROUTES = [
   { name: 'forecaster', route: '/forecasters/c_0123456789abcdef01234567' },
   { name: 'bond-grants', route: '/faucet/bond-grants' },
   { name: 'proof-card', route: `/proof/${PROOF_COMMIT}` },
+  { name: 'nodes', route: '/nodes' },
   { name: 'governance', route: '/governance/public' },
   { name: 'governance-proposal', route: '/governance/public/WIP-12' },
   { name: 'forecast', route: '/weather/forecast' },
@@ -50,6 +51,8 @@ export const SCENARIOS = [
   { name: 'explore-address', route: '/explore', note: 'a wrf address looked up: balance and earned total' },
   { name: 'proof-card-not-located', route: `/proof/${PROOF_COMMIT}`, note: 'the reading is outside the server\'s bounded block search: said, never guessed' },
   { name: 'proof-card-off', route: `/proof/${PROOF_COMMIT}`, note: 'the 404 while PROOF_CARDS_ENABLED is not true' },
+  { name: 'nodes-partial', route: '/nodes', note: 'bonds and attesters unavailable from the node: said, never zero' },
+  { name: 'nodes-off', route: '/nodes', note: 'the 404 while NETWORK_NODES_READ_ENABLED is not true' },
   { name: 'explore-address-off', route: '/explore', note: 'the 404 while the public balance read is switched off' },
 ];
 
