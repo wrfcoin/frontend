@@ -216,6 +216,18 @@ body.light-mode .dl-hero { background: linear-gradient(135deg, #EFF6FF 0%, var(-
 .dl-rel-note { font-size: 0.75rem; color: var(--dl-text-secondary); margin: 0 0 12px; }
 
 .dl-alert { margin-bottom: 12px; }
+
+/* Sync node: per-OS sub-sections and the native Windows download */
+.dl-page .dl-sub { font-size: 0.9375rem; margin: 4px 0 8px; display: flex; align-items: center; gap: 8px; }
+.dl-win { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--dl-border); }
+.dl-steps { margin: 0 0 12px; padding-left: 22px; display: flex; flex-direction: column; gap: 12px; font-size: 0.875rem; }
+.dl-steps li { padding-left: 2px; }
+.dl-steps li::marker { font-weight: 600; color: var(--dl-text); }
+.dl-step-title { display: block; font-weight: 600; color: var(--dl-text); margin-bottom: 6px; }
+.dl-step-text { display: block; color: var(--dl-text-secondary); margin: 0 0 6px; font-size: 0.8125rem; }
+.dl-step-text .dl-mono { overflow-wrap: anywhere; }
+.dl-win-get { margin-bottom: 8px; }
+.dl-win .dl-link { display: inline-block; padding-left: 0; }
 .dl-alert--top { margin-bottom: 16px; }
 
 /* Verify */
@@ -262,4 +274,6 @@ body.light-mode .dl-hero { background: linear-gradient(135deg, #EFF6FF 0%, var(-
   .dl-rel-row { grid-template-columns: 1fr; gap: 2px; }
   .dl-rel-row dt { margin-top: 4px; }
   .dl-manifest-head { flex-wrap: wrap; }
+  /* A long status badge drops under the card title instead of squeezing it to an ellipsis. */
+  .dl-card > .MuiBox-root:first-child { flex-wrap: wrap; row-gap: 8px; column-gap: 12px; }
 }

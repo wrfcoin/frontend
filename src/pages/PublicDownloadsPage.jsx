@@ -8,7 +8,7 @@ import {
   textMuted, textPrimary, textSecondary,
 } from '../components/DesignSystem/tokens';
 import ReleaseFacts, { CommandLine, CopyButton } from '../components/downloads/ReleaseFacts';
-import { DOWNLOADS_MANIFEST_PATH, loadDownloadsManifest } from '../services/downloadsManifest';
+import { DOWNLOADS_MANIFEST_PATH, fileNameOf, formatBytes, loadDownloadsManifest } from '../services/downloadsManifest';
 import { WRFCOIN_CHAIN_ID } from '../config/network';
 import './PublicDownloadsPage.css';
 
@@ -59,6 +59,7 @@ export const LINKS = {
   quickstart: 'https://github.com/wrfcoin/docs/blob/main/testnet/quickstart.md',
   joinGuide: 'https://github.com/wrfcoin/infra/blob/main/testnet/JOIN_TESTNET.md',
   nodeSource: 'https://github.com/wrfcoin/core4',
+  windowsGuide: 'https://github.com/wrfcoin/core4/blob/main/docs/operator/windows-node.md',
   statusPageWork: 'https://github.com/wrfcoin/docs/blob/main/testnet/node-status.md',
   androidReleases: 'https://github.com/wrfcoin/mobile/releases',
   cliGuide: 'https://github.com/wrfcoin/core4/blob/main/docs/WRFCOIN_CLI_GUIDE.md',
@@ -73,6 +74,7 @@ export const LINKS = {
 
 export const JOIN_COMMAND = 'git clone https://github.com/wrfcoin/infra.git wrfcoin/infra && bash wrfcoin/infra/testnet/join.sh';
 export const STATUS_PAGE_URL = 'http://localhost:8556/dashboard';
+export const WINDOWS_DASHBOARD_URL = 'http://127.0.0.1:8556/dashboard';
 export const CLI_BUILD_COMMAND = 'cargo build --release -p wrfcoin_cli';
 export const MANIFEST_URL = `https://wrfcoin.com${DOWNLOADS_MANIFEST_PATH}`;
 
@@ -89,9 +91,13 @@ export const VERIFY_COMMANDS = [
   { os: 'Windows', command: 'certutil -hashfile <file> SHA256' },
 ];
 
+/** Manifest id of the native Windows sync-node installer (wrfcoin/core4 release asset). */
+export const WINDOWS_NODE_ID = 'node-windows-x86_64';
+
 /**
  * Per-platform rows (validation status, not a promise). Windows is not a WSL2/Docker route (owner
- * ruling): the Windows sync node will be a native download, one file, and it is not available yet.
+ * ruling): the Windows sync node is a native download, one file. Its row reads "Not available yet"
+ * until the release manifest publishes the installer, then "Preview download".
  */
 export const NODE_PLATFORMS = [
   { os: 'Linux x86_64', status: 'active', label: 'Validated' },
@@ -99,6 +105,19 @@ export const NODE_PLATFORMS = [
   { os: 'macOS, Apple Silicon', status: 'warning', label: 'Native build, join not yet validated' },
   { os: 'Windows', status: 'neutral', label: 'Not available yet' },
 ];
+
+export const WINDOWS_PREVIEW_ROW = { os: 'Windows', status: 'info', label: 'Preview download' };
+
+/** The node rows with the Windows row reflecting whether the manifest publishes the installer. */
+export function nodePlatforms(windowsPublished) {
+  return NODE_PLATFORMS.map(row => (row.os === 'Windows' && windowsPublished ? WINDOWS_PREVIEW_ROW : row));
+}
+
+/** The Windows checksum command from VERIFY_COMMANDS, with the downloaded file's name filled in. */
+export function windowsVerifyCommand(fileName) {
+  const template = VERIFY_COMMANDS.find(v => v.os === 'Windows').command;
+  return fileName ? template.replace('<file>', fileName) : template;
+}
 
 const ANDROID_PLATFORMS = [
   { os: 'Android (APK, sideload)', status: 'warning', label: 'Not yet published' },
@@ -150,6 +169,55 @@ function CardHead({ icon, title, badge }) {
   );
 }
 
+/**
+ * The Windows part of the sync-node card. Until the manifest publishes the installer it says so (and
+ * shows the manifest state); once published, every fact (link, file, size, SHA-256, commit, tag)
+ * comes from that manifest entry, with the hash right next to the download.
+ */
+function WindowsNode({ state, artifact }) {
+  if (!artifact?.published) {
+    return (
+      <div className="dl-win" data-testid="windows-node">
+        <h3 className="dl-sub">On Windows</h3>
+        <p className="dl-req" data-testid="windows-node-note"><strong>Windows</strong> A native Windows download is coming: one file to run, no WSL and no Docker. It is not available yet.</p>
+        {state === 'ready' ? null : <ReleaseFacts state={state} release={null} artifact={artifact} label={WINDOWS_NODE_ID} />}
+      </div>
+    );
+  }
+  const file = fileNameOf(artifact.url);
+  const size = formatBytes(artifact.size);
+  return (
+    <section className="dl-win" data-testid="windows-node" aria-label="Windows download">
+      <h3 className="dl-sub">On Windows <WrfBadge status="info" variant="count" label="Preview" /></h3>
+      <p className="dl-req">One installer for 64-bit Windows 10 and 11. No WSL, no Docker and no admin prompt: it installs for your user only.</p>
+      <ol className="dl-steps">
+        <li>
+          <span className="dl-step-title">Download the installer</span>
+          <WrfButton variant="primary" component="a" href={artifact.url} rel="noopener noreferrer" className="dl-win-get">
+            Download for Windows{size ? ` (${size})` : ''}
+          </WrfButton>
+          <ReleaseFacts state={state} release={artifact.tag} artifact={artifact} label={WINDOWS_NODE_ID} />
+        </li>
+        <li>
+          <span className="dl-step-title">Check the file before you run it</span>
+          <span className="dl-step-text">In Command Prompt or PowerShell, in the folder you saved it to, run:</span>
+          <CommandLine text={windowsVerifyCommand(file)} label="Copy the Windows check command" />
+          <span className="dl-step-text">The long line it prints must match the SHA-256 above exactly. If it does not, delete the file and do not run it.</span>
+        </li>
+        <li>
+          <span className="dl-step-title">Run the setup</span>
+          <span className="dl-step-text">Double-click {file ? <span className="dl-mono">{file}</span> : 'the installer'} and follow the steps.</span>
+        </li>
+      </ol>
+      <p className="dl-req" data-testid="windows-node-use"><strong>Using it</strong> From the Start menu, <strong>WRFCoin Node</strong> starts the node in the background and opens its dashboard at <span className="dl-mono">{WINDOWS_DASHBOARD_URL}</span>. <strong>Stop WRFCoin Node</strong> stops it. Your node keeps its data in <span className="dl-mono">%LOCALAPPDATA%\WRFCoin</span>. It only syncs and needs no incoming connections, so choosing <em>Deny</em> if Windows Firewall asks is fine.</p>
+      <WrfAlert severity="info" role="note" className="dl-alert" data-testid="windows-node-unsigned">
+        This is a testnet preview and the installer is not code-signed yet, so Windows may say it protected your PC. If the hash matched, choose <strong>More info</strong>, then <strong>Run anyway</strong>.
+      </WrfAlert>
+      <ExternalLink className="dl-link" href={LINKS.windowsGuide}>Windows node guide</ExternalLink>
+    </section>
+  );
+}
+
 function SoftwareCard({ id, platforms, icon, title, badge, footer, children }) {
   return (
     <WrfCard
@@ -185,6 +253,8 @@ export default function PublicDownloadsPage() {
   const manifest = outcome?.kind === 'ok' ? outcome.manifest : null;
   const byId = useMemo(() => new Map((manifest?.artifacts ?? []).map(a => [a.id, a])), [manifest]);
   const release = manifest?.release ?? null;
+  const windowsNode = byId.get(WINDOWS_NODE_ID);
+  const windowsPublished = Boolean(windowsNode?.published);
   const facts = (artifactId, extra) => (
     <ReleaseFacts state={state} release={release} artifact={byId.get(artifactId)} label={artifactId} {...extra} />
   );
@@ -192,16 +262,17 @@ export default function PublicDownloadsPage() {
   const cards = [
     {
       id: 'sync-node', platforms: ['linux', 'macos', 'windows'], icon: 'bi-hdd-network', title: 'Sync node',
-      badge: <Badge status="active" label="Linux and macOS" dot />,
+      badge: <Badge status="active" label={windowsPublished ? 'Linux, macOS · Windows preview' : 'Linux and macOS'} dot />,
       body: (
         <>
-          <p className="dl-secondary">Run a full copy of the testnet chain in Docker, verify blocks yourself and serve the API locally.</p>
-          <PlatformRows rows={NODE_PLATFORMS} />
-          <p className="dl-req" data-testid="windows-node-note"><strong>Windows</strong> A native Windows download is coming: one file to run, no WSL and no Docker. It is not available yet.</p>
+          <p className="dl-secondary">Run a full copy of the testnet chain, verify blocks yourself and serve the API locally{windowsPublished ? ': in Docker on Linux and macOS, or as a native install on Windows.' : ' in Docker.'}</p>
+          <PlatformRows rows={nodePlatforms(windowsPublished)} />
+          <h3 className="dl-sub">On Linux and macOS</h3>
           <p className="dl-req"><strong>Needs</strong> git and Docker with Compose v2. Follow the join guide for current build requirements.</p>
           <CommandLine text={JOIN_COMMAND} />
           {facts('node-source', { verifyHint: { command: 'git verify-commit <commit>', text: 'after cloning; check the expected source revision in the join guide' } })}
           <p className="dl-rel-note">Release identifiers appear below when they are available in the manifest.</p>
+          <WindowsNode state={state} artifact={windowsNode} />
         </>
       ),
       footer: (
