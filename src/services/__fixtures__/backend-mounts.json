@@ -1,6 +1,6 @@
 {
-  "backendCommit": "6229638650a1e2a3745ef1b381a7c687646fed00",
-  "backendShortSha": "6229638650a1",
+  "backendCommit": "dbd7cdf579fcc94609bcbabf6129b731e53827bf",
+  "backendShortSha": "dbd7cdf579fc",
   "sourcePath": "server/enhanced_unified_api_optimized.ts",
   "families": [
     "achievement",
@@ -19,6 +19,8 @@
     "earnings",
     "environment",
     "explorer",
+    "faucet",
+    "forecasters",
     "gas",
     "governance",
     "health",
@@ -40,6 +42,7 @@
     "oracle",
     "performance",
     "privacy",
+    "public",
     "pythia",
     "quality",
     "referrals",
@@ -65,5 +68,5 @@
     "wallet-auth",
     "weather"
   ],
-  "checksum": "11b5e0c5e52a0258727244d40b9004ae442d8827ef25dbf81b8d541a289b46bb"
+  "checksum": "a9de0233b28b629ad7af38feed0a82b3c82bcb98f97bb32188a7e337018058e9"
 }
