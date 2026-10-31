@@ -228,6 +228,9 @@ function buildShadowArray(base: Record<string, string>): Theme['shadows'] {
 // Dark Theme (default)
 // ---------------------------------------------------------------------------
 
+/** Selected tab label colour on dark surfaces; held to 4.5:1 by theme/__tests__/darkTabContrast.test.ts. */
+export const darkTabSelectedColor = primaryLight;
+
 export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
@@ -480,6 +483,8 @@ export const darkTheme = createTheme({
           fontWeight: fontWeight.medium,
           fontSize: '0.875rem',
           minHeight: 48,
+          // primary.main (#3B82F6) is 4.33:1 on a dark card, under AA for 14px label text.
+          '&.Mui-selected': { color: darkTabSelectedColor },
         },
       },
     },
