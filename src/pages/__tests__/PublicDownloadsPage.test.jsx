@@ -228,25 +228,26 @@ it('shows the real testnet genesis hash on the command-line wallet card, never a
 // so the parser still shows no verifiable source release; every other entry stays unpublished.
 const fs = await import('node:fs');
 const SHIPPED = JSON.parse(fs.readFileSync(new URL('../../../public/downloads/manifest.json', import.meta.url), 'utf8'));
-const WIN_URL = 'https://github.com/wrfcoin/core4/releases/download/v888-windows-preview/wrfcoin-node-0.1.0-g228d6f3b-windows-x86_64-setup.exe';
-const WIN_SHA = '8d3960978d7037c37d40c29f94b99ba7ad6680f4d73dbb5812f26210599ea337';
+const WIN_URL = 'https://github.com/wrfcoin/core4/releases/download/v888-windows-preview-3/wrfcoin-node-0.3.0-g0c6e0fbb-windows-x86_64-setup.exe';
+const WIN_SHA = '9ae02d6d3f058b140fd84ffbaa26f6a0f1b76a20bb4921ebd70f4468226c1d4e';
 
 it('ships a manifest whose only verifiable published artifact is the Windows node installer', () => {
   expect(Number.isNaN(Date.parse(SHIPPED.generated))).toBe(false);
   const win = SHIPPED.artifacts.find(a => a.id === WINDOWS_NODE_ID);
   expect(win).toEqual({
-    id: 'node-windows-x86_64', kind: 'file', repo: 'wrfcoin/core4', url: WIN_URL, size: 8273027, sha256: WIN_SHA,
-    tag: 'v888-windows-preview', commit: '228d6f3b008e316e43b330468e3d131f6995e4bb', signedBy: null, published: true,
+    id: 'node-windows-x86_64', kind: 'file', repo: 'wrfcoin/core4', url: WIN_URL, size: 11052313, sha256: WIN_SHA,
+    tag: 'v888-windows-preview-3', commit: '0c6e0fbba667d329ddd07b4057c27f4e01a77e9c', signedBy: null, published: true,
   });
   // The tag and commit in the URL agree with the entry.
   expect(win.url).toContain(`/download/${win.tag}/`);
   expect(win.url).toContain(`-g${win.commit.slice(0, 8)}-`);
   expect(SHIPPED.artifacts.filter(a => a.published === true).map(a => a.id)).toEqual(['node-source', 'cli-source', WINDOWS_NODE_ID]);
   for (const id of ['node-source', 'cli-source']) {
-    expect(SHIPPED.artifacts.find(a => a.id === id)).toMatchObject({ kind: 'git', repo: 'wrfcoin/core4', url: 'https://github.com/wrfcoin/core4', tag: null, commit: null });
+    expect(SHIPPED.artifacts.find(a => a.id === id)).toMatchObject({ kind: 'git', repo: 'wrfcoin/core4', url: 'https://github.com/wrfcoin/core4', tag: 'v888-h3000', commit: 'de9d0d268e1a914109444c1d49b2dcfffe896d80' });
   }
   const parsed = parseManifest(SHIPPED);
-  expect(parsed.artifacts.filter(a => a.published).map(a => [a.id, a.sha256])).toEqual([[WINDOWS_NODE_ID, WIN_SHA]]);
+  // Source rows are published as a tag + commit (frontend#37); only the installer is a file with a hash.
+  expect(parsed.artifacts.filter(a => a.published).map(a => [a.id, a.sha256])).toEqual([['node-source', null], ['cli-source', null], [WINDOWS_NODE_ID, WIN_SHA]]);
 });
 
 it('renders the Windows download from the manifest: link, size, SHA-256 next to it, check, run, use, unsigned note', async () => {
@@ -262,14 +263,14 @@ it('renders the Windows download from the manifest: link, size, SHA-256 next to 
   expect(within(node).queryByText('Not available yet')).toBeNull();
   expect(screen.queryByTestId('windows-node-note')).toBeNull();
 
-  const download = within(win).getByRole('link', { name: 'Download for Windows (7.9 MB)' });
+  const download = within(win).getByRole('link', { name: 'Download for Windows (10.5 MB)' });
   expect(download).toHaveAttribute('href', WIN_URL);
   expect(download).toHaveAttribute('rel', 'noopener noreferrer');
   const facts = within(win).getByTestId(`release-${WINDOWS_NODE_ID}`);
-  expect(facts).toHaveTextContent('wrfcoin-node-0.1.0-g228d6f3b-windows-x86_64-setup.exe · 7.9 MB');
+  expect(facts).toHaveTextContent('wrfcoin-node-0.3.0-g0c6e0fbb-windows-x86_64-setup.exe · 10.5 MB');
   expect(facts).toHaveTextContent(WIN_SHA);
-  expect(facts).toHaveTextContent('v888-windows-preview');
-  expect(facts).toHaveTextContent('228d6f3b00…');
+  expect(facts).toHaveTextContent('v888-windows-preview-3');
+  expect(facts).toHaveTextContent('0c6e0fbba6…');
   // The hash sits in the same step as the download button.
   expect(download.closest('li')).toContainElement(facts);
 
@@ -277,7 +278,7 @@ it('renders the Windows download from the manifest: link, size, SHA-256 next to 
   expect(steps.map(li => li.querySelector('.dl-step-title').textContent)).toEqual([
     'Download the installer', 'Check the file before you run it', 'Run the setup',
   ]);
-  const check = 'certutil -hashfile wrfcoin-node-0.1.0-g228d6f3b-windows-x86_64-setup.exe SHA256';
+  const check = 'certutil -hashfile wrfcoin-node-0.3.0-g0c6e0fbb-windows-x86_64-setup.exe SHA256';
   expect(steps[1].querySelector('code').textContent).toBe(check);
   fireEvent.click(within(steps[1]).getByRole('button', { name: 'Copy the Windows check command' }));
   await waitFor(() => expect(writeText).toHaveBeenCalledWith(check));
@@ -290,10 +291,11 @@ it('renders the Windows download from the manifest: link, size, SHA-256 next to 
   expect(within(win).getByRole('link', { name: /Windows node guide/ })).toHaveAttribute('href', LINKS.windowsGuide);
   expect(win.textContent).not.toMatch(/WSL2|Docker Desktop/);
 
-  // Everything else in the shipped manifest stays unpublished.
+  // The APK stays unpublished.
   expect(screen.getByRole('button', { name: 'Download APK' })).toBeDisabled();
-  expect(screen.getByTestId('release-node-source')).toHaveTextContent('Not yet published');
-  expect(screen.getByTestId('release-cli-source')).toHaveTextContent('Not yet published');
+  // The source rows name the v888-h3000 commit (frontend#37).
+  expect(screen.getByTestId('release-node-source')).toHaveTextContent('Source commitde9d0d268e…');
+  expect(screen.getByTestId('release-cli-source')).toHaveTextContent('Source commitde9d0d268e…');
   // The Windows filter still shows the sync node.
   fireEvent.click(screen.getByRole('button', { name: 'Windows' }));
   await waitFor(() => expect(screen.getAllByRole('article').map(a => a.getAttribute('aria-label'))).toContain('Sync node'));
