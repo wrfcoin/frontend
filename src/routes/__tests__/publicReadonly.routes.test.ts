@@ -12,6 +12,7 @@ describe('Stage 1.5 public route policy', () => {
       '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
       '/forecasters', '/forecasters/:profileKey',
       '/faucet/bond-grants', '/faucet', '/faucet/bond-grant', '/faucet/bond-grants/x',
+      '/proof/:commitId', '/proof', '/proofs/:commitId', '/proof/:commitId/x',
       '/wallet', '/onboarding', '/governance', '/nfts', '/miner', '/dashboard',
       '/earnings', '/weather/dashboard', '/connect-station', '/earn', '/connect-station/x', '/earn/x',
       '/leaderboard', '/leaderboard/contributors/x', '/leaderboard/nearby', '/leaderboard/profile/:address',
@@ -35,6 +36,9 @@ describe('Stage 1.5 public route policy', () => {
     // Bond-grant audit list: one exact entry; the faucet's other paths never ride along.
     expect(isPublicTestnetPath('/faucet', false, true)).toBe(false);
     expect(isPublicTestnetPath('/faucet/bond-grants/x', false, true)).toBe(false);
+    // backend#229 proof card: one exact entry.
+    expect(isPublicTestnetPath('/proof', false, true)).toBe(false);
+    expect(isPublicTestnetPath('/proof/:commitId/x', false, true)).toBe(false);
     expect([...PUBLIC_ONBOARDING_PATHS]).toEqual(['/onboarding', '/wallet', '/wallet/passkey', '/connect-station', '/earn']);
   });
 
@@ -64,6 +68,7 @@ describe('Stage 1.5 station detail', () => {
       '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
       '/forecasters', '/forecasters/:profileKey',
       '/faucet/bond-grants',
+      '/proof/:commitId',
     ]);
   });
 

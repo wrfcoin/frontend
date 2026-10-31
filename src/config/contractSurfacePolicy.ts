@@ -99,6 +99,10 @@ export const PUBLIC_READONLY_PATHS = new Set([
   // Self-serve bond grant spec section 4: the read-only faucet bond-grant audit list
   // (GET /api/faucet/bond-grants). Exact entry: no other /faucet path is admitted.
   '/faucet/bond-grants',
+  // backend#229 (owner demo queue 2026-11-01): the public proof card for one station reading.
+  //   /proof/:commitId             reads GET /api/proofs/<64 lowercase hex>[?h=<height>]
+  // Exact entry: no other /proof path is admitted.
+  '/proof/:commitId',
 ]);
 
 // Owner ruling 2026-10-02 FULL WEB JOIN PATH, frontend#437: admit the exact

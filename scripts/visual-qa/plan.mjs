@@ -5,6 +5,9 @@
 // `scenarios`: states that need interaction in the same SPA session (names only;
 // run.mjs implements them).
 
+// The fixture commit id (fixtures.mjs PROOF_COMMIT).
+export const PROOF_COMMIT = 'c0ffee'.padEnd(64, '0').replace(/0{8}$/, '4d2a91e7');
+
 export const ROUTES = [
   { name: 'home', route: '/' },
   { name: 'onboarding', route: '/onboarding' },
@@ -18,6 +21,7 @@ export const ROUTES = [
   { name: 'forecasters', route: '/forecasters' },
   { name: 'forecaster', route: '/forecasters/c_0123456789abcdef01234567' },
   { name: 'bond-grants', route: '/faucet/bond-grants' },
+  { name: 'proof-card', route: `/proof/${PROOF_COMMIT}?h=44809` },
   { name: 'governance', route: '/governance/public' },
   { name: 'governance-proposal', route: '/governance/public/WIP-12' },
   { name: 'forecast', route: '/weather/forecast' },
@@ -44,6 +48,8 @@ export const SCENARIOS = [
   { name: 'bond-grants-empty', route: '/faucet/bond-grants', note: 'no grants yet: the honest empty state' },
   { name: 'bond-grants-unavailable', route: '/faucet/bond-grants', note: 'the 503 a network without the public audit list answers' },
   { name: 'explore-address', route: '/explore', note: 'a wrf address looked up: balance and earned total' },
+  { name: 'proof-card-not-located', route: `/proof/${PROOF_COMMIT}`, note: 'the reading is outside the server\'s bounded block search: said, never guessed' },
+  { name: 'proof-card-off', route: `/proof/${PROOF_COMMIT}`, note: 'the 404 while PROOF_CARDS_ENABLED is not true' },
   { name: 'explore-address-off', route: '/explore', note: 'the 404 while the public balance read is switched off' },
 ];
 
@@ -53,6 +59,7 @@ export const PARAM_ROUTE_EXAMPLES = {
   '/weather/station/:stationId': '/weather/station/st-0',
   '/contributor/:key': '/contributor/c_0123456789abcdef01234567',
   '/forecasters/:profileKey': '/forecasters/c_0123456789abcdef01234567',
+  '/proof/:commitId': `/proof/${PROOF_COMMIT}?h=44809`,
 };
 
 export const VIEWPORTS = [
