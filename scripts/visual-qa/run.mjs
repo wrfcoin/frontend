@@ -311,6 +311,17 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    for (const [name, mode] of [['proof-card-not-located', 'not_located'], ['proof-card-off', 'off']]) {
+      if (!want(name)) continue;
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { proofCard: mode });
+        await loadRoute(page, `/proof/${fx.PROOF_COMMIT}`, errors);
+        await capture(page, errors, name, `/proof/<commit> (${mode})`, suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     for (const [name, mode] of [['explore-address', 'populated'], ['explore-address-off', 'off']]) {
       if (!want(name)) continue;
       try {

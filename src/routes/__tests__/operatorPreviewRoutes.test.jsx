@@ -38,6 +38,8 @@ const PUBLIC_ONBOARDING = [
   '/onboarding', '/wallet', '/connect-station', '/earn', '/leaderboard/contributors',
   '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
   '/forecasters', '/forecasters/:profileKey',
+  // backend#229: the exact proof card page for one station reading.
+  '/proof/:commitId',
 ];
 
 // The baseline set for a flag combination, plus the onboarding loop when the

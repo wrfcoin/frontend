@@ -123,7 +123,19 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     ['0xdddddddddddddddddddddddddddddddddddddd04', '12D3KooWDddddddddddddddddddddddddddddddddddddddddddd4', 'd4', 55, null],
   ].map(([ownerAddress, peerId, k, hoursAgo, bonded]) => ({ ownerAddress, peerId, serverKey: k.repeat(32), txHash: k.repeat(32), time: iso(hoursAgo * 3_600_000), bonded })) };
 
-  return { PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, BOND_GRANTS, downloadsManifest: readFixture('downloads-manifest.json') };
+  // Proof card (backend#229) in the exact shape proof-card-routes.ts answers; the newest observation
+  // above carries the same commit id and height, so the station page links to it.
+  const PROOF_COMMIT = 'c0ffee'.padEnd(64, '0').replace(/0{8}$/, '4d2a91e7');
+  const PROOF_CARD = {
+    commitId: PROOF_COMMIT, stationAlias: 'st_7d29a4c1e0b8', status: 'reward_finalized',
+    reading: { observedAt: iso(15 * 60_000), temperatureC: 14.2, humidityPct: 62, pressureHpa: 1012.4, windSpeedMs: 5.1, precipitationMm: 0.2, dewpointC: 6.9, provenanceClass: 'real' },
+    inclusion: { status: 'included', block: { height: 44809, hash: 'b7'.repeat(4) + hex(56), timestamp: iso(14 * 60_000), producerPubkey: '1e5180e7' + hex(56), finalized: true } },
+    attestation: { approvals: 2, hasQuorum: true, quorum: 2 },
+    reward: { status: 'paid', amountBaseUnits: '1250000000', finalized: true, rewarded: true, blocker: null, block: { height: 44812, hash: hex(64), finalized: true } },
+    chain: { networkId: 'testnet', chainId: '888', genesisHash: hex(64), height: 44830, finalizedHeight: 44826 },
+  };
+  OBSERVATIONS[0] = { ...OBSERVATIONS[0], commitId: PROOF_COMMIT, height: 44809 };
+  return { PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -138,6 +150,8 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * 'unavailable' (the 503 a network without the public audit list answers).
  * `options.publicBalance`: 'populated' (default) or 'off' (the 404 while
  * PUBLIC_BALANCE_READ_ENABLED is not true).
+ * `options.proofCard`: 'populated' (default), 'not_located' (the reveal is outside the server's
+ * bounded block search) or 'off' (the 404 while PROOF_CARDS_ENABLED is not true).
  */
 export async function installRoutes(page, fx, options = {}) {
   const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
@@ -145,6 +159,7 @@ export async function installRoutes(page, fx, options = {}) {
   const forecastersMode = options.forecasters || 'populated';
   const bondGrantsMode = options.bondGrants || 'populated';
   const publicBalanceMode = options.publicBalance || 'populated';
+  const proofCardMode = options.proofCard || 'populated';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -185,6 +200,11 @@ export async function installRoutes(page, fx, options = {}) {
       if (publicBalanceMode === 'off') return json(route, { error: 'Not found' }, 404);
       // A house-node payout account after two paid epochs (2 x 189.62962944 WRF).
       return json(route, { address: m[1].toLowerCase(), balance: '37925925888', height: 10114, earned: '37925925888' });
+    }
+    if ((m = /^\/api\/proofs\/([0-9a-f]{64})$/.exec(p))) {
+      if (proofCardMode === 'off' || m[1] !== fx.PROOF_COMMIT) return json(route, { error: 'Not found' }, 404);
+      if (proofCardMode === 'not_located') return json(route, { ...fx.PROOF_CARD, reading: null, inclusion: { status: 'not_located', block: null }, attestation: null });
+      return json(route, fx.PROOF_CARD);
     }
     if (p === '/api/faucet/bond-grants') {
       if (bondGrantsMode === 'unavailable') return json(route, { error: { code: 'BOND_GRANTS_UNAVAILABLE', message: 'Bond grant history is unavailable' } }, 503);

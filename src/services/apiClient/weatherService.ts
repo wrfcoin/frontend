@@ -106,6 +106,10 @@ export class WeatherService {
       rainRateMmHr: toNumber(entry.rainRateMmHr ?? entry.rainRate),
       uvIndex: toNumber(entry.uvIndex ?? entry.uv),
       pm25UgM3: toNumber(entry.pm25UgM3 ?? entry.pm25),
+      // Chain observations carry the reveal's commit id and block height (backend#1280); a database
+      // fallback row has neither, so no proof link is offered for it.
+      ...(typeof entry.commitId === 'string' && /^[0-9a-f]{64}$/.test(entry.commitId) ? { commitId: entry.commitId } : {}),
+      ...(Number.isSafeInteger(entry.height) && entry.height > 0 ? { height: entry.height } : {}),
     }));
   }
 

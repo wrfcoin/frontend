@@ -43,6 +43,10 @@ export interface StationObservation {
   rainRateMmHr?: number;
   uvIndex?: number;
   pm25UgM3?: number;
+  /** core4 commit id of the reveal that carried this reading (chain observations only). */
+  commitId?: string;
+  /** Block height the reading landed in (chain observations only). */
+  height?: number;
 }
 
 export interface StationQualityDimension {

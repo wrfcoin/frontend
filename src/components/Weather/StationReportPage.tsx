@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useParams } from 'react-router';
+import { Link as RouterLink, useParams } from 'react-router';
 import {
   Alert,
   Box,
@@ -44,6 +44,7 @@ import {
   Filler,
 } from 'chart.js';
 
+import { proofPagePath } from '../../services/publicReadonlyApi';
 import {
   useLatestObservations,
   useStationQuality,
@@ -232,6 +233,12 @@ const StationReportPage: React.FC = () => {
     submissionsQuery.data,
   ]);
 
+  // Only a chain observation carries a commit id; a database fallback row gets no proof link.
+  const latestObservation = observationsQuery.data?.[0];
+  const latestProofPath = latestObservation?.commitId
+    ? proofPagePath(latestObservation.commitId, latestObservation.height ?? null)
+    : null;
+
   const filteredObservations = useMemo(
     () => filterObservationsByRange(observationsQuery.data ?? [], timeRange),
     [observationsQuery.data, timeRange],
@@ -410,6 +417,18 @@ const StationReportPage: React.FC = () => {
                 <Typography variant="body2" sx={{ color: palette.textSecondary }}>
                   Last update: {stationView.lastUpdateLabel}
                 </Typography>
+                {latestProofPath && (
+                  // backend#229: the newest chain reading opens as a shareable proof card.
+                  <Typography
+                    variant="body2"
+                    component={RouterLink}
+                    to={latestProofPath}
+                    data-testid="station-latest-proof-link"
+                    sx={{ color: palette.primary, fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+                  >
+                    Proof card for this reading
+                  </Typography>
+                )}
               </Stack>
             </Box>
 

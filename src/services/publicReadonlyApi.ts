@@ -97,3 +97,22 @@ export const FORECASTER_SEGMENT_RE = CONTRIBUTOR_KEY_RE;
 export function forecasterPath(segment: string): string | null {
   return FORECASTER_SEGMENT_RE.test(segment) ? `/forecasters/${segment}` : null;
 }
+
+// ---- Proof card for one station reading (backend#229, owner demo queue 2026-11-01) -------------------------
+// backend proof-card-routes.ts: GET /api/proofs/<commit id>[?h=<height>]. The commit id is core4's
+// 64-character lowercase hex; `h` is only a hint telling the server which block to read first (the
+// server proves the reading is in that block from the chain itself, so a wrong hint finds nothing).
+export const PROOF_COMMIT_ID_RE = /^[0-9a-f]{64}$/;
+const PROOF_HEIGHT_RE = /^[1-9][0-9]{0,11}$/;
+
+export function proofCardPath(commitId: string, height?: number | string | null): string | null {
+  if (!PROOF_COMMIT_ID_RE.test(commitId)) return null;
+  const h = height === null || height === undefined ? '' : String(height);
+  return PROOF_HEIGHT_RE.test(h) ? `/proofs/${commitId}?h=${h}` : `/proofs/${commitId}`;
+}
+
+/** The public page for a reading: `/proof/<commit id>` plus the height hint when it is known. */
+export function proofPagePath(commitId: string, height?: number | string | null): string | null {
+  const api = proofCardPath(commitId, height);
+  return api ? api.replace(/^\/proofs\//, '/proof/') : null;
+}
