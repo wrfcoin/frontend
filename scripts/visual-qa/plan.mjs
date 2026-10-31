@@ -21,7 +21,7 @@ export const ROUTES = [
   { name: 'forecasters', route: '/forecasters' },
   { name: 'forecaster', route: '/forecasters/c_0123456789abcdef01234567' },
   { name: 'bond-grants', route: '/faucet/bond-grants' },
-  { name: 'proof-card', route: `/proof/${PROOF_COMMIT}?h=44809` },
+  { name: 'proof-card', route: `/proof/${PROOF_COMMIT}` },
   { name: 'governance', route: '/governance/public' },
   { name: 'governance-proposal', route: '/governance/public/WIP-12' },
   { name: 'forecast', route: '/weather/forecast' },
@@ -59,7 +59,7 @@ export const PARAM_ROUTE_EXAMPLES = {
   '/weather/station/:stationId': '/weather/station/st-0',
   '/contributor/:key': '/contributor/c_0123456789abcdef01234567',
   '/forecasters/:profileKey': '/forecasters/c_0123456789abcdef01234567',
-  '/proof/:commitId': `/proof/${PROOF_COMMIT}?h=44809`,
+  '/proof/:commitId': `/proof/${PROOF_COMMIT}`,
 };
 
 export const VIEWPORTS = [
