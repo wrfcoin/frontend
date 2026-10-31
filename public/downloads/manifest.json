@@ -9,7 +9,7 @@
       "url": "https://github.com/wrfcoin/core4",
       "tag": null,
       "commit": null,
-      "published": false
+      "published": true
     },
     {
       "id": "android-apk",
@@ -27,7 +27,7 @@
       "url": "https://github.com/wrfcoin/core4",
       "tag": null,
       "commit": null,
-      "published": false
+      "published": true
     },
     {
       "id": "cli-linux-x86_64",
