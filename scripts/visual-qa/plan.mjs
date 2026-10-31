@@ -41,6 +41,8 @@ export const SCENARIOS = [
   { name: 'home-dismissed', route: '/', note: 'testnet banner dismissed; chip in the taskbar' },
   { name: 'downloads-unpublished', route: '/downloads', note: 'the shipped manifest (nothing published)' },
   { name: 'wallet-unlocked', route: '/wallet', note: 'after the real web-wallet setup and ed25519 login (stubbed challenge)' },
+  { name: 'wallet-backup-warning', route: '/wallet', note: 'unlocked phrase wallet: the Back up recovery phrase warning (nothing revealed)' },
+  { name: 'onboarding-advanced', route: '/onboarding', note: 'passkey build: the Advanced 12-word section opened' },
   { name: 'connect-station-unlocked', route: '/connect-station', note: 'same signed-in session' },
   { name: 'wallet-send-review', route: '/wallet', note: 'Send form filled and reviewed, not confirmed' },
   { name: 'forecasters-empty', route: '/forecasters', note: 'index running, no forecasts yet: the honest empty state' },

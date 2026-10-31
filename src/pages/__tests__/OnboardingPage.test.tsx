@@ -162,9 +162,24 @@ await jest.unstable_mockModule('../../components/auth/SocialLoginButton', () => 
     React.createElement('button', { onClick }, label ?? 'Social Login'),
 }));
 
+const mockRegisterPasskey = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+const mockSaveStoredPasskey = jest.fn();
+const mockLoadStoredPasskey = jest.fn<() => unknown>().mockReturnValue(null);
+await jest.unstable_mockModule('../../services/walletCrypto/passkey', () => ({
+  registerPasskey: (...args: unknown[]) => mockRegisterPasskey(...args),
+  passkeyRpId: (host: string) => host,
+}));
+await jest.unstable_mockModule('../../services/walletCrypto/passkeySend', () => ({
+  loadStoredPasskey: () => mockLoadStoredPasskey(),
+  saveStoredPasskey: (...args: unknown[]) => mockSaveStoredPasskey(...args),
+}));
+const mockReadVault = jest.fn<() => unknown>().mockReturnValue(null);
+const actualVault = await import('../../services/walletVault.ts');
+await jest.unstable_mockModule('../../services/walletVault.ts', () => ({ ...actualVault, readVault: () => mockReadVault() }));
+
 global.fetch = jest.fn() as typeof global.fetch;
 
-const { default: OnboardingPage, FAUCET_TERMS } = await import('../OnboardingPage');
+const { default: OnboardingPage, FAUCET_TERMS, PASSKEY_PRIMARY_TITLE, PHRASE_ADVANCED_LABEL } = await import('../OnboardingPage');
 const { default: FEATURES } = await import('../../config/features');
 
 // ---------------------------------------------------------------------------
@@ -195,6 +210,9 @@ describe('OnboardingPage', () => {
     mockWalletContext.account = null;
     mockWalletContext.chainId = null;
     (global.fetch as ReturnType<typeof jest.fn>).mockReset();
+    mockRegisterPasskey.mockResolvedValue({ credentialId: new Uint8Array(1), publicKeyXY: new Uint8Array(64), rpId: 'localhost' });
+    mockLoadStoredPasskey.mockReturnValue(null);
+    mockReadVault.mockReturnValue(null);
   });
 
   it('renders stepper with 4 step labels', () => {
@@ -227,21 +245,90 @@ describe('OnboardingPage', () => {
     expect(mockCreateWalletFromMnemonic).not.toHaveBeenCalled();
   });
 
-  it('offers the passkey wallet as the alternative only when the build serves /wallet/passkey', () => {
+  it('passkey flag off: no passkey card, the 12-word wallet is shown directly (no Advanced toggle)', () => {
     const previous = FEATURES.passkeyWallet;
     try {
       (FEATURES as { passkeyWallet: boolean }).passkeyWallet = false;
-      const { unmount } = renderPage();
-      expect(screen.queryByTestId('onboarding-passkey-option')).toBeNull();
-      unmount();
+      renderPage();
+      expect(screen.queryByTestId('onboarding-passkey-primary')).toBeNull();
+      expect(screen.queryByText(PHRASE_ADVANCED_LABEL)).toBeNull();
+      expect(screen.getByText('Create New Wallet')).toBeInTheDocument();
+    } finally {
+      (FEATURES as { passkeyWallet: boolean }).passkeyWallet = previous;
+    }
+  });
 
+  it('passkey flag on: the passkey wallet comes first and the 12-word wallet is Advanced and closed', () => {
+    const previous = FEATURES.passkeyWallet;
+    try {
       (FEATURES as { passkeyWallet: boolean }).passkeyWallet = true;
       renderPage();
-      const option = screen.getByTestId('onboarding-passkey-option');
-      expect(option).toHaveTextContent('no 12 words to write down');
-      expect(option).toHaveTextContent('YubiKey');
-      expect(option).toHaveTextContent('Get test coins');
-      fireEvent.click(screen.getByRole('button', { name: 'Use a passkey wallet instead' }));
+      const card = screen.getByTestId('onboarding-passkey-primary');
+      expect(card).toHaveTextContent(PASSKEY_PRIMARY_TITLE);
+      expect(card).toHaveTextContent('No recovery phrase is created');
+      expect(card).toHaveTextContent('we never ask for your email');
+      expect(screen.getByRole('button', { name: 'Create with Face ID or fingerprint' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Use a security key (YubiKey)' })).toBeInTheDocument();
+      const toggle = screen.getByRole('button', { name: PHRASE_ADVANCED_LABEL });
+      // Closed: the phrase flow is not rendered until asked for.
+      expect(screen.queryByText('Create New Wallet')).toBeNull();
+      // The passkey card precedes the Advanced section.
+      expect(card.compareDocumentPosition(toggle) & card.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      fireEvent.click(toggle);
+      expect(screen.getByText('Create New Wallet')).toBeInTheDocument();
+    } finally {
+      (FEATURES as { passkeyWallet: boolean }).passkeyWallet = previous;
+    }
+  });
+
+  it('passkey flag on: a browser that already holds a 12-word wallet opens the Advanced section at once', () => {
+    const previous = FEATURES.passkeyWallet;
+    try {
+      (FEATURES as { passkeyWallet: boolean }).passkeyWallet = true;
+      mockReadVault.mockReturnValue({ address: '0x' + 'd'.repeat(40) });
+      renderPage();
+      expect(screen.getByText('Unlock the wallet saved in this browser')).toBeInTheDocument();
+    } finally {
+      (FEATURES as { passkeyWallet: boolean }).passkeyWallet = previous;
+    }
+  });
+
+  it('passkey flag on: the create button calls WebAuthn from the click, saves the public record and opens the passkey page', async () => {
+    const previous = FEATURES.passkeyWallet;
+    try {
+      (FEATURES as { passkeyWallet: boolean }).passkeyWallet = true;
+      renderPage();
+      fireEvent.click(screen.getByRole('button', { name: 'Create with Face ID or fingerprint' }));
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/wallet/passkey'));
+      expect(mockRegisterPasskey).toHaveBeenCalledWith(expect.any(String), 'WRFCoin passkey wallet', undefined, 'any');
+      expect(mockSaveStoredPasskey).toHaveBeenCalledTimes(1);
+    } finally {
+      (FEATURES as { passkeyWallet: boolean }).passkeyWallet = previous;
+    }
+  });
+
+  it('passkey flag on: a closed prompt creates nothing and says so calmly', async () => {
+    const previous = FEATURES.passkeyWallet;
+    try {
+      (FEATURES as { passkeyWallet: boolean }).passkeyWallet = true;
+      mockRegisterPasskey.mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'NotAllowedError' }));
+      renderPage();
+      fireEvent.click(screen.getByRole('button', { name: 'Use a security key (YubiKey)' }));
+      expect(await screen.findByText(/Nothing was created; you can try again/)).toBeInTheDocument();
+      expect(mockSaveStoredPasskey).not.toHaveBeenCalled();
+      expect(mockNavigate).not.toHaveBeenCalled();
+    } finally {
+      (FEATURES as { passkeyWallet: boolean }).passkeyWallet = previous;
+    }
+  });
+
+  it('passkey flag on: a device that already has a passkey wallet is offered to open it', () => {
+    const previous = FEATURES.passkeyWallet;
+    try {
+      (FEATURES as { passkeyWallet: boolean }).passkeyWallet = true;
+      mockLoadStoredPasskey.mockReturnValueOnce({ credentialId: new Uint8Array(1), publicKeyXY: new Uint8Array(64), rpId: 'wrfcoin.com' });
+      renderPage();
+      fireEvent.click(screen.getByRole('button', { name: 'Open my passkey wallet' }));
       expect(mockNavigate).toHaveBeenCalledWith('/wallet/passkey');
     } finally {
       (FEATURES as { passkeyWallet: boolean }).passkeyWallet = previous;

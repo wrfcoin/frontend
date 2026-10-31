@@ -17,6 +17,7 @@ import { recipientStatus } from '../services/walletCrypto/recipientStatus';
 import { clearStoredPasskey, getPasskeyNonce, loadStoredPasskey, saveStoredPasskey, submitPasskeyTransfer } from '../services/walletCrypto/passkeySend';
 import { getPasskeyPublicBalance } from '../services/walletCrypto/passkeyBalance';
 import { PasskeyFaucetPanel } from '../components/wallet/PasskeyFaucetPanel';
+import { UNSUPPORTED_MESSAGE, SECURITY_KEY_UNSUPPORTED_MESSAGE } from './passkeyMessages';
 
 const mono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
 const LAUNCH_ADDRESS = /^0x[0-9a-fA-F]{40}$/;
@@ -54,8 +55,7 @@ function unitsOf(amount: string): bigint | null {
 }
 
 export const NOT_ACTIVE_MESSAGE = 'Passkey transfers are not active on the chain yet. Nothing was sent.';
-export const UNSUPPORTED_MESSAGE = 'This browser or device cannot create a passkey that stays on the device. Try a recent Chrome, Safari or Edge with a screen lock enabled.';
-export const SECURITY_KEY_UNSUPPORTED_MESSAGE = 'No passkey was created on a security key. Check that the key is plugged in (or held to the phone) and has a PIN set, then try again in a recent Chrome, Safari, Edge or Firefox.';
+export { UNSUPPORTED_MESSAGE, SECURITY_KEY_UNSUPPORTED_MESSAGE } from './passkeyMessages';
 export const SECURITY_KEY_NOTE = 'A security key needs the physical key, a touch and its PIN every time you send. If you lose the key you lose the account: there is no recovery yet, so keep only small amounts on it.';
 /** Where passkey accounts that carry over live: the wrfcoin.com page. */
 export const CANONICAL_PASSKEY_URL = 'https://wrfcoin.com/wallet/passkey';
