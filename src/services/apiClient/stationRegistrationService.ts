@@ -438,6 +438,16 @@ export interface FaucetClaimResult {
   balance?: string;
   disclaimer?: string;
   message?: string;
+  /** Backend error code on failure (`ALREADY_CLAIMED`, `RATE_LIMITED`, `FAUCET_EMPTY`, `CAPTCHA_FAILED`, …). */
+  code?: string;
+  /** HTTP status on failure; 0 or absent when the request never got an answer. */
+  status?: number;
+}
+
+/** The backend's `{ error: { code } }` code carried by a failed faucet request, if any. */
+export function faucetErrorCode(error: unknown): string | undefined {
+  const code = error instanceof ApiError ? (error.details as { code?: unknown } | undefined)?.code : undefined;
+  return typeof code === 'string' && code ? code : undefined;
 }
 
 export const FAUCET_DISCLAIMER =
@@ -676,6 +686,8 @@ export class StationRegistrationService {
       return {
         success: false,
         message: error instanceof Error ? error.message : 'Faucet claim failed.',
+        code: faucetErrorCode(error),
+        status: error instanceof ApiError ? error.status : 0,
       };
     }
 

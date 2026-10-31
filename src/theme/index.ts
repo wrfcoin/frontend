@@ -231,6 +231,13 @@ function buildShadowArray(base: Record<string, string>): Theme['shadows'] {
 /** Selected tab label colour on dark surfaces; held to 4.5:1 by theme/__tests__/darkTabContrast.test.ts. */
 export const darkTabSelectedColor = primaryLight;
 
+/**
+ * Disabled filled primary buttons on the dark page: the same gradient-outranks-disabled problem as
+ * {@link lightDisabledButton} left a dim blue label on the blue gradient. Flat slate-700 with slate-300
+ * text reads as off and holds 4.5:1.
+ */
+export const darkDisabledButton = { background: bgTertiary, color: textSecondaryRaised } as const;
+
 export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
@@ -334,6 +341,7 @@ export const darkTheme = createTheme({
             background: `linear-gradient(135deg, ${primaryDeep} 0%, ${primaryDeeper} 100%)`,
             boxShadow: glows.primaryStrong,
           },
+          '&.Mui-disabled': darkDisabledButton,
         },
         containedSecondary: {
           backgroundColor: '#7C3AED',
@@ -588,6 +596,14 @@ export const lightAccents = {
   secondary: { main: '#7C3AED', light: accentPurple, dark: '#6D28D9' },
 } as const;
 
+/**
+ * Disabled filled buttons on the light page. The primary gradient is a `background` shorthand, which
+ * outranks MUI's disabled `backgroundColor`, so a disabled primary button kept the blue gradient under
+ * MUI's 26 %-black label, which was hard to read. Flat slate-200 with the secondary text colour reads
+ * as off and holds 4.5:1.
+ */
+export const lightDisabledButton = { background: bgHoverLight, color: textSecondaryLight } as const;
+
 export const lightTheme = createTheme({
   palette: {
     mode: 'light',
@@ -673,6 +689,7 @@ export const lightTheme = createTheme({
           '&:hover': {
             background: `linear-gradient(135deg, ${lightAccents.primary.light} 0%, ${lightAccents.primary.main} 100%)`,
           },
+          '&.Mui-disabled': lightDisabledButton,
         },
         outlined: {
           borderColor: borders.defaultLight,

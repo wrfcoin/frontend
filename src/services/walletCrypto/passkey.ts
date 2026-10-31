@@ -142,20 +142,50 @@ interface CredentialsLike {
 const asBytes = (b: ArrayBuffer | ArrayBufferView): Uint8Array =>
   b instanceof Uint8Array ? b : ArrayBuffer.isView(b) ? new Uint8Array(b.buffer, b.byteOffset, b.byteLength) : new Uint8Array(b);
 
-/** WebAuthn `create()` for a new chain account. Requires user verification; ES256 only. */
-export async function registerPasskey(rpId: string, label: string, credentials: CredentialsLike = navigator.credentials): Promise<PasskeyCredentialRecord> {
-  if (!credentials.create) throw new Error('WebAuthn is not available in this browser');
-  const userId = crypto.getRandomValues(new Uint8Array(16));
-  const created = await credentials.create({
-    publicKey: {
-      rp: { id: rpId, name: 'WRFCoin' },
-      user: { id: userId, name: label, displayName: label },
-      challenge: crypto.getRandomValues(new Uint8Array(32)),
-      pubKeyCredParams: [{ type: 'public-key', alg: -7 }],
-      authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
-      attestation: 'none',
+/**
+ * Where the new passkey should live. `any` lets the browser offer whatever it has (this device's
+ * screen lock, a phone, a security key). `security-key` asks for a roaming hardware key such as a
+ * YubiKey: `authenticatorAttachment: 'cross-platform'` plus the WebAuthn Level 3 `hints` member, which
+ * browsers that do not know it ignore.
+ */
+export type PasskeyAuthenticatorChoice = 'any' | 'security-key';
+
+/**
+ * The `publicKey` options for `navigator.credentials.create()`. ES256 only, a discoverable credential,
+ * and user verification required (biometric, screen lock or the key's PIN) whichever authenticator is
+ * chosen; the choice only adds where the credential should live.
+ */
+export function passkeyCreationOptions(
+  rpId: string,
+  label: string,
+  choice: PasskeyAuthenticatorChoice = 'any',
+  random: (bytes: Uint8Array) => Uint8Array = (bytes) => crypto.getRandomValues(bytes),
+) {
+  const securityKey = choice === 'security-key';
+  return {
+    rp: { id: rpId, name: 'WRFCoin' },
+    user: { id: random(new Uint8Array(16)), name: label, displayName: label },
+    challenge: random(new Uint8Array(32)),
+    pubKeyCredParams: [{ type: 'public-key' as const, alg: -7 }],
+    authenticatorSelection: {
+      ...(securityKey ? { authenticatorAttachment: 'cross-platform' as const } : {}),
+      residentKey: 'required' as const,
+      userVerification: 'required' as const,
     },
-  });
+    ...(securityKey ? { hints: ['security-key'] } : {}),
+    attestation: 'none' as const,
+  };
+}
+
+/** WebAuthn `create()` for a new chain account. Requires user verification; ES256 only. */
+export async function registerPasskey(
+  rpId: string,
+  label: string,
+  credentials: CredentialsLike = navigator.credentials,
+  choice: PasskeyAuthenticatorChoice = 'any',
+): Promise<PasskeyCredentialRecord> {
+  if (!credentials.create) throw new Error('WebAuthn is not available in this browser');
+  const created = await credentials.create({ publicKey: passkeyCreationOptions(rpId, label, choice) });
   if (!created) throw new Error('Passkey registration was cancelled');
   const spki = created.response?.getPublicKey?.();
   if (!spki) throw new Error('This authenticator did not return a P-256 public key');

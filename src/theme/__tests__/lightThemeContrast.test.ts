@@ -4,7 +4,7 @@
  * Jest, so this checks the accent constants the theme is built from.)
  */
 import { describe, it, expect } from '@jest/globals';
-import { lightAccents } from '../index';
+import { lightAccents, lightDisabledButton } from '../index';
 import { contrastRatio, hexToRgb } from '../contrast';
 import { bgPrimaryLight, bgSecondaryLight, textPrimaryLight } from '../tokens';
 
@@ -19,6 +19,9 @@ describe('light theme accents', () => {
       expect(contrastRatio(rgb, paper)).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(white, rgb)).toBeGreaterThanOrEqual(4.5);
     }
+  });
+  it('keeps a disabled primary button label readable (it is flat, not the blue gradient)', () => {
+    expect(contrastRatio(hexToRgb(lightDisabledButton.color), hexToRgb(lightDisabledButton.background))).toBeGreaterThanOrEqual(4.5);
   });
   it('keeps body text on the page surface', () => {
     expect(contrastRatio(hexToRgb(textPrimaryLight), page)).toBeGreaterThanOrEqual(7);
