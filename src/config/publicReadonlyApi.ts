@@ -7,4 +7,6 @@ export const publicReadonlyApi = {
   blocks: '/api/blockchain/blocks?limit=25',
   transaction: (hash: string) => `/api/blockchain/transactions/${encodeURIComponent(hash)}`,
   stations: '/api/weather/stations',
+  /** Address lookup on /explore (backend#30 + earned total); `address` is lowercase 0x + 40 hex. */
+  balance: (address: string) => `/api/public/balance/${encodeURIComponent(address)}`,
 } as const;

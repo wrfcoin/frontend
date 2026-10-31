@@ -136,12 +136,15 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * backend's 503 while the chain-reward index is off on a network).
  * `options.bondGrants`: 'populated' (default), 'empty' (no grants yet) or
  * 'unavailable' (the 503 a network without the public audit list answers).
+ * `options.publicBalance`: 'populated' (default) or 'off' (the 404 while
+ * PUBLIC_BALANCE_READ_ENABLED is not true).
  */
 export async function installRoutes(page, fx, options = {}) {
   const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
   const manifestMode = options.manifest || 'populated';
   const forecastersMode = options.forecasters || 'populated';
   const bondGrantsMode = options.bondGrants || 'populated';
+  const publicBalanceMode = options.publicBalance || 'populated';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -177,6 +180,11 @@ export async function installRoutes(page, fx, options = {}) {
       // c_ key only, like the backend for every public caller; the record answers for the fixture rows' keys.
       if ((m = /^\/api\/forecasters\/(c_[0-9a-f]{24})$/.exec(p)) && fx.FORECASTERS('7d').rows.some(r => r.profileKey === m[1])) return json(route, forecastersMode === 'empty' ? { ...fx.FORECASTER, totals: { ...fx.FORECASTER.totals, forecasts: '0', byProvenance: { real: '0', synthetic: '0', unclassified: '0' }, firstActiveAt: null, lastActiveAt: null }, series: [], recent: [] } : { ...fx.FORECASTER, profileKey: m[1] });
       return json(route, { error: { code: 'FORECASTER_NOT_FOUND' } }, 404);
+    }
+    if ((m = /^\/api\/public\/balance\/(0x[0-9a-fA-F]{40})$/.exec(p))) {
+      if (publicBalanceMode === 'off') return json(route, { error: 'Not found' }, 404);
+      // A house-node payout account after two paid epochs (2 x 189.62962944 WRF).
+      return json(route, { address: m[1].toLowerCase(), balance: '37925925888', height: 10114, earned: '37925925888' });
     }
     if (p === '/api/faucet/bond-grants') {
       if (bondGrantsMode === 'unavailable') return json(route, { error: { code: 'BOND_GRANTS_UNAVAILABLE', message: 'Bond grant history is unavailable' } }, 503);
