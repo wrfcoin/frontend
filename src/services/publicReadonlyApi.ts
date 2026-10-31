@@ -116,3 +116,6 @@ export function proofPagePath(commitId: string, height?: number | string | null)
   const api = proofCardPath(commitId, height);
   return api ? api.replace(/^\/proofs\//, '/proof/') : null;
 }
+// ---- Producers and bonded nodes (owner demo queue 2026-11-01, item 3) --------------------------------------
+// backend network-nodes-routes.ts: GET /api/network/nodes, no query. One cached snapshot read from the node.
+export const NETWORK_NODES_PATH = '/network/nodes';

@@ -125,6 +125,7 @@ describe('PublicTestnetLandingPage', () => {
       '/onboarding',
       '/map',
       '/explore',
+      '/nodes',
       '/forecasters',
       '/search',
       '/leaderboard/contributors',

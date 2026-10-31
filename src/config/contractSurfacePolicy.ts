@@ -103,6 +103,10 @@ export const PUBLIC_READONLY_PATHS = new Set([
   //   /proof/:commitId             reads GET /api/proofs/<64 lowercase hex>[?h=<height>]
   // Exact entry: no other /proof path is admitted.
   '/proof/:commitId',
+  // Owner demo queue 2026-11-01 item 3: producers, bonded nodes and attesters.
+  //   /nodes                       reads GET /api/network/nodes (no query)
+  // Exact entry. The /network prefix stays NEVER_PUBLIC (legacy network dashboards).
+  '/nodes',
 ]);
 
 // Owner ruling 2026-10-02 FULL WEB JOIN PATH, frontend#437: admit the exact

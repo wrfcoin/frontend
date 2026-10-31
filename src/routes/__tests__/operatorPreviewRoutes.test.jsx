@@ -40,6 +40,8 @@ const PUBLIC_ONBOARDING = [
   '/forecasters', '/forecasters/:profileKey',
   // backend#229: the exact proof card page for one station reading.
   '/proof/:commitId',
+  // Owner demo 2026-11-01: the exact producers and bonded nodes page.
+  '/nodes',
 ];
 
 // The baseline set for a flag combination, plus the onboarding loop when the

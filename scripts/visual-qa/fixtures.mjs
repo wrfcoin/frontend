@@ -135,7 +135,31 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     chain: { networkId: 'testnet', chainId: '888', genesisHash: hex(64), height: 44830, finalizedHeight: 44826 },
   };
   OBSERVATIONS[0] = { ...OBSERVATIONS[0], commitId: PROOF_COMMIT, height: 44809 };
-  return { PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, downloadsManifest: readFixture('downloads-manifest.json') };
+  // Producers and bonded nodes (owner demo 2026-11-01) in the exact shape network-nodes-routes.ts serves.
+  // Keys and addresses: the core4 genesis roster for producers; synthetic for the bonds.
+  const NETWORK_NODES = {
+    chain: { networkId: 'testnet', chainId: '888', height: 44830, status: 'ok' },
+    producers: {
+      status: 'ok', rosterSource: 'core4 genesis_producer_pins.rs (testnet genesis roster)',
+      window: { fromHeight: 44767, toHeight: 44830, read: 64, unreadable: 0, unsigned: 0 },
+      members: [
+        { producerId: 'n5-node-a', publicKey: '1e5180e7add06bbe07cf2698ec9d4882ae1cfb54b13de67bae92a4e625ceec1a', payoutAddress: '0x680d51f7543ca70029866956376306d47ce60ed0', blocksInWindow: 64, lastBlock: { height: 44830, time: iso(60_000) }, earnedTotal: '4812500000000' },
+        { producerId: 'producer-standby', publicKey: 'cd77a1f439ec6896727f585e81228795c8008c8f8db7763bb9c42afa8d119aaa', payoutAddress: '0x39ee2e595a55c71256282fe5c42a398594985b1a', blocksInWindow: 0, lastBlock: null, earnedTotal: '0' },
+        { producerId: 'mango-mini', publicKey: '1f7a4ec7699e361390cb89297a2b4441e676b17c95b122063eda25b1f64e0f1e', payoutAddress: '0xc536d2026661522cb8631b3c723d4af43784a990', blocksInWindow: 0, lastBlock: null, earnedTotal: '0' },
+      ],
+      unrostered: [],
+    },
+    bonded: {
+      status: 'ok', epoch: 11, discovery: { settlementEpochs: [11, 10, 9, 8], configured: 3 },
+      nodes: [['ws-node', 'c37f'], ['n5-node', '4926'], ['mango-node', 'fe1b']].map(([alias, prefix], i) => ({
+        deploymentId: `${prefix}${hex(60)}`, alias, principal: '25036000000', escrowBalance: '25036000000', jailed: false, registeredEpoch: 1, exitEffectiveHeight: null,
+        payoutAddress: `0x${prefix}${hex(36)}`, earnedTotal: String(37925925888 + i * 18962962944), lastPayout: { epoch: 10, status: 'PAID', amount: '18962962944' },
+      })),
+    },
+    attesters: { status: 'ok', quorum: 2, ids: ['oracle-n5', 'oracle-ws', 'oracle-mango'] },
+    checkedAt: new Date(now).toISOString(),
+  };
+  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -152,6 +176,8 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * PUBLIC_BALANCE_READ_ENABLED is not true).
  * `options.proofCard`: 'populated' (default), 'not_located' (the reveal is outside the server's
  * bounded block search) or 'off' (the 404 while PROOF_CARDS_ENABLED is not true).
+ * `options.networkNodes`: 'populated' (default), 'partial' (bonds and attesters unavailable) or 'off'
+ * (the 404 while NETWORK_NODES_READ_ENABLED is not true).
  */
 export async function installRoutes(page, fx, options = {}) {
   const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
@@ -160,6 +186,7 @@ export async function installRoutes(page, fx, options = {}) {
   const bondGrantsMode = options.bondGrants || 'populated';
   const publicBalanceMode = options.publicBalance || 'populated';
   const proofCardMode = options.proofCard || 'populated';
+  const networkNodesMode = options.networkNodes || 'populated';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -205,6 +232,11 @@ export async function installRoutes(page, fx, options = {}) {
       if (proofCardMode === 'off' || m[1] !== fx.PROOF_COMMIT) return json(route, { error: 'Not found' }, 404);
       if (proofCardMode === 'not_located') return json(route, { ...fx.PROOF_CARD, reading: null, inclusion: { status: 'not_located', block: null }, attestation: null });
       return json(route, fx.PROOF_CARD);
+    }
+    if (p === '/api/network/nodes') {
+      if (networkNodesMode === 'off') return json(route, { error: 'Not found' }, 404);
+      if (networkNodesMode === 'partial') return json(route, { ...fx.NETWORK_NODES, bonded: { status: 'unavailable', epoch: null, discovery: { settlementEpochs: [], configured: 0 }, nodes: [] }, attesters: { status: 'unavailable', quorum: null, ids: [] } });
+      return json(route, fx.NETWORK_NODES);
     }
     if (p === '/api/faucet/bond-grants') {
       if (bondGrantsMode === 'unavailable') return json(route, { error: { code: 'BOND_GRANTS_UNAVAILABLE', message: 'Bond grant history is unavailable' } }, 503);

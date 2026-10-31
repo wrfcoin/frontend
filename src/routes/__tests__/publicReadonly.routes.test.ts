@@ -13,6 +13,7 @@ describe('Stage 1.5 public route policy', () => {
       '/forecasters', '/forecasters/:profileKey',
       '/faucet/bond-grants', '/faucet', '/faucet/bond-grant', '/faucet/bond-grants/x',
       '/proof/:commitId', '/proof', '/proofs/:commitId', '/proof/:commitId/x',
+      '/nodes', '/nodes/x', '/network/nodes',
       '/wallet', '/onboarding', '/governance', '/nfts', '/miner', '/dashboard',
       '/earnings', '/weather/dashboard', '/connect-station', '/earn', '/connect-station/x', '/earn/x',
       '/leaderboard', '/leaderboard/contributors/x', '/leaderboard/nearby', '/leaderboard/profile/:address',
@@ -39,6 +40,9 @@ describe('Stage 1.5 public route policy', () => {
     // backend#229 proof card: one exact entry.
     expect(isPublicTestnetPath('/proof', false, true)).toBe(false);
     expect(isPublicTestnetPath('/proof/:commitId/x', false, true)).toBe(false);
+    // Producers and bonded nodes: one exact entry; /network stays never-public.
+    expect(isPublicTestnetPath('/nodes/x', false, true)).toBe(false);
+    expect(isPublicTestnetPath('/network/nodes', false, true)).toBe(false);
     expect([...PUBLIC_ONBOARDING_PATHS]).toEqual(['/onboarding', '/wallet', '/wallet/passkey', '/connect-station', '/earn']);
   });
 
@@ -69,6 +73,7 @@ describe('Stage 1.5 station detail', () => {
       '/forecasters', '/forecasters/:profileKey',
       '/faucet/bond-grants',
       '/proof/:commitId',
+      '/nodes',
     ]);
   });
 
