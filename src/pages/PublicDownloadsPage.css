@@ -160,6 +160,12 @@ body.light-mode .dl-hero { background: linear-gradient(135deg, #EFF6FF 0%, var(-
   overflow-wrap: anywhere;
   line-height: 1.5;
 }
+/* Short per-OS commands stay on one line: no word (e.g. "SHA256") may land on a line of its own.
+   If a narrow screen cannot fit one, it scrolls sideways inside the box instead of wrapping. */
+.dl-cmd--nowrap code {
+  white-space: pre;
+  overflow-x: auto;
+}
 
 .dl-copy {
   flex: none;
@@ -218,6 +224,9 @@ body.light-mode .dl-hero { background: linear-gradient(135deg, #EFF6FF 0%, var(-
 .dl-verify-grid > div { min-width: 0; }
 .dl-verify-grid p { margin: 6px 0 12px; font-size: 0.9375rem; }
 .dl-verify-grid .dl-small { font-size: 0.8125rem; }
+.dl-verify-cmds { margin: 0; }
+.dl-verify-cmds dt { color: var(--dl-text-secondary); font-weight: 600; margin: 0 0 4px; }
+.dl-verify-cmds dd { margin: 0; }
 
 .dl-manifest {
   margin-top: 16px;
@@ -241,6 +250,9 @@ body.light-mode .dl-hero { background: linear-gradient(135deg, #EFF6FF 0%, var(-
 
 /* Phone */
 @media (max-width: 600px) {
+  /* Fit the longest per-OS command (certutil, 32 characters) on one line at 390 px. */
+  .dl-cmd--nowrap { padding-left: 10px; gap: 4px; }
+  .dl-cmd--nowrap code { font-size: 0.6875rem; }
   .dl-page { padding: 24px 16px 56px; }
   .dl-page h1 { font-size: 1.5rem; }
   .dl-grid, .dl-verify-grid { grid-template-columns: 1fr; }

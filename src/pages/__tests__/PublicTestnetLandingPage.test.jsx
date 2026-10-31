@@ -117,7 +117,11 @@ describe('PublicTestnetLandingPage', () => {
     const hrefs = screen
       .getAllByRole('link')
       .map(link => link.getAttribute('href'));
+    // The first link is the "Get test coins" line (the faucet lives in /onboarding).
+    expect(screen.getByRole('link', { name: 'Get test coins' })).toHaveAttribute('href', '/onboarding');
+    expect(screen.getByTestId('landing-faucet')).toHaveTextContent('one claim per address every 24 hours');
     expect(hrefs).toEqual([
+      '/onboarding',
       '/onboarding',
       '/map',
       '/explore',
@@ -149,6 +153,8 @@ describe('PublicTestnetLandingPage', () => {
       .getAllByRole('link')
       .map(link => link.getAttribute('href'));
     expect(hrefs).toEqual(['/downloads', '/terms', '/privacy', '/api-terms', '/security']);
+    // No /onboarding route on this build, so no faucet link either.
+    expect(screen.queryByTestId('landing-faucet')).toBeNull();
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
   });

@@ -9,10 +9,13 @@ import { jest } from '@jest/globals';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-const { default: PublicDownloadsPage, PLATFORMS } = await import('../PublicDownloadsPage');
+const { default: PublicDownloadsPage, PLATFORMS, TESTNET_GENESIS_HASH, VERIFY_COMMANDS, NODE_PLATFORMS } = await import('../PublicDownloadsPage');
 const { parseManifest, formatBytes, fileNameOf } = await import('../../services/downloadsManifest');
 
 const HEX64 = /\b[0-9a-f]{64}\b/;
+// The page's text without the one fixed hash it always shows (the testnet genesis hash), so the
+// "no release hash until the manifest publishes one" checks still bite.
+const releaseText = () => screen.getByTestId('public-downloads').textContent.replace(TESTNET_GENESIS_HASH, '');
 const APK_SHA = 'd2c1b0a9f8e7d6c5b4a3928170605f4e3d2c1b0a9f8e7d6c5b4a3928170605f4';
 const COMMIT = '0123456789abcdef0123456789abcdef01234567';
 
@@ -57,7 +60,7 @@ it('reads only the same-origin manifest and shows every artifact as not yet publ
   expect(screen.queryByRole('button', { name: 'Copy address' })).toBeNull();
 
   expect(screen.getAllByText('Not yet published').length).toBeGreaterThanOrEqual(3);
-  expect(screen.getByTestId('public-downloads').textContent).not.toMatch(HEX64);
+  expect(releaseText()).not.toMatch(HEX64);
   expect(screen.getByRole('button', { name: 'Download APK' })).toBeDisabled();
   expect(screen.queryByRole('link', { name: 'Download APK' })).toBeNull();
   // The verify section prints the manifest the page actually read.
@@ -119,7 +122,7 @@ it('keeps downloads off and says so when the manifest cannot be read', async () 
   expect(alerts.map(a => a.textContent).join(' ')).toContain('The release manifest could not be read');
   expect(screen.getAllByText('Release manifest unavailable').length).toBeGreaterThanOrEqual(2);
   expect(screen.getByRole('button', { name: 'Download APK' })).toBeDisabled();
-  expect(screen.getByTestId('public-downloads').textContent).not.toMatch(HEX64);
+  expect(releaseText()).not.toMatch(HEX64);
   expect(screen.queryByTestId('manifest-json')).toBeNull();
 });
 
@@ -172,4 +175,50 @@ it('Copy always copies the whole command, however the box renders it', async () 
   expect(rule).toMatch(/white-space:\s*pre-wrap/);
   expect(rule).toMatch(/overflow-wrap:\s*anywhere/);
   expect(rule).not.toMatch(/nowrap/);
+});
+
+it('does not mark Windows as available: a native download is coming, not WSL or Docker', async () => {
+  mockManifest(UNPUBLISHED);
+  mount();
+  await screen.findByTestId('manifest-json');
+  const node = screen.getByTestId('download-sync-node');
+  expect(node.textContent).not.toMatch(/WSL2|Docker Desktop/);
+  expect(within(node).queryByText('Available')).toBeNull();
+  expect(within(node).getByText('Linux and macOS')).toBeInTheDocument();
+  expect(NODE_PLATFORMS.find(r => r.os === 'Windows')).toEqual({ os: 'Windows', status: 'neutral', label: 'Not available yet' });
+  expect(screen.getByTestId('windows-node-note')).toHaveTextContent('A native Windows download is coming: one file to run, no WSL and no Docker. It is not available yet.');
+  // Linux and macOS rows are unchanged.
+  expect(NODE_PLATFORMS.map(r => r.os)).toEqual(['Linux x86_64', 'macOS, Intel', 'macOS, Apple Silicon', 'Windows']);
+});
+
+it('renders each per-OS checksum command as its own one-line copyable code box with no trailing punctuation', async () => {
+  const writeText = jest.fn(async () => undefined);
+  Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+  mockManifest(UNPUBLISHED);
+  mount();
+  await screen.findByTestId('manifest-json');
+  const cmds = screen.getByTestId('verify-commands');
+  const codes = [...cmds.querySelectorAll('code')].map(c => c.textContent);
+  expect(codes).toEqual(['sha256sum -c SHA256SUMS', 'shasum -a 256 -c SHA256SUMS', 'certutil -hashfile <file> SHA256']);
+  for (const box of cmds.querySelectorAll('.dl-cmd')) expect(box).toHaveClass('dl-cmd--nowrap');
+  expect(cmds.textContent).not.toMatch(/SHA256\./);
+  fireEvent.click(within(cmds).getByRole('button', { name: 'Copy the Windows command' }));
+  await waitFor(() => expect(writeText).toHaveBeenCalledWith('certutil -hashfile <file> SHA256'));
+  expect(VERIFY_COMMANDS.map(v => v.os)).toEqual(['Linux', 'macOS', 'Windows']);
+  // The nowrap modifier keeps the command on one line; the base rule still wraps long commands.
+  const css = (await import('node:fs')).readFileSync(new URL('../PublicDownloadsPage.css', import.meta.url), 'utf8');
+  const rule = css.match(/\.dl-cmd--nowrap code \{[^}]*\}/)[0];
+  expect(rule).toMatch(/white-space:\s*pre;/);
+  expect(rule).toMatch(/overflow-x:\s*auto/);
+});
+
+it('shows the real testnet genesis hash on the command-line wallet card, never a placeholder', async () => {
+  mockManifest(UNPUBLISHED);
+  mount();
+  await screen.findByTestId('manifest-json');
+  expect(TESTNET_GENESIS_HASH).toBe('553a3758386d9631037d7469686acb4a121ced81dcf5cde256e2d05667c5f332');
+  const cli = screen.getByTestId('download-cli-wallet');
+  expect(cli).toHaveTextContent(TESTNET_GENESIS_HASH);
+  expect(within(cli).getByRole('button', { name: 'Copy the genesis hash' })).toBeInTheDocument();
+  expect(screen.getByTestId('public-downloads').textContent).not.toMatch(/placeholder|genesis-hash>|<888/i);
 });

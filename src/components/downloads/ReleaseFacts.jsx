@@ -29,10 +29,13 @@ export function CopyButton({ value, label }) {
   );
 }
 
-/** One line of a command or address with a copy button. */
-export function CommandLine({ text, label = 'Copy command' }) {
+/**
+ * One line of a command or address with a copy button. Long commands wrap rather than clip; `nowrap`
+ * keeps a short command on one line (scrolling sideways if it must) so no word lands on its own line.
+ */
+export function CommandLine({ text, label = 'Copy command', nowrap = false }) {
   return (
-    <div className="dl-cmd">
+    <div className={`dl-cmd${nowrap ? ' dl-cmd--nowrap' : ''}`}>
       <code>{text}</code>
       <CopyButton value={text} label={label} />
     </div>

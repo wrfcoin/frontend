@@ -38,6 +38,8 @@ const PublicTestnetLandingPage = () => {
   );
   const mainLinks = entries.filter(e => e.group === 'main' && e.path !== '/');
   const policyLinks = entries.filter(e => e.group === 'legal');
+  // The faucet lives in the wallet onboarding; only link it where that route is published.
+  const faucetPath = mainLinks.some(e => e.path === '/onboarding') ? '/onboarding' : null;
 
   return (
     <div className="public-testnet">
@@ -112,6 +114,12 @@ const PublicTestnetLandingPage = () => {
             Join in. Open a wallet and connect a weather station using the
             links below; testnet tokens have no value.
           </li>
+          {faucetPath && (
+            <li data-testid="landing-faucet">
+              <Link to={faucetPath}>Get test coins</Link> from the faucet once you have a
+              wallet: 10 test WRF per claim, one claim per address every 24 hours.
+            </li>
+          )}
         </ul>
       </section>
 
