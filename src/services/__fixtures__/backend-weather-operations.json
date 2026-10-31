@@ -1,14 +1,14 @@
 {
-  "backendCommit": "6229638650a1e2a3745ef1b381a7c687646fed00",
+  "backendCommit": "dbd7cdf579fcc94609bcbabf6129b731e53827bf",
   "sourcePath": "server/enhanced_unified_api_optimized.ts",
   "sources": [
     {
       "path": "server/enhanced_unified_api_optimized.ts",
-      "sha256": "73be2c5757180518a06e17c61f9720d6a825f2ec1650d7219eabeedb3be38418"
+      "sha256": "2f51f54c22699ddb9eacf5c45aa65a2e4e3ce608987645d0ae3307995ba14de8"
     },
     {
       "path": "server/routes/weather-routes.js",
-      "sha256": "a6216b4f3b6aa27d1056d51b558e7aa4b6505c065e01d19b880a509931f19545"
+      "sha256": "120a2c99e7b88f69dc99733230b927f68498a4d0760e843ecbc4cc2508c19b39"
     },
     {
       "path": "server/routes/station-detail-routes.ts",
@@ -54,13 +54,13 @@
       "method": "GET",
       "path": "/api/weather/alerts/:location",
       "sourcePath": "server/routes/weather-routes.js",
-      "line": 738
+      "line": 713
     },
     {
       "method": "GET",
       "path": "/api/weather/coverage-zones",
       "sourcePath": "server/routes/weather-routes.js",
-      "line": 546
+      "line": 548
     },
     {
       "method": "GET",
@@ -84,7 +84,7 @@
       "method": "GET",
       "path": "/api/weather/health",
       "sourcePath": "server/routes/weather-routes.js",
-      "line": 746
+      "line": 721
     },
     {
       "method": "GET",
@@ -102,7 +102,7 @@
       "method": "GET",
       "path": "/api/weather/stations",
       "sourcePath": "server/routes/weather-routes.js",
-      "line": 635
+      "line": 610
     },
     {
       "method": "GET",
@@ -159,5 +159,5 @@
       "line": 435
     }
   ],
-  "checksum": "9717a6ee5ebac7072fc9187b2bc6c3824a9089f8d06d409981146bcd8c78a737"
+  "checksum": "75b3153ad3944b46f62464b2820e2198609b4b9f35030b4cd70fa6fb73a1a0a7"
 }

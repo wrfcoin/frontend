@@ -6,19 +6,29 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 
 // Fixture account: a stored passkey record (public material only); signing and WebAuthn are never reached.
 const record = { credentialId: new Uint8Array(16).fill(7), publicKeyXY: new Uint8Array(64).fill(9), rpId: 'localhost' };
-const getBalance = jest.fn<(a: string) => Promise<{ balance: string }>>();
+// The public balance route answers { units, height } via passkeyBalance; `balance` keeps the old fixture shape.
+const getBalance = jest.fn<(a: string) => Promise<{ balance: string; height?: number }>>();
 const clearStoredPasskey = jest.fn();
+const submitPasskeyTransfer = jest.fn<(b: unknown) => Promise<{ txHash: string; status: 'submitted' }>>();
 let stats: { blockHeight: number | null } = { blockHeight: 4210 };
 
-await jest.unstable_mockModule('../../services/apiClient', () => ({ walletService: { getBalance: (a: string) => getBalance(a) } }));
+await jest.unstable_mockModule('../../services/walletCrypto/passkeyBalance', () => ({
+  getPasskeyPublicBalance: async (a: string) => { const r = await getBalance(a); return { units: r.balance, height: r.height ?? 4209 }; },
+}));
+// Signing is replaced by a fixture body: WebAuthn is never reached. The address derivation stays real.
+const actualPasskey = await import('../../services/walletCrypto/passkey');
+await jest.unstable_mockModule('../../services/walletCrypto/passkey', () => ({
+  ...actualPasskey,
+  signPasskeyTransfer: async () => ({ fixture: true }),
+}));
 await jest.unstable_mockModule('../../hooks/usePublicTestnetStats', () => ({ default: () => stats }));
 await jest.unstable_mockModule('../../config/network', () => ({ WRFCOIN_CHAIN_ID: 777 }));
 await jest.unstable_mockModule('../../services/walletCrypto/passkeySend', () => ({
   clearStoredPasskey: () => clearStoredPasskey(),
-  getPasskeyNonce: jest.fn(),
+  getPasskeyNonce: async () => '0',
   loadStoredPasskey: () => record,
   saveStoredPasskey: jest.fn(),
-  submitPasskeyTransfer: jest.fn(),
+  submitPasskeyTransfer: (b: unknown) => submitPasskeyTransfer(b),
 }));
 const { default: PasskeyWalletPage, addressTail } = await import('../PasskeyWalletPage');
 const { passkeyRecordAddress } = await import('../../services/walletCrypto/passkey');
@@ -26,7 +36,7 @@ const address = passkeyRecordAddress(record as any);
 
 const writeText = jest.fn<(t: string) => Promise<void>>();
 beforeEach(() => {
-  getBalance.mockReset(); clearStoredPasskey.mockReset(); writeText.mockReset();
+  getBalance.mockReset(); clearStoredPasskey.mockReset(); writeText.mockReset(); submitPasskeyTransfer.mockReset();
   writeText.mockResolvedValue(undefined);
   Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
   stats = { blockHeight: 4210 };
@@ -90,9 +100,11 @@ describe('passkey wallet: balance and send gating', () => {
     fireEvent.change(screen.getByLabelText('Amount (WRF)'), { target: { value: amount } });
   };
   it('shows the exact available balance and blocks an amount above it', async () => {
-    getBalance.mockResolvedValue({ balance: '150000000' }); // 1.5 WRF
+    getBalance.mockResolvedValue({ balance: '150000000', height: 4209 }); // 1.5 WRF
     render(<PasskeyWalletPage />);
     expect(await screen.findByText('1.50000000 WRF')).toBeInTheDocument();
+    expect(getBalance).toHaveBeenCalledWith(address);
+    expect(screen.getByTestId('passkey-balance-height')).toHaveTextContent('Read at block 4,209.');
     fill('1.50000001');
     expect(screen.getAllByRole('alert')[0]).toHaveTextContent('more than the available balance');
     expect(screen.getByRole('button', { name: 'Send with passkey' })).toBeDisabled();
@@ -112,8 +124,21 @@ describe('passkey wallet: balance and send gating', () => {
     render(<PasskeyWalletPage />);
     expect(await screen.findByText('Unavailable')).toBeInTheDocument();
     expect(screen.getByTestId('passkey-balance').textContent).not.toMatch(/\d+\.\d{8}/);
+    expect(screen.queryByTestId('passkey-balance-height')).not.toBeInTheDocument();
     fill('5');
     expect(screen.getByRole('button', { name: 'Send with passkey' })).toBeEnabled();
+  });
+  it('re-reads after a send and shows "Unavailable", not the old number, when that read fails', async () => {
+    getBalance.mockResolvedValueOnce({ balance: '500000000' }).mockRejectedValueOnce(new Error('502'));
+    submitPasskeyTransfer.mockResolvedValue({ txHash: 'tx-fixture', status: 'submitted' });
+    render(<PasskeyWalletPage />);
+    expect(await screen.findByText('5.00000000 WRF')).toBeInTheDocument();
+    fill('1');
+    fireEvent.click(screen.getByRole('button', { name: 'Send with passkey' }));
+    expect(await screen.findByText('tx-fixture')).toBeInTheDocument();
+    expect(await screen.findByText('Unavailable')).toBeInTheDocument();
+    expect(screen.queryByText('5.00000000 WRF')).not.toBeInTheDocument();
+    expect(getBalance).toHaveBeenCalledTimes(2);
   });
 });
 
