@@ -1,0 +1,46 @@
+/* "Is this reading unusual?" (bring-your-own-key Wolfram|Alpha check). Colours are the --fc-* tokens the
+   public page shell injects (useForecasterThemeVars), so both themes follow the body theme. */
+.ruc-body { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 12px; }
+.ruc-lede { margin: 0; font-size: 0.875rem; color: var(--fc-text-secondary); }
+.ruc-form { display: flex; flex-direction: column; gap: 8px; }
+.ruc-label { font-size: 0.875rem; font-weight: 600; color: var(--fc-text); }
+.ruc-line { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ruc-input {
+  flex: 1 1 220px; min-width: 0; font: inherit; font-family: var(--fc-mono); font-size: 0.875rem;
+  padding: 8px 12px; border-radius: 8px; border: 1px solid var(--fc-border);
+  background: var(--fc-bg-primary); color: var(--fc-text);
+}
+.ruc-input:focus-visible { outline: 2px solid var(--fc-primary-light); outline-offset: 1px; }
+.ruc-action {
+  border: 0; background: var(--fc-primary-light); color: var(--fc-bg-primary); font: inherit; font-size: 0.875rem;
+  font-weight: 700; padding: 8px 16px; border-radius: 8px; cursor: pointer; white-space: nowrap;
+}
+.ruc-action:disabled { opacity: 0.7; cursor: progress; }
+.ruc-action:focus-visible, .ruc-link:focus-visible { outline: 2px solid var(--fc-text); outline-offset: 2px; }
+.ruc-link { border: 0; background: none; padding: 0; font: inherit; color: var(--fc-primary-light); cursor: pointer; text-decoration: underline; }
+.ruc-help, .ruc-key { margin: 0; font-size: 0.8125rem; color: var(--fc-text-secondary); }
+.ruc-help a, .ruc-attrib a { color: var(--fc-primary-light); }
+.ruc-mono { font-family: var(--fc-mono); }
+.ruc-error { margin: 0; font-size: 0.875rem; color: var(--fc-error-light); }
+
+.ruc-answer { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; border-top: 1px solid var(--fc-border); }
+.ruc-verdict { margin: 8px 0 0; font-size: 1rem; font-weight: 700; }
+.ruc-verdict--ok { color: var(--fc-success-light); }
+.ruc-verdict--warn { color: var(--fc-warning-light); }
+.ruc-verdict--alert { color: var(--fc-error-light); }
+.ruc-verdict--muted { color: var(--fc-text-secondary); }
+.ruc-kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: 0.875rem; }
+.ruc-kv dt { color: var(--fc-text-secondary); }
+.ruc-kv dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 600; }
+.ruc-pod summary { cursor: pointer; font-size: 0.8125rem; color: var(--fc-text-secondary); }
+.ruc-pod pre {
+  margin: 8px 0 0; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--fc-border);
+  background: var(--fc-bg-primary); font-family: var(--fc-mono); font-size: 0.75rem; white-space: pre-wrap; word-break: break-word;
+}
+.ruc-attrib { margin: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.75rem; color: var(--fc-text-muted); }
+.ruc-attrib > a { font-size: 0.875rem; font-weight: 600; }
+
+@media (max-width: 600px) {
+  .ruc-body { padding: 12px 16px 16px; }
+  .ruc-line .ruc-action { flex: 1 1 100%; }
+}

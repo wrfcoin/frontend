@@ -36,6 +36,8 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     ['Aurora Ridge', 44.9, -93.2, 'active'], ['Birch Hollow', 45.1, -93.4, 'active'], ['Cedar Flats', 44.7, -92.9, 'active'],
     ['Driftwood', 45.3, -92.7, 'stale'], ['Elm Prairie', 44.5, -93.6, 'registered'], ['Foxglove', 45.0, -92.5, 'offline'],
   ].map(([name, latitude, longitude, status], i) => ({ stationId: `st-${i}`, id: `st-${i}`, name, latitude, longitude, status }));
+  // The proof card's station (PROOF_CARD.stationAlias) by its public alias, for the Wolfram check's location read.
+  STATIONS[0].alias = 'st_7d29a4c1e0b8';
   const ZONES = { zones: Array.from({ length: 7 }, (_, i) => ({ lat: 44.5 + i * 0.1, lng: -93.5 + i * 0.1 })) };
   const LEADERBOARD = {
     metric: 'earnings', amountUnits: { available: true }, updatedAt: iso(3_600_000),
@@ -159,7 +161,16 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     attesters: { status: 'ok', quorum: 2, ids: ['oracle-n5', 'oracle-ws', 'oracle-mango'] },
     checkedAt: new Date(now).toISOString(),
   };
-  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, downloadsManifest: readFixture('downloads-manifest.json') };
+  // Bring-your-own-key Wolfram check (owner ruling 2026-11-01) in the exact shape
+  // wolfram-reading-check-routes.ts answers. Illustrative climate numbers for the fixture cell only.
+  const WOLFRAM_QUERY = 'historical temperatures on ' + new Date(PROOF_CARD.reading.observedAt).toLocaleString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' }) + ' at 44.9°N 93.2°W';
+  const WOLFRAM_ANSWER = {
+    verdict: 'unusual', temperatureC: PROOF_CARD.reading.temperatureC, place: { latitude: 44.9, longitude: -93.2 },
+    reference: { typicalLowC: 1.1, typicalHighC: 11.7, recordLowC: -11.7, recordHighC: 25.6, averageC: null },
+    pod: { title: 'Historical temperatures', text: 'low: -11.7 °C | average low: 1.1 °C | average high: 11.7 °C | high: 25.6 °C' },
+    query: WOLFRAM_QUERY, resultsUrl: `https://www.wolframalpha.com/input?i=${encodeURIComponent(WOLFRAM_QUERY)}`, attribution: 'Wolfram|Alpha',
+  };
+  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -228,6 +239,7 @@ export async function installRoutes(page, fx, options = {}) {
       // A house-node payout account after two paid epochs (2 x 189.62962944 WRF).
       return json(route, { address: m[1].toLowerCase(), balance: '37925925888', height: 10114, earned: '37925925888' });
     }
+    if (p === '/api/integrations/wolfram/reading-check' && req.method() === 'POST') return json(route, fx.WOLFRAM_ANSWER);
     if ((m = /^\/api\/proofs\/([0-9a-f]{64})$/.exec(p))) {
       if (proofCardMode === 'off' || m[1] !== fx.PROOF_COMMIT) return json(route, { error: 'Not found' }, 404);
       if (proofCardMode === 'not_located') return json(route, { ...fx.PROOF_CARD, reading: null, inclusion: { status: 'not_located', block: null }, attestation: null });

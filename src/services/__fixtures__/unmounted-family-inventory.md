@@ -92,5 +92,5 @@ Identity credential reads and writes contained fabricated fallback records and l
 | verify | `src/services/bridgeService.ts` (not in route import graph) |
 | weather-earnings | `src/services/config.ts` (reachable import; inspect caller) |
 | webhooks | `src/hooks/useWebhookObservability.ts` (not in route import graph; hook deleted in frontend#527) |
-| wolfram | `src/components/Integrations/WolframCard.jsx` (only behind recognized sample gate) |
+| wolfram | retired 2026-11-01: `WolframCard.jsx` keeps the AppID on the device and calls no API (bring-your-own-key; the one Wolfram call is the proof card's `/api/integrations/wolfram/reading-check`) |
 | zk | `src/components/ZKVerification/PrivacyProofExplorer.tsx` (contains sample gate; inspect live body)<br>`src/components/ZKVerification/ProofVerificationUI.tsx` (reachable import; inspect caller)<br>`src/hooks/useZkProver.js` (only behind recognized sample gate) |

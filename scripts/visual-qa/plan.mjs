@@ -55,6 +55,7 @@ export const SCENARIOS = [
   { name: 'proof-card-off', route: `/proof/${PROOF_COMMIT}`, note: 'the 404 while PROOF_CARDS_ENABLED is not true' },
   { name: 'nodes-partial', route: '/nodes', note: 'bonds and attesters unavailable from the node: said, never zero' },
   { name: 'nodes-off', route: '/nodes', note: 'the 404 while NETWORK_NODES_READ_ENABLED is not true' },
+  { name: 'proof-card-wolfram', route: `/proof/${PROOF_COMMIT}`, note: 'Is this reading unusual? answered with a saved (fixture) Wolfram AppID, stubbed relay' },
   { name: 'explore-address-off', route: '/explore', note: 'the 404 while the public balance read is switched off' },
 ];
 
