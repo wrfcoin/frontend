@@ -124,6 +124,25 @@ export function buildPasskeyAuth(input: {
   };
 }
 
+/** The registrable domain every wrfcoin.com host pins its passkeys to. */
+export const WRFCOIN_PASSKEY_RP_ID = 'wrfcoin.com';
+
+/**
+ * The WebAuthn RP ID for a new passkey on `hostname`. The account address is derived from the RP ID, so
+ * every wrfcoin.com host (the bare domain, www, any subdomain) uses the registrable domain and gives the
+ * same account. Any other host (localhost, a preview or Tailscale name) keeps its own hostname. Only an
+ * exact "wrfcoin.com" or a name ending in ".wrfcoin.com" maps; look-alikes such as "evilwrfcoin.com" or
+ * "wrfcoin.com.evil.net" do not. Signing never calls this: it uses the RP ID saved with the credential.
+ */
+export function passkeyRpId(hostname: string): string {
+  const host = hostname.trim().toLowerCase().replace(/\.$/, '');
+  if (host === WRFCOIN_PASSKEY_RP_ID || host.endsWith(`.${WRFCOIN_PASSKEY_RP_ID}`)) return WRFCOIN_PASSKEY_RP_ID;
+  return hostname;
+}
+
+/** True when `rpId` is the shared wrfcoin.com RP ID (the www / bare-domain split no longer applies). */
+export const isWrfcoinPasskeyRpId = (rpId: string): boolean => rpId === WRFCOIN_PASSKEY_RP_ID;
+
 /** What is kept locally for a registered passkey (public material only). */
 export interface PasskeyCredentialRecord {
   credentialId: Uint8Array;

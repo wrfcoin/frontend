@@ -11,7 +11,7 @@ import { AddressQr } from '../components/wallet/WalletEarningsPanel';
 import { formatBaseUnitsToWrf } from '../services/apiClient/number';
 import usePublicTestnetStats from '../hooks/usePublicTestnetStats';
 import { WRFCOIN_CHAIN_ID } from '../config/network';
-import { registerPasskey, signPasskeyTransfer, passkeyRecordAddress, type PasskeyAuthenticatorChoice, type PasskeyCredentialRecord } from '../services/walletCrypto/passkey';
+import { registerPasskey, signPasskeyTransfer, passkeyRecordAddress, passkeyRpId, isWrfcoinPasskeyRpId, type PasskeyAuthenticatorChoice, type PasskeyCredentialRecord } from '../services/walletCrypto/passkey';
 import { wrfToBaseUnits } from '../services/walletCrypto/transferPayload';
 import { recipientStatus } from '../services/walletCrypto/recipientStatus';
 import { clearStoredPasskey, getPasskeyNonce, loadStoredPasskey, saveStoredPasskey, submitPasskeyTransfer } from '../services/walletCrypto/passkeySend';
@@ -57,6 +57,18 @@ export const NOT_ACTIVE_MESSAGE = 'Passkey transfers are not active on the chain
 export const UNSUPPORTED_MESSAGE = 'This browser or device cannot create a passkey that stays on the device. Try a recent Chrome, Safari or Edge with a screen lock enabled.';
 export const SECURITY_KEY_UNSUPPORTED_MESSAGE = 'No passkey was created on a security key. Check that the key is plugged in (or held to the phone) and has a PIN set, then try again in a recent Chrome, Safari, Edge or Firefox.';
 export const SECURITY_KEY_NOTE = 'A security key needs the physical key, a touch and its PIN every time you send. If you lose the key you lose the account: there is no recovery yet, so keep only small amounts on it.';
+/** Where passkey accounts that carry over live: the wrfcoin.com page. */
+export const CANONICAL_PASSKEY_URL = 'https://wrfcoin.com/wallet/passkey';
+/** Shown above the create buttons on any host that is not wrfcoin.com (a preview or Tailscale name). */
+export const PREVIEW_HOST_NOTE = 'Passkey accounts made here are a preview and will not carry over to wrfcoin.com; use';
+
+/** The sentence that says which site the passkey belongs to, for the RP ID actually in use. */
+export function passkeySiteSentence(rpId: string): string {
+  return isWrfcoinPasskeyRpId(rpId)
+    ? 'The passkey is tied to "wrfcoin.com": wrfcoin.com and www.wrfcoin.com open the same account.'
+    : `The passkey is tied to this site ("${rpId}"): another address, such as www versus the bare domain, is a different account.`;
+}
+
 /** After a faucet claim, read the balance again once the next blocks have had time to include it. */
 const FAUCET_SETTLE_MS = 15_000;
 
@@ -72,8 +84,12 @@ function describeError(error: unknown): string {
 }
 
 /** Passkey wallet preview (flag VITE_ENABLE_PASSKEY_WALLET). The account lives in the device's authenticator, not a recovery phrase. */
-export default function PasskeyWalletPage() {
+export default function PasskeyWalletPage({ hostname = window.location.hostname }: { hostname?: string } = {}) {
   const [record, setRecord] = useState<PasskeyCredentialRecord | null>(() => loadStoredPasskey());
+  // A new passkey uses the host's RP ID; a saved one keeps the RP ID it was made with (its address depends on it).
+  const newRpId = passkeyRpId(hostname);
+  const rpId = record?.rpId ?? newRpId;
+  const previewHost = !isWrfcoinPasskeyRpId(newRpId);
   const [busy, setBusy] = useState<false | PasskeyAuthenticatorChoice | 'send'>(false);
   const [error, setError] = useState<string | null>(null);
   const [to, setTo] = useState('');
@@ -101,14 +117,14 @@ export default function PasskeyWalletPage() {
   const create = useCallback(async (choice: PasskeyAuthenticatorChoice) => {
     setBusy(choice); setError(null);
     try {
-      const created = await registerPasskey(window.location.hostname, 'WRFCoin passkey wallet', undefined, choice);
+      const created = await registerPasskey(newRpId, 'WRFCoin passkey wallet', undefined, choice);
       saveStoredPasskey(created);
       setRecord(created);
     } catch (e) {
       setError(/NotAllowed|cancel/i.test(`${(e as any)?.name ?? ''}`) ? describeError(e)
         : choice === 'security-key' ? SECURITY_KEY_UNSUPPORTED_MESSAGE : UNSUPPORTED_MESSAGE);
     } finally { setBusy(false); }
-  }, []);
+  }, [newRpId]);
 
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (settleTimer.current) clearTimeout(settleTimer.current); }, []);
@@ -149,11 +165,16 @@ export default function PasskeyWalletPage() {
         <WrfBadge status="info" label="Preview" />
       </Box>
       <Typography sx={{ color: palette.text.secondary, mb: 3 }}>
-        Your account is a passkey: on this device, unlocked with your fingerprint, face or screen lock, or on a hardware security key you plug in or tap. There is no recovery phrase to write down. The passkey is tied to this site ("{window.location.hostname}"): another address, such as www versus the bare domain, is a different account. If you lose the passkey, the account cannot be recovered.
+        Your account is a passkey: on this device, unlocked with your fingerprint, face or screen lock, or on a hardware security key you plug in or tap. There is no recovery phrase to write down. <span data-testid="passkey-site">{passkeySiteSentence(rpId)}</span> If you lose the passkey, the account cannot be recovered.
       </Typography>
 
       {!record && (
         <Box sx={{ display: 'grid', gap: 1.5, justifyItems: 'start' }}>
+          {previewHost && (
+            <Typography data-testid="passkey-preview-host" sx={{ color: palette.text.secondary }}>
+              {PREVIEW_HOST_NOTE} <a href={CANONICAL_PASSKEY_URL}>{CANONICAL_PASSKEY_URL}</a>.
+            </Typography>
+          )}
           <WrfButton variant="primary" onClick={() => void create('any')} disabled={busy !== false} data-testid="passkey-create">
             {busy === 'any' ? 'Waiting for your device…' : 'Create passkey account'}
           </WrfButton>

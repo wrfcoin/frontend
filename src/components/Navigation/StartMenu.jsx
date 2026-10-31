@@ -15,7 +15,7 @@ import {
   isOperatorPreviewEnabled,
   isPublicReadonlyEnabled,
 } from '../../config/contractSurfacePolicy';
-import { getPublicNavEntries } from '../../config/publicNavigation';
+import { getPublicNavEntries, isPasskeyWalletEnabled } from '../../config/publicNavigation';
 
 const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -520,6 +520,7 @@ const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false })
   // policy, so every visible link is reachable. Studio builds keep the full menu.
   const publicMenuItems = getPublicNavEntries(
     isPublicReadonlyEnabled(import.meta.env?.VITE_PUBLIC_READONLY_PATHS),
+    isPasskeyWalletEnabled(import.meta.env?.VITE_ENABLE_PASSKEY_WALLET),
   ).map(({ name, path, icon }) => ({ name, path, icon }));
   const visibleMenuItems = !allowShellHiddenFeatures ? publicMenuItems : filterPublicSurfaces(
     menuItems,
