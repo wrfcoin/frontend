@@ -16,6 +16,7 @@ const PublicForecastersPage = lazy(() => import('../pages/PublicForecastersPage'
 const PublicForecasterPage = lazy(() => import('../pages/PublicForecasterPage'));
 const PublicProofCardPage = lazy(() => import('../pages/PublicProofCardPage'));
 const PublicNetworkNodesPage = lazy(() => import('../pages/PublicNetworkNodesPage'));
+const PublicCompetitionsPage = lazy(() => import('../pages/PublicCompetitionsPage'));
 
 // Community & Social
 const CommunityForums = lazy(() => import('../components/CommunityForums'));
@@ -65,6 +66,7 @@ export default function communityRoutes({ isFeatureEnabled = () => false } = {})
     {/* Forecaster track record (core4#3604 A4, [post-GO]); the public route policy decides reachability */}
     <Route path="/forecasters" element={<PageWrapper tabType="community"><PublicForecastersPage /></PageWrapper>} />
     <Route path="/forecasters/:profileKey" element={<PageWrapper tabType="community"><PublicForecasterPage /></PageWrapper>} />
+    <Route path="/competitions" element={<PageWrapper tabType="community"><PublicCompetitionsPage /></PageWrapper>} />
 
     {/* Proof card for one station reading (backend#229, owner demo 2026-11-01); the public route policy decides reachability */}
     <Route path="/proof/:commitId" element={<PageWrapper tabType="community"><PublicProofCardPage /></PageWrapper>} />

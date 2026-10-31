@@ -96,6 +96,10 @@ export const PUBLIC_READONLY_PATHS = new Set([
   // Exact entries: no other /forecasters descendant is admitted.
   '/forecasters',
   '/forecasters/:profileKey',
+  // backend#251 weekly forecast competition, points only (owner GO 2026-11-01):
+  //   /competitions                reads GET /api/competitions, /api/competitions/current, /api/competitions/<ISO week>
+  // Exact entry: the week is chosen on the page, never in the path.
+  '/competitions',
   // Self-serve bond grant spec section 4: the read-only faucet bond-grant audit list
   // (GET /api/faucet/bond-grants). Exact entry: no other /faucet path is admitted.
   '/faucet/bond-grants',

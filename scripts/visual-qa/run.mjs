@@ -305,6 +305,21 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    for (const [name, mode] of [['competitions-empty', 'empty'], ['competitions-past-week', 'populated'], ['competitions-unavailable', 'unavailable']]) {
+      if (!want(name)) continue;
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { competitions: mode });
+        await loadRoute(page, '/competitions', errors);
+        if (name === 'competitions-past-week') {
+          await page.getByRole('tab').nth(1).click();
+          await page.getByText(/Final, read through block/).waitFor({ timeout: 10_000 });
+        }
+        await capture(page, errors, name, `/competitions (${name.replace('competitions-', '')})`, suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     for (const [name, mode] of [['bond-grants-empty', 'empty'], ['bond-grants-unavailable', 'unavailable']]) {
       if (!want(name)) continue;
       try {

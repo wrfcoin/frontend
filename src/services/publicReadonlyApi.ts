@@ -119,3 +119,14 @@ export function proofPagePath(commitId: string, height?: number | string | null)
 // ---- Producers and bonded nodes (owner demo queue 2026-11-01, item 3) --------------------------------------
 // backend network-nodes-routes.ts: GET /api/network/nodes, no query. One cached snapshot read from the node.
 export const NETWORK_NODES_PATH = '/network/nodes';
+
+// ---- Weekly forecast competition (backend#251, points only) ---------------------------------------------
+// backend competition-routes.ts: GET /api/competitions (this week + recent weeks with their top three),
+// GET /api/competitions/current and GET /api/competitions/<ISO week, e.g. 2026-W45>. No query string on any
+// of them (the edge admits none). All three are 503 while the forecast index or the competition flag is off.
+export const COMPETITIONS_PATH = '/competitions';
+export const COMPETITION_CURRENT_PATH = '/competitions/current';
+export const COMPETITION_WEEK_RE = /^[0-9]{4}-W[0-9]{2}$/;
+export function competitionWeekPath(week: string): string | null {
+  return COMPETITION_WEEK_RE.test(week) ? `/competitions/${week}` : null;
+}
