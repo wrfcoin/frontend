@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { usePublicTestnetStats } from '../hooks/usePublicTestnetStats';
-import { getPublicNavEntries } from '../config/publicNavigation';
+import { getPublicNavEntries, isPasskeyWalletEnabled } from '../config/publicNavigation';
 import { isPublicReadonlyEnabled } from '../config/contractSurfacePolicy';
 import './PublicTestnetLandingPage.css';
 
@@ -35,6 +35,7 @@ const PublicTestnetLandingPage = () => {
   // Same entries as the start menu, filtered by the same route policy.
   const entries = getPublicNavEntries(
     isPublicReadonlyEnabled(import.meta.env?.VITE_PUBLIC_READONLY_PATHS),
+    isPasskeyWalletEnabled(import.meta.env?.VITE_ENABLE_PASSKEY_WALLET),
   );
   const mainLinks = entries.filter(e => e.group === 'main' && e.path !== '/');
   const policyLinks = entries.filter(e => e.group === 'legal');

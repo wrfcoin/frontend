@@ -7,6 +7,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import QrCode2Icon from '@mui/icons-material/QrCode2';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import { useWallet } from '../contexts/WalletContext.jsx';
 import { walletProviderManager } from '../services/walletProviders/WalletProviderManager.js';
 import PhoneStationStatusCard from '../components/wallet/PhoneStationStatusCard';
@@ -29,6 +30,10 @@ export function maskAddress(address: string): string {
 
 export const RECEIVE_CARD_ID = 'wallet-receive';
 export const LOCKED_TITLE = 'Create, import or unlock your wallet';
+/** Where the main wallet points people who would rather not keep a 12-word recovery phrase. */
+export const PASSKEY_WALLET_PATH = '/wallet/passkey';
+export const PASSKEY_PROMPT = 'Prefer no 12 words?';
+export const PASSKEY_LINK_LABEL = 'Use a passkey wallet';
 export const LOCKED_DESCRIPTION =
   'Your wallet lives in this browser. Unlock it with your password, or create or import one to see your address and activity.';
 
@@ -46,6 +51,12 @@ export default function OwnWalletAddress() {
   const navigate = useNavigate();
   const isDark = useIsDarkTheme();
   const openSetup = useCallback(() => navigate('/onboarding'), [navigate]);
+  // A real link (href) so it can be opened in a new tab; a plain click stays in the app.
+  const openPasskey = useCallback((event: React.MouseEvent) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
+    navigate(PASSKEY_WALLET_PATH);
+  }, [navigate]);
   const [copied, setCopied] = useState(false);
   // Exact base units the earnings panel last read for this owner; null = unknown (Send then does not gate).
   const [availableUnits, setAvailableUnits] = useState<string | null>(null);
@@ -96,6 +107,16 @@ export default function OwnWalletAddress() {
           </Box>
         )}
       </Box>
+
+      {/* Only in a build with the passkey flag on, where /wallet/passkey is a route. */}
+      {FEATURES.passkeyWallet && (
+        <Box data-testid="wallet-passkey-link" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 2 }}>
+          <Typography sx={{ color: palette.text.secondary }}>{PASSKEY_PROMPT}</Typography>
+          <WrfButton variant="outline" size="sm" startIcon={<FingerprintIcon fontSize="small" />} href={PASSKEY_WALLET_PATH} onClick={openPasskey}>
+            {PASSKEY_LINK_LABEL}
+          </WrfButton>
+        </Box>
+      )}
 
       {!ownerAddress && (
         <Box

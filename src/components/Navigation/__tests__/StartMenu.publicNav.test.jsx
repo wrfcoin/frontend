@@ -19,10 +19,15 @@ import {
 import {
   PUBLIC_NON_MENU_PATHS,
   PUBLIC_NAV_ENTRIES,
+  PASSKEY_WALLET_NAV_ENTRY,
   allPublicPolicyPaths,
+  publicNavEntriesFor,
+  publicNonMenuPathsFor,
 } from '../../../config/publicNavigation';
 
 const PUBLIC_ENV = { VITE_PUBLIC_READONLY_PATHS: 'true' };
+const PASSKEY_ENV = { ...PUBLIC_ENV, VITE_ENABLE_PASSKEY_WALLET: 'true' };
+const ALL_ENTRIES = [...PUBLIC_NAV_ENTRIES, PASSKEY_WALLET_NAV_ENTRY];
 const HIDDEN = [
   '/dashboard',
   '/oracle',
@@ -53,7 +58,7 @@ function openMenu(env) {
 const renderedPaths = () =>
   screen
     .getAllByTestId(/^start-menu-item-/)
-    .map(el => PUBLIC_NAV_ENTRIES.find(e => `start-menu-item-${e.name}` === el.dataset.testid)?.path);
+    .map(el => ALL_ENTRIES.find(e => `start-menu-item-${e.name}` === el.dataset.testid)?.path);
 
 describe('StartMenu in the public build', () => {
   it('shows every main public route, and every rendered item passes the public predicate', () => {
@@ -94,15 +99,47 @@ describe('StartMenu in the public build', () => {
     for (const path of paths) expect(isPublicTestnetPath(path, false, false, false)).toBe(true);
   });
 
-  it('every route the policy admits is a menu entry or explicitly excluded', () => {
-    const entryPaths = new Set(PUBLIC_NAV_ENTRIES.map(e => e.path));
+  it.each([false, true])('with the passkey flag %s, every route the policy admits is exactly one of: a menu entry, or explicitly excluded', (passkeyOn) => {
+    const entryPaths = new Set(publicNavEntriesFor(passkeyOn).map(e => e.path));
+    const nonMenu = publicNonMenuPathsFor(passkeyOn);
     for (const path of allPublicPolicyPaths()) {
-      expect(entryPaths.has(path) || path in PUBLIC_NON_MENU_PATHS).toBe(true);
+      expect([entryPaths.has(path), path in nonMenu]).toContain(true);
+      expect(entryPaths.has(path) && path in nonMenu).toBe(false);
     }
+    // Flag off: the passkey page is listed as a non-menu route. Flag on: it is a menu entry instead.
+    expect('/wallet/passkey' in nonMenu).toBe(!passkeyOn);
+    expect(entryPaths.has('/wallet/passkey')).toBe(passkeyOn);
+    expect(publicNonMenuPathsFor(false)).toBe(PUBLIC_NON_MENU_PATHS);
     // The helper must not drift from the policy sets themselves.
     expect(new Set(allPublicPolicyPaths())).toEqual(
       new Set(['/', '/terms', '/privacy', '/api-terms', '/security', '/downloads', ...PUBLIC_READONLY_PATHS, ...PUBLIC_ONBOARDING_PATHS]),
     );
+  });
+});
+
+describe('StartMenu with the passkey wallet flag', () => {
+  it('flag on: shows "Passkey wallet" right after "Wallet", linking to /wallet/passkey', () => {
+    openMenu(PASSKEY_ENV);
+    const names = screen.getAllByTestId(/^start-menu-item-/).map(el => el.dataset.testid.replace('start-menu-item-', ''));
+    expect(names.slice(names.indexOf('Wallet'), names.indexOf('Wallet') + 3)).toEqual(['Wallet', 'Passkey wallet', 'Connect a station']);
+    const paths = renderedPaths();
+    expect(paths).toContain('/wallet/passkey');
+    for (const path of paths) expect(isPublicTestnetPath(path, false, true, false)).toBe(true);
+    expect(PASSKEY_WALLET_NAV_ENTRY).toEqual({
+      name: 'Passkey wallet', path: '/wallet/passkey', icon: 'bi-fingerprint', group: 'main',
+      description: 'A wallet unlocked with your fingerprint, face or a YubiKey; free test coins built in.',
+    });
+  });
+
+  it.each([{}, { VITE_ENABLE_PASSKEY_WALLET: 'false' }, { VITE_ENABLE_PASSKEY_WALLET: 'TRUE' }])('flag not exactly "true" (%o): no passkey entry', (extra) => {
+    openMenu({ ...PUBLIC_ENV, ...extra });
+    expect(screen.queryByTestId('start-menu-item-Passkey wallet')).not.toBeInTheDocument();
+    expect(renderedPaths()).not.toContain('/wallet/passkey');
+  });
+
+  it('flag on without the read-only flag: still no passkey entry (the route policy does not admit it)', () => {
+    openMenu({ VITE_ENABLE_PASSKEY_WALLET: 'true' });
+    expect(renderedPaths()).toEqual(['/', '/downloads', '/terms', '/privacy', '/api-terms', '/security']);
   });
 });
 

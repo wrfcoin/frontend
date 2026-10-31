@@ -43,7 +43,36 @@ export const PUBLIC_NAV_ENTRIES: readonly PublicNavEntry[] = [
   { name: 'Security', path: '/security', icon: 'bi-shield-check', group: 'legal', description: 'Security policy and reporting.' },
 ];
 
-/** Public routes that are intentionally not menu entries, with the reason. */
+/**
+ * The passkey wallet flag as features.ts reads it (VITE_ENABLE_PASSKEY_WALLET, exact "true" only), for
+ * callers that read the env at render time like the read-only flag. Kept here, not imported from
+ * features.ts, because many tests replace that module wholesale.
+ */
+export function isPasskeyWalletEnabled(value: unknown): boolean {
+  return value === 'true';
+}
+
+/**
+ * The passkey wallet entry. It is a menu entry only in a build with the passkey flag on
+ * (VITE_ENABLE_PASSKEY_WALLET); with the flag off the route does not exist and the path is
+ * listed in PUBLIC_NON_MENU_PATHS instead. It sits right after 'Wallet'.
+ */
+export const PASSKEY_WALLET_NAV_ENTRY: PublicNavEntry = {
+  name: 'Passkey wallet',
+  path: '/wallet/passkey',
+  icon: 'bi-fingerprint',
+  group: 'main',
+  description: 'A wallet unlocked with your fingerprint, face or a YubiKey; free test coins built in.',
+};
+
+/** Menu entries for a build, with the passkey wallet inserted after 'Wallet' when its flag is on. */
+export function publicNavEntriesFor(passkeyWalletEnabled: boolean): PublicNavEntry[] {
+  if (!passkeyWalletEnabled) return [...PUBLIC_NAV_ENTRIES];
+  const at = PUBLIC_NAV_ENTRIES.findIndex(e => e.path === '/wallet') + 1;
+  return [...PUBLIC_NAV_ENTRIES.slice(0, at), PASSKEY_WALLET_NAV_ENTRY, ...PUBLIC_NAV_ENTRIES.slice(at)];
+}
+
+/** Public routes that are intentionally not menu entries (passkey flag off), with the reason. */
 export const PUBLIC_NON_MENU_PATHS: Readonly<Record<string, string>> = {
   '/explorer': 'redirects to /explore?tab=blocks (same page; one menu entry, frontend#561)',
   '/weather/station/:stationId': 'detail page reached from the map and lists, not a destination',
@@ -52,12 +81,19 @@ export const PUBLIC_NON_MENU_PATHS: Readonly<Record<string, string>> = {
   '/contributor/:key': 'profile reached from the leaderboard by opaque key, not a destination',
   '/forecasters/:profileKey': 'track record reached from the forecasters page, not a destination',
   '/faucet/bond-grants': 'bond-grant audit list linked from the node operator guide, not a destination',
-  '/wallet/passkey': 'flagged preview (VITE_ENABLE_PASSKEY_WALLET, default off); reached by direct link, not a destination',
+  '/wallet/passkey': 'flagged preview (VITE_ENABLE_PASSKEY_WALLET, default off): with the flag on it is a menu entry instead',
 };
 
+/** Non-menu routes for a build: with the passkey flag on, /wallet/passkey is a menu entry, not listed here. */
+export function publicNonMenuPathsFor(passkeyWalletEnabled: boolean): Readonly<Record<string, string>> {
+  if (!passkeyWalletEnabled) return PUBLIC_NON_MENU_PATHS;
+  const { '/wallet/passkey': _menuEntry, ...rest } = PUBLIC_NON_MENU_PATHS;
+  return rest;
+}
+
 /** Entries the public build can actually reach, in display order. */
-export function getPublicNavEntries(publicReadonlyEnabled: boolean): PublicNavEntry[] {
-  return PUBLIC_NAV_ENTRIES.filter(entry =>
+export function getPublicNavEntries(publicReadonlyEnabled: boolean, passkeyWalletEnabled = false): PublicNavEntry[] {
+  return publicNavEntriesFor(passkeyWalletEnabled).filter(entry =>
     isPublicTestnetPath(entry.path, false, publicReadonlyEnabled, false),
   );
 }
