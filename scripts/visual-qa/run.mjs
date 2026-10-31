@@ -362,7 +362,7 @@ async function runViewport(browser, vp, tall, theme) {
         await capture(page, errors, 'onboarding-advanced', '/onboarding (Advanced open)', suffix);
       } catch (e) { console.log('FAIL onboarding-advanced', suffix, String(e).slice(0, 160)); report.push({ name: 'onboarding-advanced', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
-    if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review')) {
+    if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review') || want('wallet-address-book') || want('wallet-send-allowlist-refused')) {
       try {
         await createWallet(page, errors);
         if (want('wallet-unlocked')) { await goClientSide(page, '/wallet'); await page.getByText('Recent activity').first().waitFor({ timeout: 20_000 }).catch(() => undefined); await capture(page, errors, 'wallet-unlocked', '/wallet', suffix); }
@@ -371,6 +371,34 @@ async function runViewport(browser, vp, tall, theme) {
           await page.getByRole('button', { name: 'Back up recovery phrase' }).click();
           await page.waitForTimeout(800);
           await capture(page, errors, 'wallet-backup-warning', '/wallet (backup warning)', suffix);
+          await page.keyboard.press('Escape');
+          await page.waitForTimeout(500);
+        }
+        if (want('wallet-address-book') || want('wallet-send-allowlist-refused')) {
+          await goClientSide(page, '/wallet');
+          await page.getByRole('button', { name: /^Send$/ }).click();
+          await page.getByTestId('address-book-open').click();
+          const book = page.getByTestId('address-book');
+          const addOne = async (name, address, confirm) => {
+            const form = page.getByRole('form', { name: 'Add a contact' });
+            await form.getByLabel('Name').fill(name);
+            await form.getByLabel('Address').fill(address);
+            await form.getByTestId('add-contact').click();
+            if (confirm) await page.getByRole('button', { name: 'Add and start the wait' }).click();
+            await book.getByText(name).first().waitFor();
+          };
+          await addOne('Mom', '0x' + '7'.repeat(40), false);
+          await book.getByTestId('allowlist-on').click();
+          await addOne('Dad', '0x' + '8'.repeat(40), true);
+          await page.waitForTimeout(500);
+          if (want('wallet-address-book')) await capture(page, errors, 'wallet-address-book', '/wallet (Send → Address book)', suffix);
+          await page.getByRole('button', { name: 'Done' }).click();
+          await page.waitForTimeout(500);
+          if (want('wallet-send-allowlist-refused')) {
+            await page.getByLabel('Recipient address').fill('0x' + '9'.repeat(40));
+            await page.waitForTimeout(500);
+            await capture(page, errors, 'wallet-send-allowlist-refused', '/wallet (Send refused by the allowlist)', suffix);
+          }
           await page.keyboard.press('Escape');
           await page.waitForTimeout(500);
         }
