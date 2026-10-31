@@ -164,7 +164,8 @@ await jest.unstable_mockModule('../../components/auth/SocialLoginButton', () => 
 
 global.fetch = jest.fn() as typeof global.fetch;
 
-const { default: OnboardingPage } = await import('../OnboardingPage');
+const { default: OnboardingPage, FAUCET_TERMS } = await import('../OnboardingPage');
+const { default: FEATURES } = await import('../../config/features');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -209,6 +210,42 @@ describe('OnboardingPage', () => {
     renderPage();
 
     expect(screen.getByText('Create New Wallet')).toBeInTheDocument();
+  });
+
+  it('shows the faucet terms before any wallet is created', () => {
+    renderPage();
+    const terms = screen.getByTestId('onboarding-faucet-terms');
+    expect(terms).toHaveTextContent('10 test WRF per claim');
+    expect(terms).toHaveTextContent('One claim per address every 24 hours.');
+    expect(terms).toHaveTextContent('Test coins have no value');
+    expect(FAUCET_TERMS).toHaveLength(3);
+    // Faucet not open in this build: say so, but still let the newcomer make a wallet.
+    expect(terms).toHaveTextContent('The faucet is not paying out yet');
+    // The terms render ahead of the wallet-creation choice in document order.
+    const create = screen.getByText('Create New Wallet');
+    expect(terms.compareDocumentPosition(create) & terms.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(mockCreateWalletFromMnemonic).not.toHaveBeenCalled();
+  });
+
+  it('offers the passkey wallet as the alternative only when the build serves /wallet/passkey', () => {
+    const previous = FEATURES.passkeyWallet;
+    try {
+      (FEATURES as { passkeyWallet: boolean }).passkeyWallet = false;
+      const { unmount } = renderPage();
+      expect(screen.queryByTestId('onboarding-passkey-option')).toBeNull();
+      unmount();
+
+      (FEATURES as { passkeyWallet: boolean }).passkeyWallet = true;
+      renderPage();
+      const option = screen.getByTestId('onboarding-passkey-option');
+      expect(option).toHaveTextContent('no 12 words to write down');
+      expect(option).toHaveTextContent('YubiKey');
+      expect(option).toHaveTextContent('Get test coins');
+      fireEvent.click(screen.getByRole('button', { name: 'Use a passkey wallet instead' }));
+      expect(mockNavigate).toHaveBeenCalledWith('/wallet/passkey');
+    } finally {
+      (FEATURES as { passkeyWallet: boolean }).passkeyWallet = previous;
+    }
   });
 
   it('does NOT offer to import an existing wallet secret (security 2026-08-17)', () => {

@@ -56,9 +56,60 @@ function isFaucetOpen(): boolean {
   return import.meta.env?.VITE_FAUCET_OPEN === 'true';
 }
 
+/**
+ * The faucet's terms as a newcomer needs them BEFORE making a wallet. Amount and limit mirror the
+ * testnet faucet service (infra testnet/docker-compose.testnet.yml: FAUCET_AMOUNT 10,
+ * FAUCET_RATE_LIMIT_SECONDS 86400; ALREADY_CLAIMED is per address).
+ */
+export const FAUCET_TERMS = [
+  'You get 10 test WRF per claim, sent to the wallet address you choose.',
+  'One claim per address every 24 hours.',
+  'Test coins have no value: they cannot be sold or exchanged, and the testnet may be reset.',
+] as const;
+
 // ---------------------------------------------------------------------------
 // Internal sub-components (kept in-file per task spec)
 // ---------------------------------------------------------------------------
+
+/** Faucet terms, shown on the wallet step so they are read before a wallet exists. */
+function FaucetTermsNotice() {
+  return (
+    <section data-testid="onboarding-faucet-terms" aria-label="Faucet terms" style={{ marginBottom: 16 }}>
+      <WrfAlert severity="info" title="Test coins from the faucet">
+        <Box component="ul" sx={{ m: 0, pl: 2.5 }}>
+          {FAUCET_TERMS.map(term => <li key={term}>{term}</li>)}
+        </Box>
+        {!isFaucetOpen() && (
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            The faucet is not paying out yet. You can still make your wallet now.
+          </Typography>
+        )}
+      </WrfAlert>
+    </section>
+  );
+}
+
+/**
+ * The passkey wallet as the alternative to the 12-word wallet. Only offered when the build serves
+ * /wallet/passkey (FEATURES.passkeyWallet); otherwise the link would land on nothing.
+ */
+function PasskeyWalletOption() {
+  const navigate = useNavigate();
+  if (!FEATURES.passkeyWallet) return null;
+  return (
+    <section data-testid="onboarding-passkey-option" aria-label="Passkey wallet" style={{ marginBottom: 16 }}>
+      <WrfCard variant="outlined" headerTitle="Or use a passkey wallet: no 12 words to write down">
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+          Your device&apos;s passkey (fingerprint, face or PIN) or a security key such as a YubiKey holds
+          the wallet. The passkey page has its own Get test coins button.
+        </Typography>
+        <WrfButton variant="outline" onClick={() => navigate('/wallet/passkey')}>
+          Use a passkey wallet instead
+        </WrfButton>
+      </WrfCard>
+    </section>
+  );
+}
 
 /**
  * Mnemonic word grid - displays generated mnemonic as numbered word chips.
@@ -952,6 +1003,14 @@ export default function OnboardingPage() {
           </Step>
         ))}
       </Stepper>
+
+      {/* Before a wallet exists: the faucet's terms, and the passkey wallet as the alternative. */}
+      {((isPublicBuild() && !webWalletReady) || currentStep === 0) && (
+        <>
+          <FaucetTermsNotice />
+          <PasskeyWalletOption />
+        </>
+      )}
 
       {/* Step content */}
       <Box sx={{ mt: 2 }}>{renderStepContent()}</Box>

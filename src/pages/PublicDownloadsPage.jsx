@@ -76,12 +76,28 @@ export const STATUS_PAGE_URL = 'http://localhost:8556/dashboard';
 export const CLI_BUILD_COMMAND = 'cargo build --release -p wrfcoin_cli';
 export const MANIFEST_URL = `https://wrfcoin.com${DOWNLOADS_MANIFEST_PATH}`;
 
-/** Per-platform rows as documented in infra/testnet/JOIN_TESTNET.md (validation status, not a promise). */
-const NODE_PLATFORMS = [
+/**
+ * The testnet (chain 888) genesis block hash, unprefixed. Source of truth: infra
+ * testnet/cut-pins.env WRFCOIN_CUT_GENESIS_HASH. A node reports it 0x-prefixed.
+ */
+export const TESTNET_GENESIS_HASH = '553a3758386d9631037d7469686acb4a121ced81dcf5cde256e2d05667c5f332';
+
+/** Per-OS checksum commands. Each renders as its own one-line, copyable code box. */
+export const VERIFY_COMMANDS = [
+  { os: 'Linux', command: 'sha256sum -c SHA256SUMS' },
+  { os: 'macOS', command: 'shasum -a 256 -c SHA256SUMS' },
+  { os: 'Windows', command: 'certutil -hashfile <file> SHA256' },
+];
+
+/**
+ * Per-platform rows (validation status, not a promise). Windows is not a WSL2/Docker route (owner
+ * ruling): the Windows sync node will be a native download, one file, and it is not available yet.
+ */
+export const NODE_PLATFORMS = [
   { os: 'Linux x86_64', status: 'active', label: 'Validated' },
   { os: 'macOS, Intel', status: 'active', label: 'Supported' },
   { os: 'macOS, Apple Silicon', status: 'warning', label: 'Native build, join not yet validated' },
-  { os: 'Windows 11 (WSL2 + Docker Desktop)', status: 'warning', label: 'Not yet validated' },
+  { os: 'Windows', status: 'neutral', label: 'Not available yet' },
 ];
 
 const ANDROID_PLATFORMS = [
@@ -176,11 +192,12 @@ export default function PublicDownloadsPage() {
   const cards = [
     {
       id: 'sync-node', platforms: ['linux', 'macos', 'windows'], icon: 'bi-hdd-network', title: 'Sync node',
-      badge: <Badge status="active" label="Available" dot />,
+      badge: <Badge status="active" label="Linux and macOS" dot />,
       body: (
         <>
           <p className="dl-secondary">Run a full copy of the testnet chain in Docker, verify blocks yourself and serve the API locally.</p>
           <PlatformRows rows={NODE_PLATFORMS} />
+          <p className="dl-req" data-testid="windows-node-note"><strong>Windows</strong> A native Windows download is coming: one file to run, no WSL and no Docker. It is not available yet.</p>
           <p className="dl-req"><strong>Needs</strong> git and Docker with Compose v2. Follow the join guide for current build requirements.</p>
           <CommandLine text={JOIN_COMMAND} />
           {facts('node-source', { verifyHint: { command: 'git verify-commit <commit>', text: 'after cloning; check the expected source revision in the join guide' } })}
@@ -241,7 +258,8 @@ export default function PublicDownloadsPage() {
         <>
           <p className="dl-secondary">The <span className="dl-mono">wrfcoin</span> CLI for scripted sends, address inspection and node operators. Built with Rust from the core4 repository; prebuilt binaries are not published yet.</p>
           <CommandLine text={CLI_BUILD_COMMAND} />
-          <p className="dl-req"><strong>Needs</strong> a Rust toolchain. Set <span className="dl-mono">WRFCOIN_CHAIN_ID={WRFCOIN_CHAIN_ID ?? '<published-chain-id>'}</span> and <span className="dl-mono">WRFCOIN_NETWORK_ID=testnet</span> before sending. Verify the published genesis hash <span className="dl-mono">&lt;888-genesis-hash&gt;</span>; this placeholder is not a usable hash.</p>
+          <p className="dl-req"><strong>Needs</strong> a Rust toolchain. Set <span className="dl-mono">WRFCOIN_CHAIN_ID={WRFCOIN_CHAIN_ID ?? '<published-chain-id>'}</span> and <span className="dl-mono">WRFCOIN_NETWORK_ID=testnet</span> before sending. Your node should report this testnet genesis hash:</p>
+          <CommandLine text={TESTNET_GENESIS_HASH} label="Copy the genesis hash" />
           {facts('cli-source', { verifyHint: { command: 'sha256sum target/release/wrfcoin', text: 'compare with the manifest entry for your platform' } })}
           {byId.has('cli-linux-x86_64') ? facts('cli-linux-x86_64') : null}
           <p className="dl-rel-note">Release hashes appear only when they are available in the manifest.</p>
@@ -358,8 +376,14 @@ export default function PublicDownloadsPage() {
           <div>
             <h3>2 · Compare the hash</h3>
             <p className="dl-secondary">After downloading, hash the file and compare with the manifest entry. One line, no account, no network:</p>
-            <CommandLine text="sha256sum -c SHA256SUMS" />
-            <p className="dl-secondary dl-small">macOS: <span className="dl-mono">shasum -a 256 -c SHA256SUMS</span>. Windows: <span className="dl-mono">certutil -hashfile &lt;file&gt; SHA256</span>.</p>
+            <dl className="dl-verify-cmds" data-testid="verify-commands">
+              {VERIFY_COMMANDS.map(({ os, command }) => (
+                <div key={os}>
+                  <dt className="dl-small">{os}</dt>
+                  <dd><CommandLine text={command} label={`Copy the ${os} command`} nowrap /></dd>
+                </div>
+              ))}
+            </dl>
           </div>
           <div>
             <h3>3 · Trust the source</h3>
