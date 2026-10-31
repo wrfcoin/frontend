@@ -224,13 +224,14 @@ it('shows the real testnet genesis hash on the command-line wallet card, never a
 });
 
 // The real manifest this site serves (public/downloads/manifest.json): the Windows installer is the one
-// published file; every other entry stays unpublished.
+// published file. The core4 source is public (published: true) but names no release tag or commit yet,
+// so the parser still shows no verifiable source release; every other entry stays unpublished.
 const fs = await import('node:fs');
 const SHIPPED = JSON.parse(fs.readFileSync(new URL('../../../public/downloads/manifest.json', import.meta.url), 'utf8'));
 const WIN_URL = 'https://github.com/wrfcoin/core4/releases/download/v888-windows-preview/wrfcoin-node-0.1.0-g228d6f3b-windows-x86_64-setup.exe';
 const WIN_SHA = '8d3960978d7037c37d40c29f94b99ba7ad6680f4d73dbb5812f26210599ea337';
 
-it('ships a manifest whose only published artifact is the verifiable Windows node installer', () => {
+it('ships a manifest whose only verifiable published artifact is the Windows node installer', () => {
   expect(Number.isNaN(Date.parse(SHIPPED.generated))).toBe(false);
   const win = SHIPPED.artifacts.find(a => a.id === WINDOWS_NODE_ID);
   expect(win).toEqual({
@@ -240,7 +241,10 @@ it('ships a manifest whose only published artifact is the verifiable Windows nod
   // The tag and commit in the URL agree with the entry.
   expect(win.url).toContain(`/download/${win.tag}/`);
   expect(win.url).toContain(`-g${win.commit.slice(0, 8)}-`);
-  expect(SHIPPED.artifacts.filter(a => a.published === true).map(a => a.id)).toEqual([WINDOWS_NODE_ID]);
+  expect(SHIPPED.artifacts.filter(a => a.published === true).map(a => a.id)).toEqual(['node-source', 'cli-source', WINDOWS_NODE_ID]);
+  for (const id of ['node-source', 'cli-source']) {
+    expect(SHIPPED.artifacts.find(a => a.id === id)).toMatchObject({ kind: 'git', repo: 'wrfcoin/core4', url: 'https://github.com/wrfcoin/core4', tag: null, commit: null });
+  }
   const parsed = parseManifest(SHIPPED);
   expect(parsed.artifacts.filter(a => a.published).map(a => [a.id, a.sha256])).toEqual([[WINDOWS_NODE_ID, WIN_SHA]]);
 });

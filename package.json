@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5000",
     "dev:fast": "node optimize-startup.js && vite --host 127.0.0.1 --port 5000",
+    "prebuild": "node scripts/downloads-sha256sums.mjs --check",
     "build": "vite build",
     "build:deps": "vite optimize",
     "preview": "vite preview",
@@ -41,6 +42,8 @@
     "performance:storybook": "npm run storybook:generate && node scripts/storybook-performance-check.js",
     "lint": "npm run check:fabrication && eslint src --ext .js,.jsx,.ts,.tsx",
     "check:fabrication": "node scripts/check-ungated-fabrication.mjs",
+    "check:downloads-sums": "node scripts/downloads-sha256sums.mjs --check",
+    "gen:downloads-sums": "node scripts/downloads-sha256sums.mjs",
     "test:fabrication": "node --test scripts/__tests__/check-ungated-fabrication.test.mjs",
     "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json,css,md}",
