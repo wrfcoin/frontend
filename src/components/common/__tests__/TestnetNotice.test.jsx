@@ -5,7 +5,7 @@ import { jest } from '@jest/globals';
 import TestnetNotice, { TestnetChip } from '../TestnetNotice';
 import { DISMISSAL_KEY, WORDING_VERSION, resetDismissalCache } from '../testnetDisclaimerStore';
 
-const DISCLAIMER = 'https://wrfcoin-testnet.taila1c049.ts.net/testnet-disclaimer.html';
+const DISCLAIMER = '/testnet-disclaimer.html';
 
 beforeEach(() => { localStorage.clear(); sessionStorage.clear(); resetDismissalCache(); });
 afterEach(() => { cleanup(); jest.restoreAllMocks(); });

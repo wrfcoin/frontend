@@ -73,7 +73,7 @@ export const LINKS = {
 };
 
 export const JOIN_COMMAND = 'git clone https://github.com/wrfcoin/infra.git wrfcoin/infra && bash wrfcoin/infra/testnet/join.sh';
-export const STATUS_PAGE_URL = 'http://localhost:8556/dashboard';
+export const STATUS_PAGE_URL = 'http://127.0.0.1:8556/dashboard';
 export const WINDOWS_DASHBOARD_URL = 'http://127.0.0.1:8556/dashboard';
 export const CLI_BUILD_COMMAND = 'cargo build --release -p wrfcoin_cli';
 export const MANIFEST_URL = `https://wrfcoin.com${DOWNLOADS_MANIFEST_PATH}`;
@@ -283,20 +283,19 @@ export default function PublicDownloadsPage() {
       ),
     },
     {
-      id: 'node-status', platforms: ['linux', 'macos', 'windows', 'web'], icon: 'bi-speedometer2', title: 'Node status page',
-      badge: <Badge status="info" label="Not yet available" dot />,
+      id: 'node-status', platforms: ['linux', 'macos', 'windows', 'web'], icon: 'bi-speedometer2', title: 'Node dashboard',
+      badge: <Badge status="info" label="Runs on your node" dot />,
       body: (
         <>
-          <p className="dl-secondary">The proposed node status page is still under review. It is not yet available in the launch source.</p>
-
-          <p className="dl-req">See the node-status guide for current availability.</p>
+          <p className="dl-secondary">Your node serves its own dashboard: chain height, sync, peers, host load and version, refreshed every few seconds.</p>
+          <p className="dl-req">Open <span className="dl-mono">{STATUS_PAGE_URL}</span> in a browser on the same machine. The Windows preview installer opens it for you from the Start menu. A Docker node serves it once its node build includes the dashboard (core4 main does).</p>
           <WrfAlert severity="info" role="note" className="dl-alert">
-            Source presence does not establish deployed availability.
+            The dashboard only reads your own node. It is not a public status page for the network.
           </WrfAlert>
         </>
       ),
       footer: (
-        <WrfButton variant="outline" component="a" href={LINKS.statusPageWork} target="_blank" rel="noopener noreferrer">Follow the status page work</WrfButton>
+        <WrfButton variant="outline" component="a" href={LINKS.statusPageWork} target="_blank" rel="noopener noreferrer">Node dashboard guide</WrfButton>
       ),
     },
     {

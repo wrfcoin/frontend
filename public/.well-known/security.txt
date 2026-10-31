@@ -1,5 +1,5 @@
 Contact: mailto:security@wrfcoin.com
 Expires: 2027-08-01T00:00:00Z
 Preferred-Languages: en
-Canonical: https://wrfcoin-testnet.taila1c049.ts.net/.well-known/security.txt
-Policy: https://wrfcoin-testnet.taila1c049.ts.net/security
+Canonical: https://wrfcoin.com/.well-known/security.txt
+Policy: https://wrfcoin.com/security

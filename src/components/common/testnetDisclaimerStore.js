@@ -6,7 +6,7 @@
  * notice shows again. Storage can be unavailable (private mode, blocked site data, quota); every access
  * is wrapped and the in-memory value keeps the page working for the current visit.
  */
-export const DISCLAIMER_URL = 'https://wrfcoin-testnet.taila1c049.ts.net/testnet-disclaimer.html';
+export const DISCLAIMER_URL = '/testnet-disclaimer.html';
 export const DISMISSAL_KEY = 'wrfcoin-testnet-disclaimer-dismissed';
 /** Bump when the banner wording changes in a way visitors must see again. */
 export const WORDING_VERSION = '2';

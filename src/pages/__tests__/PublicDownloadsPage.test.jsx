@@ -56,7 +56,8 @@ it('reads only the same-origin manifest and shows every artifact as not yet publ
   mount();
   await screen.findByTestId('manifest-json');
   expect(requested).toEqual(['/downloads/manifest.json']);
-  expect(screen.getByTestId('download-node-status')).toHaveTextContent('Not yet available');
+  expect(screen.getByTestId('download-node-status')).toHaveTextContent('http://127.0.0.1:8556/dashboard');
+  expect(screen.getByTestId('download-node-status')).not.toHaveTextContent('Not yet available');
   expect(screen.queryByRole('button', { name: 'Copy address' })).toBeNull();
 
   expect(screen.getAllByText('Not yet published').length).toBeGreaterThanOrEqual(3);
@@ -140,7 +141,7 @@ it('filters the cards by platform chip and keeps "All" as the default', async ()
   expect(screen.getByText('3 of 6 items for Android')).toBeInTheDocument();
 
   fireEvent.click(within(group).getByRole('button', { name: 'Linux' }));
-  await waitFor(() => expect(screen.getAllByRole('article').map(a => a.getAttribute('aria-label'))).toEqual(['Sync node', 'Node status page', 'Command-line wallet', 'For developers']));
+  await waitFor(() => expect(screen.getAllByRole('article').map(a => a.getAttribute('aria-label'))).toEqual(['Sync node', 'Node dashboard', 'Command-line wallet', 'For developers']));
   fireEvent.click(within(group).getByRole('button', { name: 'All' }));
   await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(6));
 });
