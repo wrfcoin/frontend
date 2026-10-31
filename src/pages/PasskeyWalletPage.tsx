@@ -11,11 +11,12 @@ import { AddressQr } from '../components/wallet/WalletEarningsPanel';
 import { formatBaseUnitsToWrf } from '../services/apiClient/number';
 import usePublicTestnetStats from '../hooks/usePublicTestnetStats';
 import { WRFCOIN_CHAIN_ID } from '../config/network';
-import { registerPasskey, signPasskeyTransfer, passkeyRecordAddress, type PasskeyCredentialRecord } from '../services/walletCrypto/passkey';
+import { registerPasskey, signPasskeyTransfer, passkeyRecordAddress, type PasskeyAuthenticatorChoice, type PasskeyCredentialRecord } from '../services/walletCrypto/passkey';
 import { wrfToBaseUnits } from '../services/walletCrypto/transferPayload';
 import { recipientStatus } from '../services/walletCrypto/recipientStatus';
 import { clearStoredPasskey, getPasskeyNonce, loadStoredPasskey, saveStoredPasskey, submitPasskeyTransfer } from '../services/walletCrypto/passkeySend';
 import { getPasskeyPublicBalance } from '../services/walletCrypto/passkeyBalance';
+import { PasskeyFaucetPanel } from '../components/wallet/PasskeyFaucetPanel';
 
 const mono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
 const LAUNCH_ADDRESS = /^0x[0-9a-fA-F]{40}$/;
@@ -54,6 +55,10 @@ function unitsOf(amount: string): bigint | null {
 
 export const NOT_ACTIVE_MESSAGE = 'Passkey transfers are not active on the chain yet. Nothing was sent.';
 export const UNSUPPORTED_MESSAGE = 'This browser or device cannot create a passkey that stays on the device. Try a recent Chrome, Safari or Edge with a screen lock enabled.';
+export const SECURITY_KEY_UNSUPPORTED_MESSAGE = 'No passkey was created on a security key. Check that the key is plugged in (or held to the phone) and has a PIN set, then try again in a recent Chrome, Safari, Edge or Firefox.';
+export const SECURITY_KEY_NOTE = 'A security key needs the physical key, a touch and its PIN every time you send. If you lose the key you lose the account: there is no recovery yet, so keep only small amounts on it.';
+/** After a faucet claim, read the balance again once the next blocks have had time to include it. */
+const FAUCET_SETTLE_MS = 15_000;
 
 function describeError(error: unknown): string {
   const message = error instanceof Error ? error.message : '';
@@ -69,7 +74,7 @@ function describeError(error: unknown): string {
 /** Passkey wallet preview (flag VITE_ENABLE_PASSKEY_WALLET). The account lives in the device's authenticator, not a recovery phrase. */
 export default function PasskeyWalletPage() {
   const [record, setRecord] = useState<PasskeyCredentialRecord | null>(() => loadStoredPasskey());
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState<false | PasskeyAuthenticatorChoice | 'send'>(false);
   const [error, setError] = useState<string | null>(null);
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('');
@@ -93,20 +98,29 @@ export default function PasskeyWalletPage() {
     catch { setCopied('failed'); }
   }, [address]);
 
-  const create = useCallback(async () => {
-    setBusy(true); setError(null);
+  const create = useCallback(async (choice: PasskeyAuthenticatorChoice) => {
+    setBusy(choice); setError(null);
     try {
-      const created = await registerPasskey(window.location.hostname, 'WRFCoin passkey wallet');
+      const created = await registerPasskey(window.location.hostname, 'WRFCoin passkey wallet', undefined, choice);
       saveStoredPasskey(created);
       setRecord(created);
     } catch (e) {
-      setError(/NotAllowed|cancel/i.test(`${(e as any)?.name ?? ''}`) ? describeError(e) : UNSUPPORTED_MESSAGE);
+      setError(/NotAllowed|cancel/i.test(`${(e as any)?.name ?? ''}`) ? describeError(e)
+        : choice === 'security-key' ? SECURITY_KEY_UNSUPPORTED_MESSAGE : UNSUPPORTED_MESSAGE);
     } finally { setBusy(false); }
+  }, []);
+
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (settleTimer.current) clearTimeout(settleTimer.current); }, []);
+  const faucetClaimed = useCallback(() => {
+    setBalanceRead(n => n + 1);
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => setBalanceRead(n => n + 1), FAUCET_SETTLE_MS);
   }, []);
 
   const send = useCallback(async () => {
     if (!record || !address) return;
-    setBusy(true); setError(null); setSent(null);
+    setBusy('send'); setError(null); setSent(null);
     try {
       if (noFunds) throw new Error('NO_FUNDS');
       if (exceeds) throw new Error('EXCEEDS_AVAILABLE');
@@ -135,14 +149,20 @@ export default function PasskeyWalletPage() {
         <WrfBadge status="info" label="Preview" />
       </Box>
       <Typography sx={{ color: palette.text.secondary, mb: 3 }}>
-        Your account is a passkey on this device, unlocked with your fingerprint, face or screen lock. There is no recovery phrase to write down. The passkey is tied to this site ("{window.location.hostname}"): another address, such as www versus the bare domain, is a different account. If you lose the passkey, the account cannot be recovered.
+        Your account is a passkey: on this device, unlocked with your fingerprint, face or screen lock, or on a hardware security key you plug in or tap. There is no recovery phrase to write down. The passkey is tied to this site ("{window.location.hostname}"): another address, such as www versus the bare domain, is a different account. If you lose the passkey, the account cannot be recovered.
       </Typography>
 
       {!record && (
-        <Box>
-          <WrfButton variant="primary" onClick={() => void create()} disabled={busy}>
-            {busy ? 'Waiting for your device…' : 'Create passkey account'}
+        <Box sx={{ display: 'grid', gap: 1.5, justifyItems: 'start' }}>
+          <WrfButton variant="primary" onClick={() => void create('any')} disabled={busy !== false} data-testid="passkey-create">
+            {busy === 'any' ? 'Waiting for your device…' : 'Create passkey account'}
           </WrfButton>
+          <WrfButton variant="outline" onClick={() => void create('security-key')} disabled={busy !== false} data-testid="passkey-create-security-key">
+            {busy === 'security-key' ? 'Touch your security key…' : 'Use a security key (YubiKey)'}
+          </WrfButton>
+          <Typography variant="body2" data-testid="passkey-security-key-note" sx={{ color: palette.text.secondary }}>
+            {SECURITY_KEY_NOTE}
+          </Typography>
         </Box>
       )}
 
@@ -184,13 +204,14 @@ export default function PasskeyWalletPage() {
               {chain.blockHeight !== null ? `Current block: ${chain.blockHeight.toLocaleString('en-US')}.` : 'Current block: unavailable.'}
             </Typography>
           </Box>
+          <PasskeyFaucetPanel address={address} onClaimed={faucetClaimed} />
           <WrfInput label="Recipient address" value={to} onChange={(e) => setTo(e.target.value)} placeholder="0x…" autoComplete="off" inputProps={{ style: { fontFamily: mono } }} />
           <WrfInput label="Amount (WRF)" value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" autoComplete="off" />
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-            <WrfButton variant="primary" onClick={() => void send()} disabled={busy || !to.trim() || !amount.trim() || noFunds || exceeds}>
-              {busy ? 'Waiting for your device…' : 'Send with passkey'}
+            <WrfButton variant="primary" onClick={() => void send()} disabled={busy !== false || !to.trim() || !amount.trim() || noFunds || exceeds}>
+              {busy === 'send' ? 'Waiting for your device…' : 'Send with passkey'}
             </WrfButton>
-            <WrfButton variant="outline" onClick={() => { setTypedTail(''); setConfirmOpen(true); }} disabled={busy}>Forget on this device</WrfButton>
+            <WrfButton variant="outline" onClick={() => { setTypedTail(''); setConfirmOpen(true); }} disabled={busy !== false}>Forget on this device</WrfButton>
           </Box>
           {noFunds && <Typography role="status" variant="caption" sx={{ color: palette.text.secondary }}>This account has no funds yet, so sending is off.</Typography>}
           {exceeds && <WrfAlert severity="error" role="alert">That is more than the available balance.</WrfAlert>}

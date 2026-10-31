@@ -4,7 +4,7 @@
  * (The created MUI theme is stubbed under Jest, so this checks the constant the theme is built from.)
  */
 import { describe, it, expect } from '@jest/globals';
-import { darkTabSelectedColor } from '../index';
+import { darkDisabledButton, darkTabSelectedColor } from '../index';
 import { contrastRatio, hexToRgb } from '../contrast';
 import { bgPrimary, bgSecondary, primary, textSecondary } from '../tokens';
 
@@ -24,5 +24,8 @@ describe('dark theme tab labels', () => {
   });
   it('RED control: the previous colour (primary.main) fails on the /pop card', () => {
     expect(contrastRatio(hexToRgb(primary), hexToRgb('#182234'))).toBeLessThan(4.5);
+  });
+  it('a disabled primary button label holds 4.5:1 on its flat fill (not the blue gradient)', () => {
+    expect(contrastRatio(hexToRgb(darkDisabledButton.color), hexToRgb(darkDisabledButton.background))).toBeGreaterThanOrEqual(4.5);
   });
 });
