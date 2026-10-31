@@ -9,7 +9,7 @@ import { jest } from '@jest/globals';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-const { default: PublicDownloadsPage, PLATFORMS, TESTNET_GENESIS_HASH, VERIFY_COMMANDS, NODE_PLATFORMS } = await import('../PublicDownloadsPage');
+const { default: PublicDownloadsPage, PLATFORMS, TESTNET_GENESIS_HASH, VERIFY_COMMANDS, NODE_PLATFORMS, WINDOWS_NODE_ID, LINKS } = await import('../PublicDownloadsPage');
 const { parseManifest, formatBytes, fileNameOf } = await import('../../services/downloadsManifest');
 
 const HEX64 = /\b[0-9a-f]{64}\b/;
@@ -177,7 +177,7 @@ it('Copy always copies the whole command, however the box renders it', async () 
   expect(rule).not.toMatch(/nowrap/);
 });
 
-it('does not mark Windows as available: a native download is coming, not WSL or Docker', async () => {
+it('does not mark Windows as available until the manifest publishes it: a native download is coming, not WSL or Docker', async () => {
   mockManifest(UNPUBLISHED);
   mount();
   await screen.findByTestId('manifest-json');
@@ -221,4 +221,94 @@ it('shows the real testnet genesis hash on the command-line wallet card, never a
   expect(cli).toHaveTextContent(TESTNET_GENESIS_HASH);
   expect(within(cli).getByRole('button', { name: 'Copy the genesis hash' })).toBeInTheDocument();
   expect(screen.getByTestId('public-downloads').textContent).not.toMatch(/placeholder|genesis-hash>|<888/i);
+});
+
+// The real manifest this site serves (public/downloads/manifest.json): the Windows installer is the one
+// published file; every other entry stays unpublished.
+const fs = await import('node:fs');
+const SHIPPED = JSON.parse(fs.readFileSync(new URL('../../../public/downloads/manifest.json', import.meta.url), 'utf8'));
+const WIN_URL = 'https://github.com/wrfcoin/core4/releases/download/v888-windows-preview/wrfcoin-node-0.1.0-g228d6f3b-windows-x86_64-setup.exe';
+const WIN_SHA = '8d3960978d7037c37d40c29f94b99ba7ad6680f4d73dbb5812f26210599ea337';
+
+it('ships a manifest whose only published artifact is the verifiable Windows node installer', () => {
+  expect(Number.isNaN(Date.parse(SHIPPED.generated))).toBe(false);
+  const win = SHIPPED.artifacts.find(a => a.id === WINDOWS_NODE_ID);
+  expect(win).toEqual({
+    id: 'node-windows-x86_64', kind: 'file', repo: 'wrfcoin/core4', url: WIN_URL, size: 8273027, sha256: WIN_SHA,
+    tag: 'v888-windows-preview', commit: '228d6f3b008e316e43b330468e3d131f6995e4bb', signedBy: null, published: true,
+  });
+  // The tag and commit in the URL agree with the entry.
+  expect(win.url).toContain(`/download/${win.tag}/`);
+  expect(win.url).toContain(`-g${win.commit.slice(0, 8)}-`);
+  expect(SHIPPED.artifacts.filter(a => a.published === true).map(a => a.id)).toEqual([WINDOWS_NODE_ID]);
+  const parsed = parseManifest(SHIPPED);
+  expect(parsed.artifacts.filter(a => a.published).map(a => [a.id, a.sha256])).toEqual([[WINDOWS_NODE_ID, WIN_SHA]]);
+});
+
+it('renders the Windows download from the manifest: link, size, SHA-256 next to it, check, run, use, unsigned note', async () => {
+  const writeText = jest.fn(async () => undefined);
+  Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+  mockManifest(SHIPPED);
+  mount();
+  await screen.findByTestId('manifest-json');
+  const win = screen.getByTestId('windows-node');
+  const node = screen.getByTestId('download-sync-node');
+  expect(within(node).getByText('Linux, macOS · Windows preview')).toBeInTheDocument();
+  expect(within(node).getByText('Preview download')).toBeInTheDocument();
+  expect(within(node).queryByText('Not available yet')).toBeNull();
+  expect(screen.queryByTestId('windows-node-note')).toBeNull();
+
+  const download = within(win).getByRole('link', { name: 'Download for Windows (7.9 MB)' });
+  expect(download).toHaveAttribute('href', WIN_URL);
+  expect(download).toHaveAttribute('rel', 'noopener noreferrer');
+  const facts = within(win).getByTestId(`release-${WINDOWS_NODE_ID}`);
+  expect(facts).toHaveTextContent('wrfcoin-node-0.1.0-g228d6f3b-windows-x86_64-setup.exe · 7.9 MB');
+  expect(facts).toHaveTextContent(WIN_SHA);
+  expect(facts).toHaveTextContent('v888-windows-preview');
+  expect(facts).toHaveTextContent('228d6f3b00…');
+  // The hash sits in the same step as the download button.
+  expect(download.closest('li')).toContainElement(facts);
+
+  const steps = within(win).getAllByRole('listitem');
+  expect(steps.map(li => li.querySelector('.dl-step-title').textContent)).toEqual([
+    'Download the installer', 'Check the file before you run it', 'Run the setup',
+  ]);
+  const check = 'certutil -hashfile wrfcoin-node-0.1.0-g228d6f3b-windows-x86_64-setup.exe SHA256';
+  expect(steps[1].querySelector('code').textContent).toBe(check);
+  fireEvent.click(within(steps[1]).getByRole('button', { name: 'Copy the Windows check command' }));
+  await waitFor(() => expect(writeText).toHaveBeenCalledWith(check));
+  expect(steps[1]).toHaveTextContent('must match the SHA-256 above');
+
+  expect(screen.getByTestId('windows-node-use')).toHaveTextContent('WRFCoin Node starts the node in the background and opens its dashboard at http://127.0.0.1:8556/dashboard. Stop WRFCoin Node stops it.');
+  expect(screen.getByTestId('windows-node-use')).toHaveTextContent('%LOCALAPPDATA%\\WRFCoin');
+  expect(screen.getByTestId('windows-node-unsigned')).toHaveTextContent('testnet preview and the installer is not code-signed yet');
+  expect(screen.getByTestId('windows-node-unsigned')).toHaveTextContent('If the hash matched, choose More info, then Run anyway.');
+  expect(within(win).getByRole('link', { name: /Windows node guide/ })).toHaveAttribute('href', LINKS.windowsGuide);
+  expect(win.textContent).not.toMatch(/WSL2|Docker Desktop/);
+
+  // Everything else in the shipped manifest stays unpublished.
+  expect(screen.getByRole('button', { name: 'Download APK' })).toBeDisabled();
+  expect(screen.getByTestId('release-node-source')).toHaveTextContent('Not yet published');
+  expect(screen.getByTestId('release-cli-source')).toHaveTextContent('Not yet published');
+  // The Windows filter still shows the sync node.
+  fireEvent.click(screen.getByRole('button', { name: 'Windows' }));
+  await waitFor(() => expect(screen.getAllByRole('article').map(a => a.getAttribute('aria-label'))).toContain('Sync node'));
+});
+
+it('never shows a Windows hash or download from a published flag without a well-formed hash, or before the manifest loads', async () => {
+  const bad = { ...SHIPPED, artifacts: SHIPPED.artifacts.map(a => (a.id === WINDOWS_NODE_ID ? { ...a, sha256: 'TBD' } : a)) };
+  mockManifest(bad);
+  mount();
+  await screen.findByTestId('manifest-json');
+  expect(screen.getByTestId('windows-node-note')).toHaveTextContent('It is not available yet.');
+  expect(screen.queryByRole('link', { name: /Download for Windows/ })).toBeNull();
+  expect(within(screen.getByTestId('download-sync-node')).getByText('Linux and macOS')).toBeInTheDocument();
+  expect(releaseText()).not.toMatch(HEX64);
+  cleanup();
+
+  mockManifest(new Error('offline'));
+  mount();
+  await screen.findAllByRole('alert');
+  expect(within(screen.getByTestId('windows-node')).getByText('Release manifest unavailable')).toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: /Download for Windows/ })).toBeNull();
 });
