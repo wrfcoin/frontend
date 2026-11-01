@@ -37,7 +37,7 @@ function visible(fullStudio, publicReadonly, operatorPreview) {
 const PUBLIC_ONBOARDING = [
   '/onboarding', '/wallet', '/connect-station', '/earn', '/leaderboard/contributors',
   '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
-  '/forecasters', '/forecasters/:profileKey',
+  '/forecasters', '/forecasters/:profileKey', '/competitions',
   // backend#229: the exact proof card page for one station reading.
   '/proof/:commitId',
   // Owner demo 2026-11-01: the exact producers and bonded nodes page.

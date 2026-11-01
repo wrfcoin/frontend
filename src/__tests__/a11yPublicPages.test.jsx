@@ -19,6 +19,7 @@ const { PublicGovernanceListPage } = await import('../pages/PublicGovernancePage
 const { default: PublicPolicyPage } = await import('../pages/PublicPolicyPage');
 const { default: PublicDownloadsPage } = await import('../pages/PublicDownloadsPage');
 const { default: PublicForecastersPage } = await import('../pages/PublicForecastersPage');
+const { default: PublicCompetitionsPage } = await import('../pages/PublicCompetitionsPage');
 
 const AXE_OPTIONS = {
   rules: {
@@ -42,12 +43,23 @@ const FORECASTERS = {
   network: { forecasters: '1', forecasts: '12', rewardsMintedCount: '12', rewardsMintedBaseUnits: '123456789012', rewardsMintedDisplay: '1234.56789012', rewardsWithReceiptCount: '0', rewardsBaselineCount: '12', blocks: '7000', blocksWithoutCounters: '0', meanSkill: { status: 'not_yet_available', reason: 'r' } },
   rows: [{ rank: 1, profileKey: 'c_0123456789abcdef01234567', shortAddress: '0x0000…00a1', address: null, isYou: false, forecasts: '12', forecastsPrevious: '9', forecastsDelta: '3', firstActiveAt: '2026-10-01T00:00:00.000000Z', lastActiveAt: '2026-10-18T06:00:00.000000Z', skill: { status: 'not_yet_available', reason: 'r' }, paid: { status: 'not_yet_available', reason: 'r' } }],
 };
+const COMP_ROW = { rank: 1, profileKey: 'c_0123456789abcdef01234567', shortAddress: '0x0000…00a1', address: null, isYou: false, points: '12', forecasts: '12', firstAt: '2026-10-26T01:00:00.000000Z', lastAt: '2026-10-30T06:00:00.000000Z' };
+const COMPETITIONS = { success: true, current: '2026-W44', weeks: [
+  { week: '2026-W44', from: '2026-10-26T00:00:00.000Z', until: '2026-11-02T00:00:00.000Z', title: 't', status: 'open', entrants: 1, forecasts: '12', leaders: [COMP_ROW] },
+  { week: '2026-W43', from: '2026-10-19T00:00:00.000Z', until: '2026-10-26T00:00:00.000Z', title: 't', status: 'final', entrants: 1, forecasts: '4', leaders: [COMP_ROW] },
+] };
+const COMPETITION_CURRENT = { success: true, competition: { week: '2026-W44', from: '2026-10-26T00:00:00.000Z', until: '2026-11-02T00:00:00.000Z', title: 't', status: 'open', final: null,
+  rule: { id: 'scored-forecasts-v1', points: 'p', ties: 't', prizes: 'Points only.', week: 'w' } },
+asOf: { height: '44370', hash: 'ab'.repeat(32), time: '2026-10-31T07:00:00.000000Z', checkedAt: '2026-10-31T07:00:05.000Z' },
+coverage: { fromHeight: '1', throughHeight: '44370', complete: true, skippedRecords: '0' }, entrants: 1, forecasts: '12', rows: [COMP_ROW], you: null, limit: 50 };
 const GOVERNANCE_EMPTY = { success: true, count: 0, total: 0, offset: 0, limit: 20, hasMore: false, proposals: [] };
 
 beforeEach(() => {
   globalThis.fetch = jest.fn(async input => {
     const { pathname } = new URL(String(input), 'https://test.invalid');
     const body = pathname.endsWith('/forecasters') ? FORECASTERS
+      : pathname.endsWith('/competitions') ? COMPETITIONS
+      : pathname.endsWith('/competitions/current') ? COMPETITION_CURRENT
       : pathname.endsWith('/governance/proposals') ? GOVERNANCE_EMPTY
         : null;
     if (!body) return new Response('{}', { status: 503, headers: { 'content-type': 'application/json' } });
@@ -62,6 +74,7 @@ const pages = [
   ['terms', () => render(<MemoryRouter initialEntries={['/terms']}><PublicPolicyPage /></MemoryRouter>), () => screen.findByRole('heading', { level: 1 })],
   ['downloads', () => render(<MemoryRouter initialEntries={['/downloads']}><PublicDownloadsPage /></MemoryRouter>), () => screen.findAllByRole('heading')],
   ['forecasters', () => render(<MemoryRouter><PublicForecastersPage /></MemoryRouter>), () => screen.findAllByTestId('forecaster-row')],
+  ['competitions', () => render(<MemoryRouter><PublicCompetitionsPage /></MemoryRouter>), () => screen.findAllByTestId('competition-row')],
 ];
 
 test.each(pages)('%s has no serious or critical axe finding', async (_name, mount, settled) => {

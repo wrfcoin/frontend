@@ -115,6 +115,36 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     profileKey: 'c_0123456789abcdef01234567', shortAddress: '0xaaaa…aaaa', address: null, isYou: false,
   };
 
+  // Weekly forecast competition (backend#251), in the exact shape backend competition-routes.ts serves an
+  // anonymous caller: short addresses and c_ keys only, points from scored forecasts, the rule text verbatim.
+  // The week is the one containing `now` (ISO week, Monday 00:00 UTC), so "Ends in" is always shown.
+  const monday = (() => { const d = new Date(now); const m = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - ((d.getUTCDay() + 6) % 7) * 86_400_000; return m; })();
+  const isoWeek = ms => { const thu = new Date(ms + 3 * 86_400_000); const y = thu.getUTCFullYear(); const j4 = Date.UTC(y, 0, 4); const w1 = j4 - ((new Date(j4).getUTCDay() + 6) % 7) * 86_400_000; return `${y}-W${String(Math.round((ms - w1) / (7 * 86_400_000)) + 1).padStart(2, '0')}`; };
+  const COMPETITION_RULE = {
+    id: 'scored-forecasts-v1',
+    points: 'One point for each of your forecasts that the chain scored and decided a reward for during the week.',
+    ties: 'Equal points: whoever reached the total first ranks higher.',
+    prizes: 'Points only. No WRF is paid and nothing is staked.',
+    week: 'Weeks run Monday 00:00 UTC to the next Monday 00:00 UTC, by block time.',
+  };
+  // Times inside the week: the open week's last forecasts are recent, a past week's fall on its Saturday.
+  const compRows = (pts, from, open) => FORECASTER_ROWS.slice(0, pts.length).map((r, i) => ({ rank: i + 1, profileKey: r.profileKey, shortAddress: r.shortAddress, address: null, isYou: false, points: pts[i], forecasts: pts[i],
+    firstAt: new Date(from + (i + 1) * 3_600_000).toISOString(), lastAt: open ? day((i + 1) * 3 * 3_600_000) : new Date(from + 5 * 86_400_000 + (12 - i) * 3_600_000).toISOString() }));
+  const compWeek = (back, status, pts) => {
+    const from = monday - back * 7 * 86_400_000;
+    return { week: isoWeek(from), from: new Date(from).toISOString(), until: new Date(from + 7 * 86_400_000).toISOString(), title: 't', status, rows: compRows(pts, from, back === 0) };
+  };
+  const WEEKS = [compWeek(0, 'open', ['14', '11', '9', '6', '3', '1']), compWeek(1, 'final', ['22', '19', '12', '7']), compWeek(2, 'final', ['17', '9', '4']), compWeek(3, 'final', ['5'])];
+  const compStandings = (w) => ({
+    success: true,
+    competition: { week: w.week, from: w.from, until: w.until, title: w.title, status: w.status, rule: COMPETITION_RULE,
+      final: w.status === 'final' ? { finalizedAt: new Date(Date.parse(w.until) + 3_600_000).toISOString(), throughHeight: String(44812 - 2000), throughHash: 'cd'.repeat(32) } : null },
+    asOf: w.status === 'final' ? null : forecastHeader.asOf, coverage: w.status === 'final' ? null : forecastHeader.coverage,
+    entrants: w.rows.length, forecasts: String(w.rows.reduce((n, r) => n + Number(r.points), 0)), rows: w.rows, you: null, limit: 50,
+  });
+  const COMPETITIONS = { success: true, current: WEEKS[0].week, weeks: WEEKS.map(w => ({ week: w.week, from: w.from, until: w.until, title: w.title, status: w.status, entrants: w.rows.length, forecasts: String(w.rows.reduce((n, r) => n + Number(r.points), 0)), leaders: w.rows.slice(0, 3) })) };
+  const COMPETITION = week => { const w = week === 'current' ? WEEKS[0] : WEEKS.find(x => x.week === week); return w ? compStandings(w) : null; };
+
   // Faucet bond-grant audit list (infra testnet/services/faucet/BOND_GRANT.md): exactly the six fields the
   // faucet returns, newest first. Wallets and keys are visibly synthetic; peer ids are well-formed base58
   // shapes, not real nodes. `bonded` is null on today's faucet; one true and one false show the other states.
@@ -170,7 +200,7 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     pod: { title: 'Historical temperatures', text: 'low: -11.7 °C | average low: 1.1 °C | average high: 11.7 °C | high: 25.6 °C' },
     query: WOLFRAM_QUERY, resultsUrl: `https://www.wolframalpha.com/input?i=${encodeURIComponent(WOLFRAM_QUERY)}`, attribution: 'Wolfram|Alpha',
   };
-  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, downloadsManifest: readFixture('downloads-manifest.json') };
+  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -189,6 +219,8 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * bounded block search) or 'off' (the 404 while PROOF_CARDS_ENABLED is not true).
  * `options.networkNodes`: 'populated' (default), 'partial' (bonds and attesters unavailable) or 'off'
  * (the 404 while NETWORK_NODES_READ_ENABLED is not true).
+ * `options.competitions`: 'populated' (default), 'empty' (a new week, no points
+ * yet) or 'unavailable' (the 503 while the index or the competition flag is off).
  */
 export async function installRoutes(page, fx, options = {}) {
   const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
@@ -198,6 +230,7 @@ export async function installRoutes(page, fx, options = {}) {
   const publicBalanceMode = options.publicBalance || 'populated';
   const proofCardMode = options.proofCard || 'populated';
   const networkNodesMode = options.networkNodes || 'populated';
+  const competitionsMode = options.competitions || 'populated';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -233,6 +266,14 @@ export async function installRoutes(page, fx, options = {}) {
       // c_ key only, like the backend for every public caller; the record answers for the fixture rows' keys.
       if ((m = /^\/api\/forecasters\/(c_[0-9a-f]{24})$/.exec(p)) && fx.FORECASTERS('7d').rows.some(r => r.profileKey === m[1])) return json(route, forecastersMode === 'empty' ? { ...fx.FORECASTER, totals: { ...fx.FORECASTER.totals, forecasts: '0', byProvenance: { real: '0', synthetic: '0', unclassified: '0' }, firstActiveAt: null, lastActiveAt: null }, series: [], recent: [] } : { ...fx.FORECASTER, profileKey: m[1] });
       return json(route, { error: { code: 'FORECASTER_NOT_FOUND' } }, 404);
+    }
+    if (p === '/api/competitions' || p.startsWith('/api/competitions/')) {
+      if (competitionsMode === 'unavailable') return json(route, { status: 'unavailable', error: { code: 'COMPETITIONS_DISABLED' }, reason: 'Forecast competitions are not enabled on this network.' }, 503);
+      if (p === '/api/competitions') return json(route, competitionsMode === 'empty' ? { ...fx.COMPETITIONS, weeks: fx.COMPETITIONS.weeks.slice(0, 1).map(w => ({ ...w, entrants: 0, forecasts: '0', leaders: [] })) } : fx.COMPETITIONS);
+      const week = p.slice('/api/competitions/'.length);
+      const body = fx.COMPETITION(week);
+      if (!body) return json(route, { error: { code: 'COMPETITION_NOT_FOUND' } }, 404);
+      return json(route, competitionsMode === 'empty' ? { ...body, entrants: 0, forecasts: '0', rows: [] } : body);
     }
     if ((m = /^\/api\/public\/balance\/(0x[0-9a-fA-F]{40})$/.exec(p))) {
       if (publicBalanceMode === 'off') return json(route, { error: 'Not found' }, 404);

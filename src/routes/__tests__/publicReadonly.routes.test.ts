@@ -10,7 +10,7 @@ describe('Stage 1.5 public route policy', () => {
     const candidates = [
       '/explore', '/explorer', '/map', '/search', '/weather/station/:stationId', '/leaderboard/contributors',
       '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
-      '/forecasters', '/forecasters/:profileKey',
+      '/forecasters', '/forecasters/:profileKey', '/competitions',
       '/faucet/bond-grants', '/faucet', '/faucet/bond-grant', '/faucet/bond-grants/x',
       '/proof/:commitId', '/proof', '/proofs/:commitId', '/proof/:commitId/x',
       '/nodes', '/nodes/x', '/network/nodes',
@@ -70,7 +70,7 @@ describe('Stage 1.5 station detail', () => {
     expect([...PUBLIC_READONLY_PATHS]).toEqual([
       '/explore', '/explorer', '/map', '/search', STATION, '/leaderboard/contributors',
       '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
-      '/forecasters', '/forecasters/:profileKey',
+      '/forecasters', '/forecasters/:profileKey', '/competitions',
       '/faucet/bond-grants',
       '/proof/:commitId',
       '/nodes',

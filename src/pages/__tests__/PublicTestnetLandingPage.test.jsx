@@ -127,6 +127,7 @@ describe('PublicTestnetLandingPage', () => {
       '/explore',
       '/nodes',
       '/forecasters',
+      '/competitions',
       '/search',
       '/leaderboard/contributors',
       '/governance/public',
