@@ -38,6 +38,11 @@ const AUTHENTICATED_ROUTES: readonly AuthenticatedRoute[] = [
   { method: 'POST', path: /^(?:\/api)?\/governance\/delegate$/ },
   // Operator preview builds: the miner panel's node poll (backend /api/mining requireAuth).
   { method: 'GET', path: /^(?:\/api)?\/mining\/node-stats$/ },
+  // Payout notifications (backend#389): wallet-login subscription routes (payoutNotifications.ts).
+  { method: 'POST', path: /^(?:\/api)?\/notifications\/subscriptions$/ },
+  { method: 'GET', path: new RegExp(`^(?:/api)?/notifications/subscriptions/${WALLET_ADDRESS}$`) },
+  { method: 'DELETE', path: /^(?:\/api)?\/notifications\/subscriptions\/[0-9a-f-]{36}$/ },
+  { method: 'POST', path: /^(?:\/api)?\/notifications\/subscriptions\/[0-9a-f-]{36}\/test$/ },
   // Compute job submission (backend requireAuth), including its fallback paths.
   { method: 'POST', path: /^(?:\/api)?\/compute\/(?:tasks|submit|submit-job)$/ },
 ];

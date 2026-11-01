@@ -63,6 +63,8 @@ export const SCENARIOS = [
   { name: 'nodes-off', route: '/nodes', note: 'the 404 while NETWORK_NODES_READ_ENABLED is not true' },
   { name: 'proof-card-wolfram', route: `/proof/${PROOF_COMMIT}`, note: 'Is this reading unusual? answered with a saved (fixture) Wolfram AppID, stubbed relay' },
   { name: 'explore-address-off', route: '/explore', note: 'the 404 while the public balance read is switched off' },
+  { name: 'explore-notify-visitor', route: '/explore', note: 'notifications on, not signed in: how to turn them on (backend#389)' },
+  { name: 'explore-notify-owner', route: '/explore', note: 'signed in with the looked-up address: browser push and ntfy topics' },
 ];
 
 /** Public navigation paths with route params are reached through a fixture id. */

@@ -259,9 +259,17 @@ describe('Stage 1.5 API traversal', () => {
     expect(lastTargets.filter(target => !edgeAdmits(target))).toEqual([]);
   });
 
-  it('POST allowlist admits exactly the infra#1319 send route and the Wolfram reading check, and every regex is well formed', () => {
+  it('POST allowlist admits exactly the infra#1319 send route, the Wolfram reading check and the backend#389 notification writes, and every regex is well formed', () => {
     const post = (edge as unknown as { post: Array<{ path: string; query: string[]; requiresBearer: boolean }> }).post;
-    expect(post.map(r => r.path)).toEqual(['^/api/wallet/send$', '^/api/integrations/wolfram/reading-check$']);
+    expect(post.map(r => r.path)).toEqual([
+      '^/api/wallet/send$',
+      '^/api/integrations/wolfram/reading-check$',
+      '^/api/notifications/subscriptions$',
+      '^/api/notifications/subscriptions/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test$',
+      '^/api/notifications/unsubscribe$',
+    ]);
+    // Of the notification writes, only unsubscribe works without the wallet login (possession of the endpoint or topic).
+    expect(post.filter(r => !r.requiresBearer && r.path.includes('/notifications/')).map(r => r.path)).toEqual(['^/api/notifications/unsubscribe$']);
     expect(post[0].requiresBearer).toBe(true);
     const own = '0x' + 'ab'.repeat(20);
     expect(edgeAdmits(`/api/wallet/${own}/nonce`)).toBe(true);
