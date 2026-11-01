@@ -1,6 +1,6 @@
 import { WRFCOIN_CHAIN_ID } from '../../config/network';
 import { deriveAccount } from './firstPartyKeys';
-import { buildSignedTransfer, wrfToBaseUnits } from './transferPayload';
+import { buildSignedTransfer, transparentTransferMessage, wrfToBaseUnits } from './transferPayload';
 import { readVault, unlockVault } from '../walletVault';
 import { ApiClient } from '../apiClient/client';
 import { requireExactBaseUnits } from '../apiClient/number';
@@ -82,7 +82,13 @@ export async function signVaultTransfer(p: TransferPreview, password: string) {
   }
 }
 
-export async function submitVaultTransfer(input: TransferPreview, password: string) {
+/**
+ * Co-signs one transfer with a registered security key (`security_key_spend`): given the sender and the
+ * exact ed25519 transfer preimage, returns core4's `security_key_auth` assertion.
+ */
+export type SpendCoSigner = (from: string, debitMessage: Uint8Array) => Promise<unknown>;
+
+export async function submitVaultTransfer(input: TransferPreview, password: string, coSign?: SpendCoSigner) {
   if (!FEATURES.walletSend) throw new Error('WALLET_SEND_UNAVAILABLE');
   // Snapshot so later mutation of the caller's object (async edits) cannot change what is signed.
   const p: TransferPreview = Object.freeze({ ...input });
@@ -93,7 +99,14 @@ export async function submitVaultTransfer(input: TransferPreview, password: stri
   const body = await signVaultTransfer(p, password);
   password = '';
   if (await getNonce(p.from) !== p.nonce) throw new Error('Nonce changed. Review the transfer again.');
-  const response = await client.post<{ hash?: string; status?: string }>('/wallet/send', body);
+  // A protected account also needs the security key's touch over the same preimage the phrase key signed.
+  const securityKeyAuth = coSign
+    ? await coSign(p.from, transparentTransferMessage({ ...p, amountBaseUnits: BigInt(p.amountBaseUnits), nonce: BigInt(p.nonce) }))
+    : undefined;
+  const response = await client.post<{ hash?: string; status?: string }>(
+    '/wallet/send',
+    securityKeyAuth ? { ...body, security_key_auth: securityKeyAuth } : body,
+  );
   if (typeof response.hash !== 'string' || !response.hash) throw new Error('No submission identifier returned');
   return { txHash: response.hash, status: 'submitted' as const };
 }

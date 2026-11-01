@@ -25,6 +25,15 @@ import { WrfAlert } from '../DesignSystem/WrfAlert';
 import { WrfBadge } from '../DesignSystem/WrfBadge';
 import { palette } from '../DesignSystem/tokens';
 import AddressBookButton, { ContactPicks, useRecipientGuard } from './AddressBook';
+import { useChainProtections, useNow } from '../../services/walletCrypto/useChainProtections';
+import {
+  allowlistDecision,
+  securityKeySpendCoSigner,
+  KEY_CANCELLED_MESSAGE,
+  KEY_WRONG_SITE_MESSAGE,
+  type AllowlistDecision,
+} from '../../services/walletCrypto/protections';
+import { formatCountdown } from '../../services/walletCrypto/chainProtections';
 
 const decimal = (units: string) => `${BigInt(units) / 100000000n}.${(BigInt(units) % 100000000n).toString().padStart(8, '0')}`;
 const mono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
@@ -42,6 +51,19 @@ function amountUnits(amount: string): bigint | null {
 export const PREPARE_FAILED_MESSAGE =
   'Unable to prepare transfer. Check the full address, amount (up to 8 decimals), and wallet connection.';
 export const DEVICE_SIGNS_MESSAGE = 'This device signs this send. No password needed.';
+/** The chain allowlist refuses this recipient; shown before anything is signed. */
+export const CHAIN_ALLOWLIST_BLOCKED_MESSAGE =
+  'This address is not on your send allowlist, so the network would refuse this send. Add it under Account protection first; new addresses wait before they can receive.';
+export const chainAllowlistPendingMessage = (msLeft: number) =>
+  `This address is waiting to join your send allowlist. You can send to it in ${formatCountdown(msLeft)}.`;
+export const SECURITY_KEY_SEND_MESSAGE = 'Your YubiKey must approve this send: after your password it asks for a touch and PIN.';
+
+/** The refusal text for a chain allowlist decision, or null when the send may go ahead. */
+function chainRefusal(decision: AllowlistDecision, now: number): string | null {
+  if (decision.kind === 'blocked') return CHAIN_ALLOWLIST_BLOCKED_MESSAGE;
+  if (decision.kind === 'pending') return chainAllowlistPendingMessage(decision.etaMs - now);
+  return null;
+}
 export const NOT_CONFIRMED_MESSAGE =
   'Transfer was not confirmed. Check activity before retrying; review again and re-enter your password.';
 
@@ -90,6 +112,15 @@ export default function VaultSend({ address, availableUnits }: { address: string
   // App-level allowlist (device-only, opt-in): refuses recipients outside the address book before any preview.
   const guard = useRecipientGuard();
   const allowlistRefusal = recipient.trim() ? guard.refusal(recipient) : null;
+  // Chain-enforced protections (flag + node gated; null reads change nothing).
+  const protections = useChainProtections(address);
+  const chainCheck = (to: string, now = Date.now()) =>
+    (/^0x[0-9a-fA-F]{40}$/.test(to.trim()) ? chainRefusal(allowlistDecision(protections.allowlist, address, to, protections.fetchedAt), now) : null);
+  // Ticks once a second only while the send form is open on an account whose list is in force.
+  const now = useNow(open && protections.allowlist?.allowlist.in_force === true);
+  const chainAllowlistRefusal = chainCheck(recipient, now);
+  const keys = protections.securityKey?.required_to_spend ? protections.securityKey.keys : [];
+  const keyRequired = keys.length > 0;
   const contactName = guard.contactName(recipient);
   const availableBase = availableUnits != null && /^\d+$/.test(availableUnits) ? BigInt(availableUnits) : null;
   const requested = amountUnits(amount);
@@ -98,7 +129,7 @@ export default function VaultSend({ address, availableUnits }: { address: string
   const review = async () => {
     if (inFlight.current) return;
     if (knownLegacy) { setError(LEGACY_RECIPIENT_MESSAGE); return; }
-    const refusal = guard.refusal(recipient, Date.now());
+    const refusal = guard.refusal(recipient, Date.now()) ?? chainCheck(recipient);
     if (refusal) { setError(refusal); return; }
     if (zeroBalance) { setError(ZERO_BALANCE_MESSAGE); return; }
     if (exceedsAvailable) { setError(EXCEEDS_AVAILABLE_MESSAGE); return; }
@@ -130,17 +161,21 @@ export default function VaultSend({ address, availableUnits }: { address: string
   const confirm = async () => {
     if (!preview || inFlight.current) return;
     // Checked again at the moment of signing (device key or password): the allowlist may have been turned on since the review.
-    const refusal = guard.refusal(preview.to, Date.now());
+    const refusal = guard.refusal(preview.to, Date.now()) ?? chainCheck(preview.to);
     if (refusal) { if (password.current) password.current.value = ''; setPreview(null); setError(refusal); return; }
     // The device path signs without a password, so it also needs the stored address book loaded (fail closed).
-    if (device?.ok && guard.ready) { await confirmWithDevice(); return; }
+    // A YubiKey-protected account never uses it: every send needs the key.
+    if (device?.ok && guard.ready && !keyRequired) { await confirmWithDevice(); return; }
     if (!password.current?.value) return;
     inFlight.current = true; setBusy(true); setError('');
-    const pending = submitVaultTransfer(preview, password.current.value);
+    const pending = keyRequired
+      ? submitVaultTransfer(preview, password.current.value, securityKeySpendCoSigner(keys))
+      : submitVaultTransfer(preview, password.current.value);
     password.current.value = '';
     try { setHash((await pending).txHash); setPreview(null); }
-    catch {
-      setError(NOT_CONFIRMED_MESSAGE);
+    catch (e) {
+      const message = e instanceof Error ? e.message : '';
+      setError(message === KEY_CANCELLED_MESSAGE || message === KEY_WRONG_SITE_MESSAGE ? message : NOT_CONFIRMED_MESSAGE);
       setPreview(null);
     } finally { inFlight.current = false; setBusy(false); }
   };
@@ -149,7 +184,7 @@ export default function VaultSend({ address, availableUnits }: { address: string
     setOpen(false); setPreview(null);
   };
   const openSend = () => { setOpen(true); setHash(''); setError(''); setDevice(null); };
-  const deviceSigns = device?.ok === true && guard.ready;
+  const deviceSigns = device?.ok === true && guard.ready && !keyRequired;
   const fallbackNote = deviceFallbackMessage(device);
 
   const stage: 'form' | 'review' | 'submitted' = hash ? 'submitted' : preview ? 'review' : 'form';
@@ -166,7 +201,7 @@ export default function VaultSend({ address, availableUnits }: { address: string
   ) : (
     <>
       <WrfButton variant="ghost" disabled={busy} onClick={close}>Cancel</WrfButton>
-      <WrfButton variant="primary" onClick={review} disabled={busy || knownLegacy || zeroBalance || exceedsAvailable || Boolean(allowlistRefusal)} loading={busy}>Review transfer</WrfButton>
+      <WrfButton variant="primary" onClick={review} disabled={busy || knownLegacy || zeroBalance || exceedsAvailable || Boolean(allowlistRefusal) || Boolean(chainAllowlistRefusal)} loading={busy}>Review transfer</WrfButton>
     </>
   );
 
@@ -251,7 +286,8 @@ export default function VaultSend({ address, availableUnits }: { address: string
               <WrfAlert severity="success" role="status" data-testid="device-signs">{DEVICE_SIGNS_MESSAGE}</WrfAlert>
             ) : (
               <>
-                {fallbackNote && <WrfAlert severity="info" role="note" sx={{ mb: 2 }} data-testid="device-fallback">{fallbackNote}</WrfAlert>}
+                {keyRequired && <WrfAlert severity="info" role="note" sx={{ mb: 2 }} data-testid="send-security-key">{SECURITY_KEY_SEND_MESSAGE}</WrfAlert>}
+                {fallbackNote && !keyRequired && <WrfAlert severity="info" role="note" sx={{ mb: 2 }} data-testid="device-fallback">{fallbackNote}</WrfAlert>}
                 <WrfInput
                   ref={password}
                   type="password"
@@ -305,6 +341,9 @@ export default function VaultSend({ address, availableUnits }: { address: string
             )}
             {allowlistRefusal && !knownLegacy && (
               <WrfAlert severity="error" title="Not in your allowlist" data-testid="send-allowlist-refusal">{allowlistRefusal}</WrfAlert>
+            )}
+            {chainAllowlistRefusal && !allowlistRefusal && !knownLegacy && (
+              <WrfAlert severity="error" title="Not on your send allowlist" data-testid="send-chain-allowlist-refusal">{chainAllowlistRefusal}</WrfAlert>
             )}
             {zeroBalance && !knownLegacy && (
               <WrfAlert severity="info" title="No WRF to send">{ZERO_BALANCE_MESSAGE}</WrfAlert>

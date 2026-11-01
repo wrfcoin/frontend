@@ -63,7 +63,7 @@ export async function readDeviceState(owner: string): Promise<DeviceState> {
 }
 
 /** Unlock the phrase once with the password, use the owner key for one signature, then drop it. */
-async function withOwnerKey<T>(owner: string, password: string, run: (account: ReturnType<typeof deriveAccount>) => T): Promise<T> {
+export async function withOwnerKey<T>(owner: string, password: string, run: (account: ReturnType<typeof deriveAccount>) => T): Promise<T> {
   if (readVault()?.address.toLowerCase() !== owner.toLowerCase()) throw new Error(UNLOCK_FAILED_MESSAGE);
   let account: ReturnType<typeof deriveAccount> | null = null;
   try {

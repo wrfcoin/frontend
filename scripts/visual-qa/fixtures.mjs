@@ -336,6 +336,9 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * `options.sessionKeys`: 'off' (default: feature_active false, as on chain 888 today) or 'on'.
  * With 'on', a device registered through POST /api/wallet/session-keys is listed back as an active
  * key with that grant's limits (2.5 WRF already used today), so the setup flow can be driven for real.
+ * `options.protections`: 'off' (default: the security-key and send-allowlist reads 404, as before the
+ * backend relays exist) or 'on' (both consensus features active; no YubiKey yet; the allowlist on with
+ * one address and one addition requested just now, 48 h to go).
  */
 export async function installRoutes(page, fx, options = {}) {
   const json = (route, body, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
@@ -348,6 +351,7 @@ export async function installRoutes(page, fx, options = {}) {
   const networkNodesMode = options.networkNodes || 'populated';
   const competitionsMode = options.competitions || 'populated';
   const sessionKeysMode = options.sessionKeys || 'off';
+  const protectionsMode = options.protections || 'off';
   fx.sessionKeyRecords ??= new Map();
   const calibrationMode = options.calibration || 'calibrated';
   const forecastCheckMode = options.forecastCheck || 'populated';
@@ -393,6 +397,18 @@ export async function installRoutes(page, fx, options = {}) {
         fx.sessionKeyRecords.set(owner, [record]);
       }
       return json(route, { hash: `0x${hex(64)}`, action: reg ? 'register' : 'revoke', status: 'submitted', settled: false }, 202);
+    }
+    if ((m = /^\/api\/wallet\/(0x[0-9a-fA-F]{40})\/security-key$/.exec(p))) {
+      if (protectionsMode !== 'on') return json(route, { success: false, error: { code: 'NOT_FOUND' } }, 404);
+      return json(route, { success: true, data: { address: m[1].toLowerCase(), next_height: 48913, feature_active_at_next_height: true, next_nonce: 0, generation: 0, required_to_spend: false, keys: [], escape_delay_blocks: null, pending_escape: null, escape_matured: false } });
+    }
+    if ((m = /^\/api\/wallet\/(0x[0-9a-fA-F]{40})\/send-allowlist$/.exec(p))) {
+      if (protectionsMode !== 'on') return json(route, { success: false, error: { code: 'NOT_FOUND' } }, 404);
+      return json(route, { success: true, data: { feature_active_next_height: true, observed_at_height: 48912, allowlist: {
+        account: m[1].toLowerCase(), next_action_nonce: 2, in_force: true, at_height: 48913, add_delay_blocks: 2244, enabled_at_height: 46000,
+        allowed: [fx.PEER.toLowerCase()], pending_additions: [{ address: `0x${'8'.repeat(40)}`, requested_at_height: 48912, effective_at_height: 51156 }],
+        pending_disable: null, requests_blocked_until_height: null,
+      } } });
     }
     if ((m = /\/wallet\/(0x[0-9a-fA-F]{40})$/.exec(p))) return json(route, fx.wallet(m[1].toLowerCase()).balance);
     if ((m = /\/wallet\/(0x[0-9a-fA-F]{40})\/transactions$/.exec(p))) return json(route, fx.wallet(m[1].toLowerCase()).history);
