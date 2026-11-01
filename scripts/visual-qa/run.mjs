@@ -517,6 +517,8 @@ async function runViewport(browser, vp, tall, theme) {
           await page.getByLabel('Amount in WRF').fill(amount);
           await page.getByRole('button', { name: 'Review transfer' }).click();
           await page.getByTestId(waitFor).waitFor({ timeout: 20_000 });
+          // Let the review dialog finish its fade-in so the page behind does not show through.
+          await page.waitForTimeout(800);
           await capture(page, errors, name, `/wallet (Send ${amount} WRF reviewed)`, suffix);
           await page.getByRole('button', { name: 'Back', exact: true }).click();
           await page.getByRole('button', { name: 'Cancel' }).click();

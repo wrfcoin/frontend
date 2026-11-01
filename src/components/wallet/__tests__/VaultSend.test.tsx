@@ -13,7 +13,8 @@ await jest.unstable_mockModule('../../../services/walletCrypto/deviceSession', (
   checkThisDeviceCanSend: deviceCheck,
   submitDeviceTransfer: deviceSubmit,
   errorCode: realDeviceSession.errorCode,
-  deviceFallbackMessage: (d: any) => (d && !d.ok && d.reason === 'daily' ? "Over this device's 10 WRF daily limit. Confirm with your recovery phrase password." : d && !d.ok && d.reason === 'refused' ? 'REFUSED-NOTE' : null),
+  DeviceSendRefusedError: class DeviceSendRefusedError extends Error {},
+  deviceFallbackMessage: (d: any) => (d && !d.ok && d.reason === 'daily' ? 'Over this device\'s 10 WRF daily limit. Confirm with your recovery phrase password.' : d && !d.ok && d.reason === 'refused' ? 'REFUSED-NOTE' : null),
 }));
 const { default: VaultSend } = await import('../VaultSend');
 beforeEach(() => {
@@ -114,7 +115,10 @@ it('device key: a send inside this device\'s limits needs no password and is sig
   expect(screen.queryByLabelText('Wallet password for this send')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Confirm & Send' }));
   await screen.findByText('Submitted; settlement is not yet confirmed.');
-  expect(deviceSubmit).toHaveBeenCalledWith(p);
+  expect(deviceSubmit).toHaveBeenCalledWith(p, expect.any(Function));
+  // The allowlist check handed to the device path is the live guard (allowlist off here: allowed).
+  const recipientRefusal = deviceSubmit.mock.calls[0][1] as (to: string) => string | null;
+  expect(recipientRefusal(p.to)).toBeNull();
   expect(submit).not.toHaveBeenCalled();
 });
 

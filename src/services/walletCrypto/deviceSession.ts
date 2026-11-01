@@ -139,13 +139,13 @@ export function deviceFallbackMessage(decision: DeviceSendDecision | null): stri
   if (!decision || decision.ok) return null;
   const r = decision.record;
   switch (decision.reason) {
-    case 'per-send': return `Over this device's ${wrfLabel(r?.max_value_per_use)} per-send limit. Confirm with your recovery phrase password.`;
-    case 'daily': return `Over this device's ${wrfLabel(r?.window?.max_value)} daily limit. Confirm with your recovery phrase password.`;
-    case 'total': return `Over what this device has left (${wrfLabel(r?.total_remaining)}). Confirm with your recovery phrase password.`;
-    case 'recipient': return "This device can't pay this address. Confirm with your recovery phrase password.";
-    case 'inactive': return "This device's key is not on. Confirm with your recovery phrase password.";
-    case 'refused': return "The network didn't take this device's signature, so nothing was sent. Confirm with your recovery phrase password.";
-    default: return null;
+  case 'per-send': return `Over this device's ${wrfLabel(r?.max_value_per_use)} per-send limit. Confirm with your recovery phrase password.`;
+  case 'daily': return `Over this device's ${wrfLabel(r?.window?.max_value)} daily limit. Confirm with your recovery phrase password.`;
+  case 'total': return `Over what this device has left (${wrfLabel(r?.total_remaining)}). Confirm with your recovery phrase password.`;
+  case 'recipient': return 'This device can\'t pay this address. Confirm with your recovery phrase password.';
+  case 'inactive': return 'This device\'s key is not on. Confirm with your recovery phrase password.';
+  case 'refused': return 'The network didn\'t take this device\'s signature, so nothing was sent. Confirm with your recovery phrase password.';
+  default: return null;
   }
 }
 
@@ -154,9 +154,24 @@ async function nonceOf(from: string): Promise<string> {
   return requireExactBaseUnits(response.nonce, 'wallet nonce');
 }
 
-/** Sign the reviewed transfer with this device's key (no password) and submit it. */
-export async function submitDeviceTransfer(input: TransferPreview): Promise<{ txHash: string; status: 'submitted' }> {
+/** The app-level allowlist (address book, frontend#42) refused this recipient; nothing was signed. */
+export class DeviceSendRefusedError extends Error {
+  constructor(message: string) { super(message); this.name = 'DeviceSendRefusedError'; }
+}
+
+/**
+ * Sign the reviewed transfer with this device's key (no password) and submit it.
+ * `recipientRefusal` is the address-book allowlist check (null = allowed). It is
+ * required and runs before anything is signed, so the device key never pays an
+ * address the app-level allowlist refuses.
+ */
+export async function submitDeviceTransfer(
+  input: TransferPreview,
+  recipientRefusal: (to: string) => string | null,
+): Promise<{ txHash: string; status: 'submitted' }> {
   const p: TransferPreview = Object.freeze({ ...input });
+  const refusal = recipientRefusal(p.to);
+  if (refusal) throw new DeviceSendRefusedError(refusal);
   validatePreview(p);
   if (!WRFCOIN_CHAIN_ID || p.chainId !== WRFCOIN_CHAIN_ID) throw new Error('Wrong signing network');
   const device = await loadDeviceKey(p.from);

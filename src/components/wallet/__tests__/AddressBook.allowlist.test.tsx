@@ -15,6 +15,17 @@ const STRANGER = '0x' + '3'.repeat(40);
 const prepare = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 const submit = jest.fn<(...args: unknown[]) => Promise<{ txHash: string }>>();
 await jest.unstable_mockModule('../../../services/walletCrypto/vaultTransfer', () => ({ previewVaultTransfer: prepare, submitVaultTransfer: submit }));
+// This browser's device key (session key): the same allowlist must stop it too.
+class DeviceSendRefusedError extends Error {}
+const deviceCheck = jest.fn<(...args: unknown[]) => Promise<unknown>>();
+const deviceSubmit = jest.fn<(p: { to: string }, refusal: (to: string) => string | null) => Promise<{ txHash: string }>>();
+await jest.unstable_mockModule('../../../services/walletCrypto/deviceSession', () => ({
+  checkThisDeviceCanSend: deviceCheck,
+  submitDeviceTransfer: deviceSubmit,
+  errorCode: () => null,
+  deviceFallbackMessage: () => null,
+  DeviceSendRefusedError,
+}));
 const fetchSpy = jest.fn();
 (globalThis as { fetch: unknown }).fetch = fetchSpy;
 
@@ -33,6 +44,13 @@ beforeEach(() => {
   __resetAddressBookForTests({ ...memoryStore(), persistent: true });
   prepare.mockReset().mockResolvedValue({ from, to: MOM, amountBaseUnits: '100000000', nonce: '1', chainId: '888', networkId: 'testnet' });
   submit.mockReset().mockResolvedValue({ txHash: 'h' });
+  deviceCheck.mockReset().mockResolvedValue({ ok: false, reason: 'no-key' });
+  // Like the real submitDeviceTransfer: the allowlist check runs before anything is signed.
+  deviceSubmit.mockReset().mockImplementation(async (p, refusal) => {
+    const r = refusal(p.to);
+    if (r) throw new DeviceSendRefusedError(r);
+    return { txHash: 'device-h' };
+  });
   fetchSpy.mockReset();
 });
 afterEach(() => { cleanup(); jest.restoreAllMocks(); });
@@ -129,5 +147,41 @@ describe('Send with the allowlist', () => {
     openSend();
     fireEvent.change(screen.getByLabelText('Recipient address'), { target: { value: MOM } });
     expect(screen.queryByTestId('send-allowlist-refusal')).toBeNull();
+  });
+
+  it('device key: a send the device could sign alone is still refused once the allowlist is on', async () => {
+    deviceCheck.mockResolvedValue({ ok: true });
+    prepare.mockResolvedValue({ from, to: STRANGER, amountBaseUnits: '100000000', nonce: '1', chainId: '888', networkId: 'testnet' });
+    render(<><VaultSend address={from} /><AddressBookButton /></>);
+    fireEvent.click(screen.getByRole('button', { name: /^Send$/ }));
+    fireEvent.change(screen.getByLabelText('Recipient address'), { target: { value: STRANGER } });
+    fireEvent.change(screen.getByLabelText('Amount in WRF'), { target: { value: '1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Review transfer' }));
+    expect(await screen.findByTestId('device-signs')).toHaveTextContent('No password needed');
+    // The allowlist goes on after the review (another tab, or the book dialog).
+    fireEvent.click(screen.getByTestId('address-book-open'));
+    fireEvent.click(await screen.findByTestId('allowlist-on'));
+    await screen.findByText('On');
+    // The book dialog sits on top of the send review (which is aria-hidden meanwhile).
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm & Send', hidden: true }));
+    await waitFor(() => expect(screen.getAllByText(/not in your address book/).length).toBeGreaterThan(0));
+    expect(deviceSubmit).not.toHaveBeenCalled();
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it('device key: the allowlist check handed to the device path is the live one', async () => {
+    await setUpBook(false);
+    deviceCheck.mockResolvedValue({ ok: true });
+    openSend();
+    fireEvent.change(screen.getByLabelText('Recipient address'), { target: { value: MOM } });
+    fireEvent.change(screen.getByLabelText('Amount in WRF'), { target: { value: '1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Review transfer' }));
+    expect(await screen.findByTestId('device-signs')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm & Send' }));
+    await screen.findByText('Submitted; settlement is not yet confirmed.');
+    expect(deviceSubmit).toHaveBeenCalledTimes(1);
+    const refusal = deviceSubmit.mock.calls[0][1];
+    expect(refusal(MOM)).toBeNull();
+    expect(refusal(STRANGER)).toMatch(/not in your address book/);
   });
 });

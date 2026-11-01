@@ -26,7 +26,7 @@ import {
   type SessionKeyRecord,
 } from '../sessionKeys';
 import { SESSION_KEY_WALLET_LOGIN_DOMAIN, assertSessionKeyLoginChallenge } from '../loginChallenge';
-import { getOrCreateDeviceKey, loadDeviceKey, forgetDeviceKey, keyAddress, memoryDeviceKeyStorage, setDeviceKeyStorage } from '../deviceKeyStore';
+import { DeviceKeyUnsupportedError, getOrCreateDeviceKey, loadDeviceKey, forgetDeviceKey, keyAddress, memoryDeviceKeyStorage, setDeviceKeyStorage } from '../deviceKeyStore';
 import { WalletAuthService } from '../../walletAuthService';
 import { getAuthToken, clearAuthToken } from '../../authTokenStore';
 
@@ -70,6 +70,8 @@ describe('golden vectors (core4 wallet_client_golden_vectors)', () => {
       sessionSignature: ed25519.sign(preimage, sessionSeed),
     });
     expect(JSON.parse(JSON.stringify(body))).toEqual(GOLDEN.register_body);
+    // Byte-exact: core4's REGISTER_BODY_JSON string, as serde writes it (addresses as 20-number arrays).
+    expect(JSON.stringify(body)).toBe(E.register_body_json);
   });
 
   it('transfer preimage and signature', () => {
@@ -219,12 +221,36 @@ describe('device key store', () => {
     expect(await loadDeviceKey(ownerAddress)).toBeNull();
   });
 
-  it('falls back to a clearly marked software key without WebCrypto Ed25519', async () => {
+  it('the private key cannot be exported, in any format', async () => {
+    const stored: { privateKey?: CryptoKey }[] = [];
+    const mem = memoryDeviceKeyStorage();
+    setDeviceKeyStorage({ ...mem, put: async r => { stored.push(r); await mem.put(r); } });
+    await getOrCreateDeviceKey(ownerAddress);
+    const privateKey = stored[0].privateKey as CryptoKey;
+    expect(privateKey.extractable).toBe(false);
+    expect(privateKey.usages).toEqual(['sign']);
+    for (const format of ['pkcs8', 'jwk', 'raw'] as const) {
+      await expect(crypto.subtle.exportKey(format, privateKey)).rejects.toThrow();
+    }
+    // Nothing but the CryptoKey handle and the public key is stored: no seed, no key bytes.
+    expect(Object.keys(stored[0]).sort()).toEqual(['createdAt', 'kind', 'owner', 'privateKey', 'publicKeyHex']);
+  });
+
+  it('without WebCrypto Ed25519 there is no device key at all (no software fallback), and nothing is stored', async () => {
     const spy = jest.spyOn(crypto.subtle, 'generateKey').mockRejectedValueOnce(new Error('Ed25519 unsupported') as never);
-    const key = await getOrCreateDeviceKey(ownerAddress);
+    await expect(getOrCreateDeviceKey(ownerAddress)).rejects.toBeInstanceOf(DeviceKeyUnsupportedError);
     spy.mockRestore();
-    expect(key.kind).toBe('software');
-    const msg = new TextEncoder().encode('hello');
-    expect(ed25519.verify(await key.sign(msg), msg, hexToBytes(key.publicKeyHex))).toBe(true);
+    expect(await loadDeviceKey(ownerAddress)).toBeNull();
+  });
+
+  it('refuses a stored record whose key is extractable or not a CryptoKey', async () => {
+    const extractable = (await crypto.subtle.generateKey({ name: 'Ed25519' }, true, ['sign', 'verify'])) as CryptoKeyPair;
+    const pub = bytesToHex(new Uint8Array(await crypto.subtle.exportKey('raw', extractable.publicKey)));
+    const mem = memoryDeviceKeyStorage();
+    setDeviceKeyStorage(mem);
+    await mem.put({ owner: ownerAddress, publicKeyHex: pub, kind: 'webcrypto', createdAt: 1, privateKey: extractable.privateKey });
+    expect(await loadDeviceKey(ownerAddress)).toBeNull();
+    await mem.put({ owner: ownerAddress, publicKeyHex: pub, kind: 'software' as 'webcrypto', createdAt: 1, seed: new Uint8Array(32) } as never);
+    expect(await loadDeviceKey(ownerAddress)).toBeNull();
   });
 });

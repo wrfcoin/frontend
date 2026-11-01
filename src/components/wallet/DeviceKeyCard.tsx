@@ -19,6 +19,8 @@ import {
 } from '../../services/walletCrypto/deviceSession';
 import { DEFAULT_LIFETIME_DAYS, wrfLabel } from '../../services/walletCrypto/sessionKeys';
 import { useAddressBook } from '../../services/addressBook/useAddressBook';
+import { allowlistOn } from '../../services/addressBook/addressBook';
+import { DEVICE_KEY_UNSUPPORTED_MESSAGE, DeviceKeyUnsupportedError } from '../../services/walletCrypto/deviceKeyStore';
 
 /**
  * "This device": a key kept in this browser that can make small sends and sign
@@ -45,12 +47,12 @@ const bodySx = { color: palette.text.secondary, fontSize: '0.875rem' } as const;
 
 function statusBadge(status: string): { status: 'active' | 'warning' | 'error' | 'neutral'; label: string } {
   switch (status) {
-    case 'active': return { status: 'active', label: 'On' };
-    case 'not_yet_valid': return { status: 'warning', label: 'Starting soon' };
-    case 'expired': return { status: 'neutral', label: 'Expired' };
-    case 'exhausted': return { status: 'neutral', label: 'Used up' };
-    case 'revoked': return { status: 'neutral', label: 'Removed' };
-    default: return { status: 'neutral', label: status };
+  case 'active': return { status: 'active', label: 'On' };
+  case 'not_yet_valid': return { status: 'warning', label: 'Starting soon' };
+  case 'expired': return { status: 'neutral', label: 'Expired' };
+  case 'exhausted': return { status: 'neutral', label: 'Used up' };
+  case 'revoked': return { status: 'neutral', label: 'Removed' };
+  default: return { status: 'neutral', label: status };
   }
 }
 
@@ -71,6 +73,8 @@ export default function DeviceKeyCard({ ownerAddress, canUnlock = true }: { owne
   // The device-only address book: "only my address book" limits this device to those addresses on chain.
   const { book } = useAddressBook();
   const bookAddresses = [...new Set(book.contacts.map(c => c.address.toLowerCase()))].slice(0, 64);
+  // With the app-level allowlist on, start from "Only my address book" so the on-chain limit matches it.
+  const allowlistIsOn = allowlistOn(book, Date.now());
   const [allowlist, setAllowlist] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -131,7 +135,8 @@ export default function DeviceKeyCard({ ownerAddress, canUnlock = true }: { owne
       setMode('idle'); setPending(true);
       await load();
     } catch (e) {
-      setError(e instanceof Error && e.message === FEATURE_OFF_MESSAGE ? FEATURE_OFF_MESSAGE : SETUP_FAILED_MESSAGE);
+      setError(e instanceof DeviceKeyUnsupportedError ? DEVICE_KEY_UNSUPPORTED_MESSAGE
+        : e instanceof Error && e.message === FEATURE_OFF_MESSAGE ? FEATURE_OFF_MESSAGE : SETUP_FAILED_MESSAGE);
     } finally { setBusy(false); }
   };
 
@@ -199,7 +204,7 @@ export default function DeviceKeyCard({ ownerAddress, canUnlock = true }: { owne
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, alignItems: 'flex-start' }}>
           <Typography sx={bodySx}>{pending ? PENDING_MESSAGE : SETUP_SUMMARY}</Typography>
           {!pending && (
-            <WrfButton variant="primary" size="md" startIcon={<PhonelinkLockIcon fontSize="small" />} disabled={!canUnlock} onClick={() => { setMode('setup'); setError(''); }}>
+            <WrfButton variant="primary" size="md" startIcon={<PhonelinkLockIcon fontSize="small" />} disabled={!canUnlock} onClick={() => { setMode('setup'); setError(''); if (allowlistIsOn && bookAddresses.length > 0) setRecipients('book'); }}>
               Set up this device
             </WrfButton>
           )}
@@ -274,11 +279,6 @@ export default function DeviceKeyCard({ ownerAddress, canUnlock = true }: { owne
               Block {record.valid_until.toLocaleString()} ({aboutDays(record.valid_until - (state.list?.next_height ?? record.valid_until))})
             </Typography>
           </Box>
-          {state.key?.kind === 'software' && (
-            <Typography sx={{ ...bodySx, fontSize: '0.8125rem' }}>
-              This browser has no built-in key storage, so the device key is a software key kept in this browser&apos;s storage.
-            </Typography>
-          )}
           {record.status !== 'revoked' && mode !== 'remove' && (
             <Box>
               <WrfButton variant="outline" size="sm" disabled={!canUnlock} onClick={() => { setMode('remove'); setError(''); }}>Remove this device</WrfButton>

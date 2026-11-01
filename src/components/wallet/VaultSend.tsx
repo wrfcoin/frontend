@@ -15,6 +15,7 @@ import {
   deviceFallbackMessage,
   errorCode,
   submitDeviceTransfer,
+  DeviceSendRefusedError,
   type DeviceSendDecision,
 } from '../../services/walletCrypto/deviceSession';
 import { WrfModal } from '../DesignSystem/WrfModal';
@@ -113,8 +114,9 @@ export default function VaultSend({ address, availableUnits }: { address: string
   const confirmWithDevice = async () => {
     if (!preview || inFlight.current) return;
     inFlight.current = true; setBusy(true); setError('');
-    try { setHash((await submitDeviceTransfer(preview)).txHash); setPreview(null); }
+    try { setHash((await submitDeviceTransfer(preview, to => guard.refusal(to, Date.now()))).txHash); setPreview(null); }
     catch (e) {
+      if (e instanceof DeviceSendRefusedError) { setPreview(null); setError(e.message); return; }
       const code = errorCode(e);
       if (code === 'SESSION_KEY_LIMIT' || code === 'FEATURE_NOT_ACTIVE' || code === 'AUTHORIZATION_INVALID') {
         // The node said no to the device key: nothing was sent. Keep the review; ask for the password.
@@ -130,7 +132,8 @@ export default function VaultSend({ address, availableUnits }: { address: string
     // Checked again at the moment of signing (device key or password): the allowlist may have been turned on since the review.
     const refusal = guard.refusal(preview.to, Date.now());
     if (refusal) { if (password.current) password.current.value = ''; setPreview(null); setError(refusal); return; }
-    if (device?.ok) { await confirmWithDevice(); return; }
+    // The device path signs without a password, so it also needs the stored address book loaded (fail closed).
+    if (device?.ok && guard.ready) { await confirmWithDevice(); return; }
     if (!password.current?.value) return;
     inFlight.current = true; setBusy(true); setError('');
     const pending = submitVaultTransfer(preview, password.current.value);
@@ -146,7 +149,7 @@ export default function VaultSend({ address, availableUnits }: { address: string
     setOpen(false); setPreview(null);
   };
   const openSend = () => { setOpen(true); setHash(''); setError(''); setDevice(null); };
-  const deviceSigns = device?.ok === true;
+  const deviceSigns = device?.ok === true && guard.ready;
   const fallbackNote = deviceFallbackMessage(device);
 
   const stage: 'form' | 'review' | 'submitted' = hash ? 'submitted' : preview ? 'review' : 'form';
@@ -250,13 +253,13 @@ export default function VaultSend({ address, availableUnits }: { address: string
               <>
                 {fallbackNote && <WrfAlert severity="info" role="note" sx={{ mb: 2 }} data-testid="device-fallback">{fallbackNote}</WrfAlert>}
                 <WrfInput
-              ref={password}
-              type="password"
-              label="Wallet password for this send"
-              autoComplete="off"
-              disabled={busy}
-              prefixIcon={<LockOutlinedIcon fontSize="small" />}
-              helperText="Your password signs this one transfer and is not stored."
+                  ref={password}
+                  type="password"
+                  label="Wallet password for this send"
+                  autoComplete="off"
+                  disabled={busy}
+                  prefixIcon={<LockOutlinedIcon fontSize="small" />}
+                  helperText="Your password signs this one transfer and is not stored."
                 />
               </>
             )}

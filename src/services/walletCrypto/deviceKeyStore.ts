@@ -1,31 +1,35 @@
 /**
  * This browser's device key (a session key; see sessionKeys.ts).
  *
- * Preferred: a WebCrypto Ed25519 key generated NON-extractable and kept in
+ * Only ever a WebCrypto Ed25519 key generated NON-extractable and kept in
  * IndexedDB as a CryptoKey. Page scripts can ask it to sign, but cannot read
- * the private key out, and it never touches localStorage.
- *
- * Fallback, only where the browser has no WebCrypto Ed25519: a software key
- * (@noble/curves) whose 32-byte seed is stored in IndexedDB. It is marked
- * `kind: 'software'` and the UI says so. Its limits on chain are the same.
+ * the private key out, and it never touches localStorage. There is no
+ * software fallback: a browser without WebCrypto Ed25519 gets no device key
+ * (DeviceKeyUnsupportedError) and keeps using the password/passkey flow.
+ * A stored record whose key is extractable, or not a CryptoKey, is refused.
  *
  * One device key per wallet address per browser.
  */
-import { ed25519 } from '@noble/curves/ed25519.js';
 import { sha3_256 } from '@noble/hashes/sha3.js';
 import { bytesToHex } from './firstPartyKeys';
 
-export type DeviceKeyKind = 'webcrypto' | 'software';
+export type DeviceKeyKind = 'webcrypto';
+
+export const DEVICE_KEY_UNSUPPORTED_MESSAGE =
+  'This browser can\'t keep a device key that stays locked inside it, so sends here keep asking for your password.';
+
+/** This browser has no non-extractable WebCrypto Ed25519. */
+export class DeviceKeyUnsupportedError extends Error {
+  constructor() { super(DEVICE_KEY_UNSUPPORTED_MESSAGE); this.name = 'DeviceKeyUnsupportedError'; }
+}
 
 export interface StoredDeviceKey {
   owner: string;
   publicKeyHex: string;
   kind: DeviceKeyKind;
   createdAt: number;
-  /** Non-extractable WebCrypto private key (kind 'webcrypto'). */
-  privateKey?: CryptoKey;
-  /** Software seed (kind 'software' only). */
-  seed?: Uint8Array;
+  /** Non-extractable WebCrypto private key. */
+  privateKey: CryptoKey;
 }
 
 export interface DeviceKey {
@@ -98,18 +102,21 @@ export function setDeviceKeyStorage(next: DeviceKeyStorage): void { storage = ne
 
 function toDeviceKey(record: StoredDeviceKey): DeviceKey {
   const base = { owner: record.owner, publicKeyHex: record.publicKeyHex, address: keyAddress(record.publicKeyHex), kind: record.kind };
-  if (record.kind === 'webcrypto' && record.privateKey) {
-    const privateKey = record.privateKey;
-    return {
-      ...base,
-      sign: async message => new Uint8Array(await crypto.subtle.sign({ name: 'Ed25519' }, privateKey, message as BufferSource)),
-    };
+  const privateKey = record.privateKey;
+  if (
+    record.kind !== 'webcrypto' ||
+    typeof CryptoKey === 'undefined' ||
+    !(privateKey instanceof CryptoKey) ||
+    privateKey.extractable !== false ||
+    privateKey.type !== 'private' ||
+    !/^[0-9a-f]{64}$/.test(record.publicKeyHex)
+  ) {
+    throw new Error('Stored device key is not a non-extractable key');
   }
-  if (record.kind === 'software' && record.seed) {
-    const seed = record.seed;
-    return { ...base, sign: async message => ed25519.sign(message, seed) };
-  }
-  throw new Error('Stored device key is incomplete');
+  return {
+    ...base,
+    sign: async message => new Uint8Array(await crypto.subtle.sign({ name: 'Ed25519' }, privateKey, message as BufferSource)),
+  };
 }
 
 /** Generate a WebCrypto Ed25519 key that cannot be exported, or null if the browser lacks Ed25519. */
@@ -140,14 +147,11 @@ export async function getOrCreateDeviceKey(owner: string): Promise<DeviceKey> {
   const existing = await loadDeviceKey(owner);
   if (existing) return existing;
   const generated = await generateWebCryptoKey();
-  let record: StoredDeviceKey;
-  if (generated) {
-    record = { owner: owner.toLowerCase(), publicKeyHex: generated.publicKeyHex, kind: 'webcrypto', createdAt: Date.now(), privateKey: generated.privateKey };
-  } else {
-    // Fallback: no WebCrypto Ed25519 in this browser. Clearly marked 'software'.
-    const seed = ed25519.utils.randomSecretKey();
-    record = { owner: owner.toLowerCase(), publicKeyHex: bytesToHex(ed25519.getPublicKey(seed)), kind: 'software', createdAt: Date.now(), seed };
-  }
+  // No software fallback: a key whose private half could be read out is never made.
+  if (!generated) throw new DeviceKeyUnsupportedError();
+  const record: StoredDeviceKey = {
+    owner: owner.toLowerCase(), publicKeyHex: generated.publicKeyHex, kind: 'webcrypto', createdAt: Date.now(), privateKey: generated.privateKey,
+  };
   await storage.put(record);
   return toDeviceKey(record);
 }
