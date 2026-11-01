@@ -3,7 +3,8 @@
  * NodeBondPossession subject are pinned against core4's own golden file (node-bond-golden.json, copied
  * from shared-protocol/tests/fixtures/golden/node_share_contracts_v1.jsonc). The payout passkey subject
  * challenge, every intermediate and an example approval are pinned against core4's
- * passkey_bond_payout_vectors.json (copied unchanged).
+ * passkey_bond_payout_vectors.json from core4#108 (shared-protocol/tests/fixtures/, head 577ce29,
+ * copied unchanged).
  */
 import { jest } from '@jest/globals';
 import { p256 } from '@noble/curves/nist.js';
