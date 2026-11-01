@@ -259,7 +259,7 @@ describe('Stage 1.5 API traversal', () => {
     expect(lastTargets.filter(target => !edgeAdmits(target))).toEqual([]);
   });
 
-  it('POST allowlist admits exactly the infra#1319 send route, the Wolfram reading check and the backend#389 notification writes, and every regex is well formed', () => {
+  it('POST allowlist admits exactly the infra#1319 send route, the Wolfram reading check, the backend#389 notification writes and the passkey-signed ones, and every regex is well formed', () => {
     const post = (edge as unknown as { post: Array<{ path: string; query: string[]; requiresBearer: boolean }> }).post;
     // Demo item 7 adds the forecast check hand-in: no Bearer (the record proves itself against the chain).
     expect(post.map(r => r.path)).toEqual([
@@ -269,9 +269,18 @@ describe('Stage 1.5 API traversal', () => {
       '^/api/notifications/subscriptions/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test$',
       '^/api/notifications/unsubscribe$',
       '^/api/forecast-verification/forecasts$',
+      '^/api/notifications/passkey/challenge$',
+      '^/api/notifications/passkey/subscriptions$',
+      '^/api/notifications/passkey/unsubscribe$',
     ]);
-    // Of the notification writes, only unsubscribe works without the wallet login (possession of the endpoint or topic).
-    expect(post.filter(r => !r.requiresBearer && r.path.includes('/notifications/')).map(r => r.path)).toEqual(['^/api/notifications/unsubscribe$']);
+    // Of the notification writes, only these work without the wallet login: unsubscribe (possession of the endpoint
+    // or topic) and the passkey routes (a WebAuthn assertion over a server nonce; passkey wallets have no login).
+    expect(post.filter(r => !r.requiresBearer && r.path.includes('/notifications/')).map(r => r.path)).toEqual([
+      '^/api/notifications/unsubscribe$',
+      '^/api/notifications/passkey/challenge$',
+      '^/api/notifications/passkey/subscriptions$',
+      '^/api/notifications/passkey/unsubscribe$',
+    ]);
     expect(post[0].requiresBearer).toBe(true);
     expect(post.find(r => r.path === '^/api/forecast-verification/forecasts$')?.requiresBearer).toBeUndefined();
     const own = '0x' + 'ab'.repeat(20);

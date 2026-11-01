@@ -1,5 +1,8 @@
 import { API_BASE_URL } from './config';
 import { getAuthToken } from './authTokenStore';
+import { sha256 } from '@noble/hashes/sha2.js';
+import { sha3_256 } from '@noble/hashes/sha3.js';
+import { assertPasskey, bytesToHex, concat, framed, passkeyRecordAddress, u64le, type PasskeyAuthJson, type PasskeyCredentialRecord } from './walletCrypto/passkey';
 
 /**
  * Payout notifications (backend#389, owner ruling 2026-11-01: no email or personal data).
@@ -131,4 +134,103 @@ export async function createPushSubscription(publicKey: string): Promise<{ endpo
   const json = sub.toJSON() as { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
   if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) throw new Error('The browser returned an incomplete push subscription.');
   return { endpoint: json.endpoint, keys: { p256dh: json.keys.p256dh, auth: json.keys.auth } };
+}
+
+// ---- Passkey wallets (owner approval 2026-11-01) ------------------------------------------------------
+// A passkey wallet has no wallet-login token. It signs each subscribe/unsubscribe with its passkey instead:
+// the server issues a single-use nonce, the passkey asserts over SHA3-256 of a message binding the domain
+// tag, chain, network, address, action, channel, target hash, nonce and expiry (backend
+// services/payout-notify/passkey-proof.ts), and the server checks that the credential derives the address.
+// The server keeps no list it would hand out without a login, so this browser remembers (public data only)
+// which subscriptions it made for each passkey address.
+
+export const PASSKEY_NOTIFY_DOMAIN = 'wrfcoin_passkey_payout_notify_v1';
+export type PasskeyNotifyAction = 'subscribe' | 'unsubscribe';
+export interface PasskeyNotifyFields {
+  chainId: string;
+  network: string;
+  address: string;
+  action: PasskeyNotifyAction;
+  channel: 'webpush' | 'ntfy';
+  targetHash: string;
+  nonce: string;
+  expiresAtSec: number;
+}
+
+export function passkeyNotifyMessage(f: PasskeyNotifyFields): Uint8Array {
+  return concat(new TextEncoder().encode(PASSKEY_NOTIFY_DOMAIN), framed(f.chainId), framed(f.network), framed(f.address), framed(f.action),
+    framed(f.channel), framed(f.targetHash), framed(f.nonce), u64le(BigInt(f.expiresAtSec)));
+}
+export const passkeyNotifyChallenge = (f: PasskeyNotifyFields): Uint8Array => sha3_256(passkeyNotifyMessage(f));
+
+interface PasskeyChallenge { domain: string; chainId: string; network: string; address: string; nonce: string; expiresAt: number }
+
+type Assert = (record: PasskeyCredentialRecord, challenge: Uint8Array) => Promise<PasskeyAuthJson>;
+
+/** Ask for a nonce, sign `action` on (channel, target hash) with the passkey, return the signed fields. */
+async function passkeyProof(record: PasskeyCredentialRecord, address: string, action: PasskeyNotifyAction, channel: 'webpush' | 'ntfy', hash: string, assert: Assert):
+Promise<Result<{ nonce: string; passkey_auth: PasskeyAuthJson }>> {
+  if (passkeyRecordAddress(record) !== address) return { ok: false, status: null, code: 'PASSKEY_ADDRESS_MISMATCH' };
+  const c = await call<PasskeyChallenge>('POST', '/notifications/passkey/challenge', { body: { address } });
+  if (!c.ok) return c;
+  const ch = c.value;
+  if (ch?.domain !== PASSKEY_NOTIFY_DOMAIN || ch.address !== address || !/^[0-9]{1,10}$/.test(String(ch.chainId)) || !/^[0-9a-f]{64}$/.test(ch.nonce) || !Number.isSafeInteger(ch.expiresAt)) {
+    return { ok: false, status: null, code: null };
+  }
+  const passkeyAuth = await assert(record, passkeyNotifyChallenge({
+    chainId: String(ch.chainId), network: ch.network, address, action, channel, targetHash: hash, nonce: ch.nonce, expiresAtSec: ch.expiresAt,
+  }));
+  return { ok: true, value: { nonce: ch.nonce, passkey_auth: passkeyAuth } };
+}
+
+const PASSKEY_SUBS_KEY = 'wrfcoin.payoutNotify.passkey.v1';
+
+function readPasskeySubs(): Record<string, NotificationSubscription[]> {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PASSKEY_SUBS_KEY) ?? '{}');
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch { return {}; }
+}
+function writePasskeySubs(address: string, subs: NotificationSubscription[]): void {
+  try {
+    const all = readPasskeySubs();
+    if (subs.length) all[address] = subs; else delete all[address];
+    localStorage.setItem(PASSKEY_SUBS_KEY, JSON.stringify(all));
+  } catch { /* storage unavailable: the subscription still works, this page just forgets it */ }
+}
+/** The subscriptions this browser made for a passkey address. */
+export function listPasskeySubscriptions(address: string): NotificationSubscription[] {
+  const subs = readPasskeySubs()[address];
+  return Array.isArray(subs) ? subs.filter(s => s && typeof s.targetHash === 'string' && (s.channel === 'ntfy' || s.channel === 'webpush')) : [];
+}
+function rememberPasskeySubscription(sub: NotificationSubscription): void {
+  writePasskeySubs(sub.address, [...listPasskeySubscriptions(sub.address).filter(s => !(s.channel === sub.channel && s.targetHash === sub.targetHash)), sub]);
+}
+export function forgetPasskeySubscription(address: string, channel: string, hash: string): void {
+  writePasskeySubs(address, listPasskeySubscriptions(address).filter(s => !(s.channel === channel && s.targetHash === hash)));
+}
+
+async function passkeySubscribe(record: PasskeyCredentialRecord, address: string, channel: 'webpush' | 'ntfy', target: string, body: Record<string, unknown>, assert: Assert):
+Promise<Result<NotificationSubscription>> {
+  const proof = await passkeyProof(record, address, 'subscribe', channel, bytesToHex(sha256(new TextEncoder().encode(target))), assert);
+  if (!proof.ok) return proof;
+  const r = await call<{ subscription: NotificationSubscription }>('POST', '/notifications/passkey/subscriptions', { body: { address, channel, ...body, ...proof.value } });
+  if (!r.ok) return r;
+  rememberPasskeySubscription(r.value.subscription);
+  return { ok: true, value: r.value.subscription };
+}
+
+export const subscribeNtfyPasskey = (record: PasskeyCredentialRecord, address: string, topic: string, assert: Assert = assertPasskey) =>
+  passkeySubscribe(record, address, 'ntfy', topic, { topic }, assert);
+
+export const subscribeWebPushPasskey = (record: PasskeyCredentialRecord, address: string, subscription: { endpoint: string; keys: { p256dh: string; auth: string } }, assert: Assert = assertPasskey) =>
+  passkeySubscribe(record, address, 'webpush', subscription.endpoint, { subscription: { endpoint: subscription.endpoint, keys: subscription.keys } }, assert);
+
+/** Remove one of this passkey address's subscriptions by its target hash (signed with the passkey). */
+export async function unsubscribePasskey(record: PasskeyCredentialRecord, address: string, channel: 'webpush' | 'ntfy', hash: string, assert: Assert = assertPasskey): Promise<Result<{ removed: number }>> {
+  const proof = await passkeyProof(record, address, 'unsubscribe', channel, hash, assert);
+  if (!proof.ok) return proof;
+  const r = await call<{ removed: number }>('POST', '/notifications/passkey/unsubscribe', { body: { address, channel, targetHash: hash, ...proof.value } });
+  if (r.ok) forgetPasskeySubscription(address, channel, hash);
+  return r;
 }
