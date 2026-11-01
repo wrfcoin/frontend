@@ -326,7 +326,7 @@ export default function PublicDownloadsPage() {
       badge: <Badge status="neutral" label="Source only" dot className="dl-badge-purple" />,
       body: (
         <>
-          <p className="dl-secondary">The <span className="dl-mono">wrfcoin</span> CLI for scripted sends, address inspection and node operators. Built with Rust from the core4 repository; prebuilt binaries are not published yet.</p>
+          <p className="dl-secondary">The <span className="dl-mono">wrfcoin</span> CLI for scripted sends, address inspection and node operators. Built with Rust from the core4 repository. On Windows, the node installer also installs it as <span className="dl-mono">wrfcoin.exe</span>; prebuilt Linux and macOS binaries are not published yet.</p>
           <CommandLine text={CLI_BUILD_COMMAND} />
           <p className="dl-req"><strong>Needs</strong> a Rust toolchain. Set <span className="dl-mono">WRFCOIN_CHAIN_ID={WRFCOIN_CHAIN_ID ?? '<published-chain-id>'}</span> and <span className="dl-mono">WRFCOIN_NETWORK_ID=testnet</span> before sending. Your node should report this testnet genesis hash:</p>
           <CommandLine text={TESTNET_GENESIS_HASH} label="Copy the genesis hash" />
