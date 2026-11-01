@@ -33,10 +33,10 @@ describe('public policy surfaces', () => {
     expect(securityTxt).not.toMatch(/Contact:.*(github\.com|issues)/i);
     expect(securityTxt).toContain('Expires: 2027-08-01T00:00:00Z');
     expect(securityTxt).toContain(
-      'Canonical: https://wrfcoin-testnet.taila1c049.ts.net/.well-known/security.txt',
+      'Canonical: https://wrfcoin.com/.well-known/security.txt',
     );
     expect(securityTxt).toContain(
-      'Policy: https://wrfcoin-testnet.taila1c049.ts.net/security',
+      'Policy: https://wrfcoin.com/security',
     );
   });
 });

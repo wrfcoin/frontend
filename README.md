@@ -34,7 +34,7 @@ The [route policy](src/config/contractSurfacePolicy.ts) admits the data, onboard
 
 ## Planned and experimental
 
-DeFi trading, cross-chain value movement, NFT marketplaces, DAG/sharding dashboards and zero-knowledge wallet features are **not public testnet offerings**. Governance is read-only here. Forecast display does not establish a validated competitive forecasting or payout product.
+DeFi trading, cross-chain value movement, NFT marketplaces, DAG/sharding dashboards and zero-knowledge wallet features are **not public testnet offerings** today. An NFT marketplace and cross-chain bridges are planned for later. Governance is read-only here. Forecast display does not establish a validated competitive forecasting or payout product.
 
 ## Run locally
 
