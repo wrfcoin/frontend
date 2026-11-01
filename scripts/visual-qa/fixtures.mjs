@@ -278,7 +278,35 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     ],
     status: 'live',
   });
-  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, FORECAST_CHECK, FORECAST_CHECK_EMPTY, CHALLENGE_CODE, CHALLENGE: challengeFor_, TEAM_CHALLENGE, downloadsManifest: readFixture('downloads-manifest.json') };
+  // Free-play duels (backend#228) in the exact shape duel-routes.ts answers: one open, one running,
+  // one decided by the chain's rewards, one draw at the baseline.
+  const DUEL_ID = '6f1d2c4e-8a8b-4c1e-9d6a-1f2e3d4c5b6a';
+  const hourAt = h => new Date(Math.floor(now / 3_600_000) * 3_600_000 + h * 3_600_000).toISOString();
+  const duelEntry = (address, over = {}) => ({ address, commitId: null, linkedAt: null, recordVerified: false, modelId: null, forecast: null,
+    chainReward: null, chainRewardFinalized: false, status: 'no_entry', invalidReason: null, ...over });
+  const duelOf = (id, alias, targetH, over = {}) => ({
+    id, stationAlias: alias, targetAt: hourAt(targetH), lockAt: hourAt(targetH - 6), resolveBy: hourAt(targetH + 48), status: 'open', phase: 'open',
+    mode: 'free_play', stakes: null, creator: duelEntry('0x5ca1ab1e000000000000000000000000000d00d1', { commitId: hex(64), status: 'linked' }), opponent: null,
+    invitedOpponent: null, outcome: null, judge: 'The chain', createdAt: iso(3_600_000), matchedAt: null, resolvedAt: null, ...over,
+  });
+  const DUEL_DECIDED = duelOf(DUEL_ID, 'st_7d29a4c1e0b8', -20, {
+    status: 'resolved', phase: 'resolved', matchedAt: iso(30 * 3_600_000), resolvedAt: iso(2 * 3_600_000),
+    creator: duelEntry('0x5ca1ab1e000000000000000000000000000d00d1', { commitId: hex(64), recordVerified: true, modelId: 'learned-conv1d/v1', forecast: { temperature_c: 9.4, pressure_hpa: 1012.8 }, chainReward: '71250000', chainRewardFinalized: true, status: 'linked' }),
+    opponent: duelEntry('0x7e57ab1e00000000000000000000000000c0ffee', { commitId: hex(64), recordVerified: true, modelId: 'persistence-trend/v1', forecast: { temperature_c: 11.2, pressure_hpa: 1011.9 }, chainReward: '10000000', chainRewardFinalized: true, status: 'linked' }),
+    outcome: { result: 'creator', winner: '0x5ca1ab1e000000000000000000000000000d00d1', reason: 'higher_chain_reward', note: 'The chain paid this forecast more: its oracle receipt scored higher.' },
+  });
+  const DUELS = {
+    open: [duelOf('0b7e4a52-3c2d-4f19-8e6b-2a1c9d8e7f60', 'st_31c0e9a2b4d7', 14)],
+    live: [duelOf('2d9c1b7a-6e5f-4a3b-9c8d-7e6f5a4b3c2d', 'st_7d29a4c1e0b8', 4, { status: 'matched', phase: 'waiting_for_target', matchedAt: iso(5 * 3_600_000),
+      opponent: duelEntry('0x00000000000000000000000000000000000beef1', { commitId: hex(64), status: 'linked' }) })],
+    finished: [DUEL_DECIDED, duelOf('9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d', 'st_31c0e9a2b4d7', -50, {
+      status: 'resolved', phase: 'resolved', resolvedAt: iso(26 * 3_600_000),
+      creator: duelEntry('0x5ca1ab1e000000000000000000000000000d00d1', { commitId: hex(64), recordVerified: true, forecast: { temperature_c: 6.1 }, chainReward: '10000000', chainRewardFinalized: true, status: 'linked' }),
+      opponent: duelEntry('0x00000000000000000000000000000000000beef1', { commitId: hex(64), recordVerified: true, forecast: { temperature_c: 5.4 }, chainReward: '10000000', chainRewardFinalized: true, status: 'linked' }),
+      outcome: { result: 'draw', winner: null, reason: 'equal_chain_reward', note: 'The chain paid both forecasts the same amount. Without an oracle receipt every forecast earns the 0.1 baseline, so this is a draw.' },
+    })],
+  };
+  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, FORECAST_CHECK, FORECAST_CHECK_EMPTY, CHALLENGE_CODE, CHALLENGE: challengeFor_, TEAM_CHALLENGE, DUEL_ID, DUELS, DUEL_DECIDED, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -298,6 +326,7 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * `options.forecastCheck`: 'populated' (default), 'empty' (nothing scored yet) or 'off' (the 404 while
  * FORECAST_VERIFICATION_ENABLED is not true).
  * `options.challenges`: 'populated' (default) or 'off' (the 404 while FRIEND_CHALLENGES_ENABLED is not true).
+ * `options.duels`: 'populated' (default) or 'off' (the 404 while FORECAST_DUELS_ENABLED is not true).
  * `options.proofCard`: 'populated' (default), 'not_located' (the reveal is outside the server's
  * bounded block search) or 'off' (the 404 while PROOF_CARDS_ENABLED is not true).
  * `options.networkNodes`: 'populated' (default), 'partial' (bonds and attesters unavailable) or 'off'
@@ -323,6 +352,7 @@ export async function installRoutes(page, fx, options = {}) {
   const calibrationMode = options.calibration || 'calibrated';
   const forecastCheckMode = options.forecastCheck || 'populated';
   const challengesMode = options.challenges || 'populated';
+  const duelsMode = options.duels || 'populated';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -426,6 +456,14 @@ export async function installRoutes(page, fx, options = {}) {
       let you = '0x7e57ab1e00000000000000000000000000c0ffee';
       try { you = JSON.parse(Buffer.from(bearer.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString()).sub || you; } catch { /* fixture default */ }
       return json(route, { challenges: [fx.CHALLENGE(you), fx.TEAM_CHALLENGE(you)] });
+    }
+    if (p === '/api/duels' && req.method() === 'GET') {
+      if (duelsMode === 'off') return json(route, { error: 'Not found' }, 404);
+      return json(route, fx.DUELS);
+    }
+    if ((m = /^\/api\/duels\/([0-9a-f-]{36})$/.exec(p)) && req.method() === 'GET') {
+      if (duelsMode === 'off' || m[1] !== fx.DUEL_ID) return json(route, { error: 'Not found' }, 404);
+      return json(route, { duel: fx.DUEL_DECIDED });
     }
     if ((m = /^\/api\/proofs\/([0-9a-f]{64})$/.exec(p))) {
       if (proofCardMode === 'off' || m[1] !== fx.PROOF_COMMIT) return json(route, { error: 'Not found' }, 404);

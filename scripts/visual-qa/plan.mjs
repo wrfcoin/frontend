@@ -27,6 +27,8 @@ export const ROUTES = [
   { name: 'forecast-check', route: '/forecast-check' },
   { name: 'challenges', route: '/challenges' },
   { name: 'challenge-board', route: '/challenges/RAIN-7K2Q' },
+  { name: 'duels', route: '/duels' },
+  { name: 'duel', route: '/duels/6f1d2c4e-8a8b-4c1e-9d6a-1f2e3d4c5b6a' },
   { name: 'governance', route: '/governance/public' },
   { name: 'governance-proposal', route: '/governance/public/WIP-12' },
   { name: 'forecast', route: '/weather/forecast' },
@@ -74,6 +76,7 @@ export const SCENARIOS = [
   { name: 'forecast-check-off', route: '/forecast-check', note: 'the 404 while FORECAST_VERIFICATION_ENABLED is not true' },
   { name: 'challenges-signed-in', route: '/challenges', note: 'after the real web-wallet setup: your challenges with chain counts' },
   { name: 'challenge-board-off', route: '/challenges/RAIN-7K2Q', note: 'the 404 while FRIEND_CHALLENGES_ENABLED is not true' },
+  { name: 'duels-off', route: '/duels', note: 'the 404 while FORECAST_DUELS_ENABLED is not true' },
   { name: 'explore-address-off', route: '/explore', note: 'the 404 while the public balance read is switched off' },
   { name: 'explore-notify-visitor', route: '/explore', note: 'notifications on, not signed in: how to turn them on (backend#389)' },
   { name: 'explore-notify-owner', route: '/explore', note: 'signed in with the looked-up address: browser push and ntfy topics' },
@@ -89,6 +92,7 @@ export const PARAM_ROUTE_EXAMPLES = {
   '/forecasters/:profileKey': '/forecasters/c_0123456789abcdef01234567',
   '/proof/:commitId': `/proof/${PROOF_COMMIT}`,
   '/challenges/:code': '/challenges/RAIN-7K2Q',
+  '/duels/:id': '/duels/6f1d2c4e-8a8b-4c1e-9d6a-1f2e3d4c5b6a',
 };
 
 export const VIEWPORTS = [

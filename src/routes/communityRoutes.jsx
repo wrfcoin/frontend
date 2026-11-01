@@ -20,6 +20,8 @@ const PublicCompetitionsPage = lazy(() => import('../pages/PublicCompetitionsPag
 const PublicForecastCheckPage = lazy(() => import('../pages/PublicForecastCheckPage'));
 const FriendChallengesPage = lazy(() => import('../pages/FriendChallengesPage'));
 const FriendChallengeBoardPage = lazy(() => import('../pages/FriendChallengeBoardPage'));
+const ForecastDuelsPage = lazy(() => import('../pages/ForecastDuelsPage'));
+const ForecastDuelPage = lazy(() => import('../pages/ForecastDuelPage'));
 
 // Community & Social
 const CommunityForums = lazy(() => import('../components/CommunityForums'));
@@ -81,6 +83,9 @@ export default function communityRoutes({ isFeatureEnabled = () => false } = {})
     {/* Friend challenges (backend#249, demo item 8): points only; the public route policy decides reachability */}
     <Route path="/challenges" element={<PageWrapper tabType="community"><FriendChallengesPage /></PageWrapper>} />
     <Route path="/challenges/:code" element={<PageWrapper tabType="community"><FriendChallengeBoardPage /></PageWrapper>} />
+    {/* Free-play forecast duels (backend#228, demo item 10): no stakes; the public route policy decides reachability */}
+    <Route path="/duels" element={<PageWrapper tabType="community"><ForecastDuelsPage /></PageWrapper>} />
+    <Route path="/duels/:id" element={<PageWrapper tabType="community"><ForecastDuelPage /></PageWrapper>} />
 
     {/* Community */}
     {isFeatureEnabled('community') && <Route path="/community" element={<PageWrapper tabType="weather"><CommunityForums /></PageWrapper>} />}

@@ -149,6 +149,15 @@ export function forecastCheckRecordPath(commitId: string): string | null {
   return PROOF_COMMIT_ID_RE.test(commitId) ? `/forecast-verification/forecasts/${commitId}` : null;
 }
 
+// ---- Free-play forecast duels (backend#228/#1424, demo item 10) ---------------------------------------------
+// backend duel-routes.ts: GET /api/duels (board) and GET /api/duels/<uuid>, no query. Opening, accepting and
+// linking are wallet calls (services/walletApi.ts); handing in a revealed record is publicPost below.
+export const FORECAST_DUELS_PATH = '/duels';
+const DUEL_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export function forecastDuelPath(id: string): string | null {
+  return DUEL_ID_RE.test(id) ? `/duels/${id}` : null;
+}
+
 export type PublicPostResult<T> =
   | { kind: 'ok'; status: number; data: T }
   | { kind: 'refused'; status: number; code: string | null; message: string | null }

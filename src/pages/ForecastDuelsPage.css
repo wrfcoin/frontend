@@ -1,0 +1,67 @@
+/* Free-play forecast duels (backend#228, demo item 10). Builds on PublicForecastersPage.css; colours are
+   the --fc-* design tokens injected by useForecasterThemeVars, so both themes follow the body theme. */
+.du-page { max-width: 1040px; }
+.du-frac { color: var(--fc-text-muted); }
+.du-signin { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 16px 20px; }
+.du-signin p { margin: 0; font-size: 0.875rem; color: var(--fc-text-secondary); max-width: 60ch; }
+.du-signin strong { color: var(--fc-text); }
+.du-form { display: flex; flex-direction: column; gap: 12px; padding: 16px 20px 20px; }
+.du-inline { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; padding: 16px 20px 20px; }
+.du-inline .du-field { flex: 1 1 320px; }
+.du-fields { display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 10px; }
+.du-fields--2 { grid-template-columns: 1fr 1fr; }
+.du-field { display: flex; flex-direction: column; gap: 6px; font-size: 0.8125rem; font-weight: 600; color: var(--fc-text-secondary); min-width: 0; }
+.du-field input, .du-field select, .du-field textarea { font: inherit; font-size: 0.875rem; font-weight: 400; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--fc-border); background: var(--fc-bg-primary); color: var(--fc-text); min-width: 0; }
+.du-field textarea { font-family: var(--fc-mono); font-size: 0.8125rem; resize: vertical; }
+.du-field input:focus-visible, .du-field select:focus-visible, .du-field textarea:focus-visible { outline: 2px solid var(--fc-primary-light); outline-offset: 1px; }
+.du-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.du-actions .fc-note { margin: 0; }
+.du-action { display: inline-flex; align-items: center; justify-content: center; border: 0; background: var(--fc-primary-light); color: var(--fc-bg-primary); font: inherit; font-size: 0.875rem; font-weight: 700; padding: 9px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; white-space: nowrap; align-self: flex-start; }
+.du-action:disabled { opacity: 0.55; cursor: not-allowed; }
+.du-action:focus-visible { outline: 2px solid var(--fc-text); outline-offset: 2px; }
+.du-notice { margin: 0 0 16px; }
+.du-cta { margin: 0 0 16px; }
+.du-help { margin: 0; padding: 16px 20px 0; font-size: 0.875rem; color: var(--fc-text-secondary); }
+.du-help code { font-family: var(--fc-mono); font-size: 0.8125rem; }
+.du-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+.du-empty { border: 1px dashed var(--fc-border); border-radius: var(--fc-r-md); }
+
+.du-board { border: 1px solid var(--fc-border); border-radius: var(--fc-r-lg, 12px); background: var(--fc-bg-secondary); overflow: hidden; margin-bottom: 16px; }
+.du-list .du-board { margin-bottom: 0; }
+.du-board-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 16px 20px 8px; }
+.du-board-head h3 { margin: 0; font-size: 1.0625rem; font-weight: 600; }
+.du-board-head h3 a { color: var(--fc-text); text-decoration: none; }
+.du-board-head h3 a:hover { color: var(--fc-primary-light); }
+.du-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-top: 4px; font-size: 0.8125rem; color: var(--fc-text-secondary); }
+.du-phase { flex: none; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--fc-border); white-space: nowrap; color: var(--fc-info-light); }
+.du-phase--resolved { color: var(--fc-success-light); }
+.du-phase--void, .du-phase--expired { color: var(--fc-text-secondary); }
+.du-sides { display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; gap: 12px; padding: 8px 20px 16px; }
+.du-vs { align-self: center; font-weight: 700; color: var(--fc-text-muted); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.08em; }
+.du-side { border: 1px solid var(--fc-border); border-radius: var(--fc-r-md); background: var(--fc-bg-primary); padding: 12px 14px; min-width: 0; }
+.du-side--won { border-color: var(--fc-success-light); }
+.du-side--empty { display: flex; flex-direction: column; justify-content: center; border-style: dashed; }
+.du-side-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fc-text-muted); }
+.du-won { color: var(--fc-success-light); }
+.du-side-who { font-family: var(--fc-mono); font-size: 0.9375rem; font-weight: 600; margin: 4px 0 8px; overflow-wrap: anywhere; }
+.du-facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 0.8125rem; }
+.du-facts dt { color: var(--fc-text-secondary); }
+.du-facts dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+.du-invalid { margin: 8px 0 0; font-size: 0.75rem; color: var(--fc-warning-light); }
+.du-outcome { margin: 0; padding: 12px 20px; border-top: 1px solid var(--fc-border); font-size: 0.875rem; color: var(--fc-text-secondary); }
+.du-outcome strong { color: var(--fc-text); }
+.du-note { margin: 0; padding: 0 20px 12px; font-size: 0.75rem; color: var(--fc-text-muted); }
+
+@media (max-width: 900px) {
+  .du-fields { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .du-fields, .du-fields--2 { grid-template-columns: 1fr; }
+  .du-form, .du-inline, .du-signin { padding: 12px 16px 16px; }
+  .du-board-head, .du-outcome { padding-left: 16px; padding-right: 16px; }
+  .du-board-head { flex-direction: column; }
+  .du-phase { white-space: normal; }
+  .du-sides { grid-template-columns: 1fr; padding: 8px 16px 16px; }
+  .du-vs { justify-self: center; }
+  .du-help { padding: 12px 16px 0; }
+}

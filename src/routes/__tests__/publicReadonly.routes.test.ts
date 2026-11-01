@@ -16,6 +16,7 @@ describe('Stage 1.5 public route policy', () => {
       '/nodes', '/nodes/x', '/network/nodes',
       '/forecast-check', '/forecast-check/x',
       '/challenges', '/challenges/:code', '/challenges/:code/x', '/challenge',
+      '/duels', '/duels/:id', '/duels/:id/x', '/duel',
       '/wallet', '/onboarding', '/governance', '/nfts', '/miner', '/dashboard',
       '/earnings', '/weather/dashboard', '/connect-station', '/earn', '/connect-station/x', '/earn/x',
       '/leaderboard', '/leaderboard/contributors/x', '/leaderboard/nearby', '/leaderboard/profile/:address',
@@ -49,6 +50,8 @@ describe('Stage 1.5 public route policy', () => {
     expect(isPublicTestnetPath('/forecast-check/x', false, true)).toBe(false);
     // Demo item 8 friend challenges: two exact entries.
     expect(isPublicTestnetPath('/challenges/:code/x', false, true)).toBe(false);
+    // Demo item 10 duels: two exact entries.
+    expect(isPublicTestnetPath('/duels/:id/x', false, true)).toBe(false);
     expect([...PUBLIC_ONBOARDING_PATHS]).toEqual(['/onboarding', '/wallet', '/wallet/passkey', '/connect-station', '/earn']);
   });
 
@@ -82,6 +85,7 @@ describe('Stage 1.5 station detail', () => {
       '/nodes',
       '/forecast-check',
       '/challenges', '/challenges/:code',
+      '/duels', '/duels/:id',
     ]);
   });
 

@@ -263,6 +263,7 @@ describe('Stage 1.5 API traversal', () => {
     const post = (edge as unknown as { post: Array<{ path: string; query: string[]; requiresBearer: boolean }> }).post;
     // Demo item 7 adds the forecast check hand-in: no Bearer (the record proves itself against the chain).
     // Demo item 8 adds the friend challenge writes, behind a wallet Bearer like the send.
+    // Demo item 10 adds the duel writes (wallet Bearer) and the record hand-in (no Bearer: it proves itself).
     expect(post.map(r => r.path)).toEqual([
       '^/api/wallet/send$',
       '^/api/integrations/wolfram/reading-check$',
@@ -274,7 +275,10 @@ describe('Stage 1.5 API traversal', () => {
       '^/api/notifications/passkey/subscriptions$',
       '^/api/notifications/passkey/unsubscribe$',
       '^/api/challenges(/join|/sync)?$',
+      expect.stringMatching(/^\^\/api\/duels\(/),
+      expect.stringMatching(/\/record\$$/),
     ]);
+    expect(post.slice(-2).map(r => Boolean(r.requiresBearer))).toEqual([true, false]);
     // Of the notification writes, only these work without the wallet login: unsubscribe (possession of the endpoint
     // or topic) and the passkey routes (a WebAuthn assertion over a server nonce; passkey wallets have no login).
     expect(post.filter(r => !r.requiresBearer && r.path.includes('/notifications/')).map(r => r.path)).toEqual([
