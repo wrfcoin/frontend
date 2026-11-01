@@ -18,6 +18,8 @@ const PublicProofCardPage = lazy(() => import('../pages/PublicProofCardPage'));
 const PublicNetworkNodesPage = lazy(() => import('../pages/PublicNetworkNodesPage'));
 const PublicCompetitionsPage = lazy(() => import('../pages/PublicCompetitionsPage'));
 const PublicForecastCheckPage = lazy(() => import('../pages/PublicForecastCheckPage'));
+const FriendChallengesPage = lazy(() => import('../pages/FriendChallengesPage'));
+const FriendChallengeBoardPage = lazy(() => import('../pages/FriendChallengeBoardPage'));
 
 // Community & Social
 const CommunityForums = lazy(() => import('../components/CommunityForums'));
@@ -76,6 +78,9 @@ export default function communityRoutes({ isFeatureEnabled = () => false } = {})
 
     {/* Forecast check: on-chain forecasts vs station readings and NOAA (demo item 7); the public route policy decides reachability */}
     <Route path="/forecast-check" element={<PageWrapper tabType="community"><PublicForecastCheckPage /></PageWrapper>} />
+    {/* Friend challenges (backend#249, demo item 8): points only; the public route policy decides reachability */}
+    <Route path="/challenges" element={<PageWrapper tabType="community"><FriendChallengesPage /></PageWrapper>} />
+    <Route path="/challenges/:code" element={<PageWrapper tabType="community"><FriendChallengeBoardPage /></PageWrapper>} />
 
     {/* Community */}
     {isFeatureEnabled('community') && <Route path="/community" element={<PageWrapper tabType="weather"><CommunityForums /></PageWrapper>} />}

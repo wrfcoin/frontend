@@ -25,6 +25,8 @@ export const ROUTES = [
   { name: 'proof-card', route: `/proof/${PROOF_COMMIT}` },
   { name: 'nodes', route: '/nodes' },
   { name: 'forecast-check', route: '/forecast-check' },
+  { name: 'challenges', route: '/challenges' },
+  { name: 'challenge-board', route: '/challenges/RAIN-7K2Q' },
   { name: 'governance', route: '/governance/public' },
   { name: 'governance-proposal', route: '/governance/public/WIP-12' },
   { name: 'forecast', route: '/weather/forecast' },
@@ -70,6 +72,8 @@ export const SCENARIOS = [
   { name: 'proof-card-wolfram', route: `/proof/${PROOF_COMMIT}`, note: 'Is this reading unusual? answered with a saved (fixture) Wolfram AppID, stubbed relay' },
   { name: 'forecast-check-empty', route: '/forecast-check', note: 'nothing scored yet: every figure says Unavailable with its reason' },
   { name: 'forecast-check-off', route: '/forecast-check', note: 'the 404 while FORECAST_VERIFICATION_ENABLED is not true' },
+  { name: 'challenges-signed-in', route: '/challenges', note: 'after the real web-wallet setup: your challenges with chain counts' },
+  { name: 'challenge-board-off', route: '/challenges/RAIN-7K2Q', note: 'the 404 while FRIEND_CHALLENGES_ENABLED is not true' },
   { name: 'explore-address-off', route: '/explore', note: 'the 404 while the public balance read is switched off' },
   { name: 'explore-notify-visitor', route: '/explore', note: 'notifications on, not signed in: how to turn them on (backend#389)' },
   { name: 'explore-notify-owner', route: '/explore', note: 'signed in with the looked-up address: browser push and ntfy topics' },
@@ -84,6 +88,7 @@ export const PARAM_ROUTE_EXAMPLES = {
   '/contributor/:key': '/contributor/c_0123456789abcdef01234567',
   '/forecasters/:profileKey': '/forecasters/c_0123456789abcdef01234567',
   '/proof/:commitId': `/proof/${PROOF_COMMIT}`,
+  '/challenges/:code': '/challenges/RAIN-7K2Q',
 };
 
 export const VIEWPORTS = [
