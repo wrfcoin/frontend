@@ -45,6 +45,8 @@ export const SCENARIOS = [
   { name: 'onboarding-advanced', route: '/onboarding', note: 'passkey build: the Advanced 12-word section opened' },
   { name: 'connect-station-unlocked', route: '/connect-station', note: 'same signed-in session' },
   { name: 'wallet-send-review', route: '/wallet', note: 'Send form filled and reviewed, not confirmed' },
+  { name: 'wallet-address-book', route: '/wallet', note: 'Send → Address book: allowlist on, one contact allowed, one waiting 24 h (device-only)' },
+  { name: 'wallet-send-allowlist-refused', route: '/wallet', note: 'Send to an address outside the address book while the allowlist is on' },
   { name: 'forecasters-empty', route: '/forecasters', note: 'index running, no forecasts yet: the honest empty state' },
   { name: 'forecaster-empty', route: '/forecasters/c_0123456789abcdef01234567', note: 'a forecaster with no decisions in the index' },
   { name: 'forecasters-unavailable', route: '/forecasters', note: 'the backend 503 while the chain-reward index is off on a network' },

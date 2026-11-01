@@ -158,3 +158,27 @@ describe('passkey wallet: activation note', () => {
     expect(screen.getByTestId('passkey-activation')).toHaveTextContent('Current block: unavailable.');
   });
 });
+
+describe('passkey wallet: app-level send allowlist', () => {
+  it('refuses an address outside the address book before the passkey prompt', async () => {
+    const { __resetAddressBookForTests } = await import('../../services/addressBook/useAddressBook');
+    const { memoryStore } = await import('../../services/addressBook/deviceStore');
+    const { turnAllowlistOn, EMPTY_BOOK } = await import('../../services/addressBook/addressBook');
+    const store = memoryStore();
+    await store.save(turnAllowlistOn(EMPTY_BOOK, Date.now()));
+    __resetAddressBookForTests(store);
+    try {
+      getBalance.mockResolvedValue({ balance: '100000000' });
+      render(<PasskeyWalletPage />);
+      await screen.findByText('1.00000000 WRF');
+      fireEvent.change(screen.getByLabelText('Recipient address'), { target: { value: '0x' + '4'.repeat(40) } });
+      fireEvent.change(screen.getByLabelText('Amount (WRF)'), { target: { value: '0.5' } });
+      expect(await screen.findByTestId('passkey-allowlist-refusal')).toHaveTextContent('not in your address book');
+      expect(screen.getByRole('button', { name: 'Send with passkey' })).toBeDisabled();
+      expect(submitPasskeyTransfer).not.toHaveBeenCalled();
+    } finally {
+      cleanup();
+      __resetAddressBookForTests(null);
+    }
+  });
+});

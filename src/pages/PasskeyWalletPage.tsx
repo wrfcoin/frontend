@@ -14,6 +14,7 @@ import { WRFCOIN_CHAIN_ID } from '../config/network';
 import { registerPasskey, signPasskeyTransfer, passkeyRecordAddress, passkeyRpId, isWrfcoinPasskeyRpId, type PasskeyAuthenticatorChoice, type PasskeyCredentialRecord } from '../services/walletCrypto/passkey';
 import { wrfToBaseUnits } from '../services/walletCrypto/transferPayload';
 import { recipientStatus } from '../services/walletCrypto/recipientStatus';
+import AddressBookButton, { ContactPicks, useRecipientGuard } from '../components/wallet/AddressBook';
 import { clearStoredPasskey, getPasskeyNonce, loadStoredPasskey, saveStoredPasskey, submitPasskeyTransfer } from '../services/walletCrypto/passkeySend';
 import { getPasskeyPublicBalance } from '../services/walletCrypto/passkeyBalance';
 import { PasskeyFaucetPanel } from '../components/wallet/PasskeyFaucetPanel';
@@ -107,6 +108,9 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
   const noFunds = availableUnits === 0n;
   const exceeds = availableUnits !== null && requested !== null && requested > availableUnits;
   const balanceText = balance.kind === 'ready' ? formatBaseUnitsToWrf(balance.units) : null;
+  // App-level allowlist (device-only, opt-in): the same guard as the 12-word wallet's Send.
+  const guard = useRecipientGuard();
+  const allowlistRefusal = to.trim() ? guard.refusal(to) : null;
 
   const copyAddress = useCallback(async () => {
     if (!address) return;
@@ -141,6 +145,8 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
       if (noFunds) throw new Error('NO_FUNDS');
       if (exceeds) throw new Error('EXCEEDS_AVAILABLE');
       if (!LAUNCH_ADDRESS.test(to.trim()) || recipientStatus(to.trim()) === 'known-legacy-receive-only') throw new Error('bad recipient');
+      const refusal = guard.refusal(to, Date.now());
+      if (refusal) { setError(refusal); return; }
       if (!WRFCOIN_CHAIN_ID) throw new Error('Signing chain is not configured');
       const amountBaseUnits = wrfToBaseUnits(amount);
       if (amountBaseUnits <= 0n) throw new Error('bad amount');
@@ -153,7 +159,7 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
       setAmount('');
       setBalanceRead(n => n + 1);
     } catch (e) { setError(describeError(e)); } finally { setBusy(false); }
-  }, [record, address, to, amount, noFunds, exceeds]);
+  }, [record, address, to, amount, noFunds, exceeds, guard]);
 
   const forget = useCallback(() => { clearStoredPasskey(); setRecord(null); setSent(null); setError(null); setConfirmOpen(false); setTypedTail(''); }, []);
   const tailOk = address !== null && typedTail.trim().toLowerCase() === addressTail(address);
@@ -226,10 +232,15 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
             </Typography>
           </Box>
           <PasskeyFaucetPanel address={address} onClaimed={faucetClaimed} />
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', justifyContent: 'space-between' }}>
+            <ContactPicks onPick={setTo} disabled={busy !== false} />
+            <AddressBookButton size="sm" />
+          </Box>
           <WrfInput label="Recipient address" value={to} onChange={(e) => setTo(e.target.value)} placeholder="0x…" autoComplete="off" inputProps={{ style: { fontFamily: mono } }} />
           <WrfInput label="Amount (WRF)" value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" autoComplete="off" />
+          {allowlistRefusal && <WrfAlert severity="error" data-testid="passkey-allowlist-refusal">{allowlistRefusal}</WrfAlert>}
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-            <WrfButton variant="primary" onClick={() => void send()} disabled={busy !== false || !to.trim() || !amount.trim() || noFunds || exceeds}>
+            <WrfButton variant="primary" onClick={() => void send()} disabled={busy !== false || !to.trim() || !amount.trim() || noFunds || exceeds || Boolean(allowlistRefusal)}>
               {busy === 'send' ? 'Waiting for your device…' : 'Send with passkey'}
             </WrfButton>
             <WrfButton variant="outline" onClick={() => { setTypedTail(''); setConfirmOpen(true); }} disabled={busy !== false}>Forget on this device</WrfButton>

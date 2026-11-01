@@ -16,6 +16,7 @@ import { WrfButton } from '../DesignSystem/WrfButton';
 import { WrfAlert } from '../DesignSystem/WrfAlert';
 import { WrfBadge } from '../DesignSystem/WrfBadge';
 import { palette } from '../DesignSystem/tokens';
+import AddressBookButton, { ContactPicks, useRecipientGuard } from './AddressBook';
 
 const decimal = (units: string) => `${BigInt(units) / 100000000n}.${(BigInt(units) % 100000000n).toString().padStart(8, '0')}`;
 const mono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
@@ -75,6 +76,10 @@ export default function VaultSend({ address, availableUnits }: { address: string
   const password = useRef<HTMLInputElement>(null);
   const inFlight = useRef(false);
   const knownLegacy = recipientStatus(recipient) === 'known-legacy-receive-only';
+  // App-level allowlist (device-only, opt-in): refuses recipients outside the address book before any preview.
+  const guard = useRecipientGuard();
+  const allowlistRefusal = recipient.trim() ? guard.refusal(recipient) : null;
+  const contactName = guard.contactName(recipient);
   const availableBase = availableUnits != null && /^\d+$/.test(availableUnits) ? BigInt(availableUnits) : null;
   const requested = amountUnits(amount);
   const zeroBalance = availableBase === 0n;
@@ -82,6 +87,8 @@ export default function VaultSend({ address, availableUnits }: { address: string
   const review = async () => {
     if (inFlight.current) return;
     if (knownLegacy) { setError(LEGACY_RECIPIENT_MESSAGE); return; }
+    const refusal = guard.refusal(recipient, Date.now());
+    if (refusal) { setError(refusal); return; }
     if (zeroBalance) { setError(ZERO_BALANCE_MESSAGE); return; }
     if (exceedsAvailable) { setError(EXCEEDS_AVAILABLE_MESSAGE); return; }
     inFlight.current = true; setBusy(true); setError('');
@@ -91,6 +98,9 @@ export default function VaultSend({ address, availableUnits }: { address: string
   };
   const confirm = async () => {
     if (!preview || inFlight.current || !password.current?.value) return;
+    // Checked again at the moment of signing: the allowlist may have been turned on since the review.
+    const refusal = guard.refusal(preview.to, Date.now());
+    if (refusal) { password.current.value = ''; setPreview(null); setError(refusal); return; }
     inFlight.current = true; setBusy(true); setError('');
     const pending = submitVaultTransfer(preview, password.current.value);
     password.current.value = '';
@@ -120,7 +130,7 @@ export default function VaultSend({ address, availableUnits }: { address: string
   ) : (
     <>
       <WrfButton variant="ghost" disabled={busy} onClick={close}>Cancel</WrfButton>
-      <WrfButton variant="primary" onClick={review} disabled={busy || knownLegacy || zeroBalance || exceedsAvailable} loading={busy}>Review transfer</WrfButton>
+      <WrfButton variant="primary" onClick={review} disabled={busy || knownLegacy || zeroBalance || exceedsAvailable || Boolean(allowlistRefusal)} loading={busy}>Review transfer</WrfButton>
     </>
   );
 
@@ -179,6 +189,12 @@ export default function VaultSend({ address, availableUnits }: { address: string
             <Box component="dl" sx={{ display: 'grid', gridTemplateColumns: 'auto minmax(0, 1fr)', columnGap: 2, rowGap: 1, m: 0, mb: 2, p: 1.5, borderRadius: '8px', backgroundColor: palette.background.row }}>
               <Typography component="dt" sx={dtSx}>Recipient</Typography>
               <Typography component="dd" sx={{ ...ddSx, fontFamily: mono }}>{preview.to}</Typography>
+              {guard.contactName(preview.to) && (
+                <>
+                  <Typography component="dt" sx={dtSx}>Contact</Typography>
+                  <Typography component="dd" sx={ddSx} data-testid="send-review-contact">{guard.contactName(preview.to)}</Typography>
+                </>
+              )}
               <Typography component="dt" sx={dtSx}>From</Typography>
               <Typography component="dd" sx={{ ...ddSx, fontFamily: mono }}>{preview.from}</Typography>
               <Typography component="dt" sx={dtSx}>Recipient status</Typography>
@@ -225,6 +241,10 @@ export default function VaultSend({ address, availableUnits }: { address: string
                 </>
               )}
             </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', justifyContent: 'space-between' }}>
+              <ContactPicks onPick={setRecipient} disabled={busy} />
+              <AddressBookButton size="sm" />
+            </Box>
             <WrfInput
               label="Recipient address"
               value={recipient}
@@ -234,11 +254,14 @@ export default function VaultSend({ address, availableUnits }: { address: string
               autoComplete="off"
               spellCheck={false}
               suffixIcon={knownLegacy ? <WrfBadge status="error" label="Legacy" /> : undefined}
-              helperText={recipient && !knownLegacy ? <span role="status">{UNKNOWN_RECIPIENT_MESSAGE}</span> : ' '}
+              helperText={recipient && !knownLegacy ? <span role="status">{contactName ? `${contactName} (from your address book). ` : ''}{UNKNOWN_RECIPIENT_MESSAGE}</span> : ' '}
               slotProps={{ input: { sx: { fontFamily: mono, fontSize: '0.8125rem' } } }}
             />
             {knownLegacy && (
               <WrfAlert severity="error" title="Send blocked: legacy receive-only address">{LEGACY_RECIPIENT_MESSAGE}</WrfAlert>
+            )}
+            {allowlistRefusal && !knownLegacy && (
+              <WrfAlert severity="error" title="Not in your allowlist" data-testid="send-allowlist-refusal">{allowlistRefusal}</WrfAlert>
             )}
             {zeroBalance && !knownLegacy && (
               <WrfAlert severity="info" title="No WRF to send">{ZERO_BALANCE_MESSAGE}</WrfAlert>
