@@ -33,6 +33,12 @@ const WALLET_SEND = isWalletSendEnabled(
 // WRFCOIN_ENABLE_PASSKEY_SEND and core4's passkey_p256_auth (h3400 on chain 888).
 const PASSKEY_WALLET = import.meta.env?.VITE_ENABLE_PASSKEY_WALLET === 'true';
 
+// Chain-enforced account protections on the 12-word wallet ("require my YubiKey to spend", send allowlist):
+// exact string "true" only; default OFF. Even when on, each control shows only once the node reports its
+// consensus feature (security_key_spend / send_allowlist) active at the next block, and needs the backend
+// relays under /api/wallet/:address/{security-key,send-allowlist}.
+const CHAIN_PROTECTIONS = import.meta.env?.VITE_ENABLE_CHAIN_PROTECTIONS === 'true';
+
 /**
  * Opt-IN gate for surfaces that render fabricated data. (frontend#214)
  *
@@ -70,6 +76,8 @@ export const FEATURES = {
   walletSend: WALLET_SEND,
   /** Passkey wallet preview at /wallet/passkey. Default FALSE. */
   passkeyWallet: PASSKEY_WALLET,
+  /** Chain-enforced protections on the 12-word wallet. Default FALSE; also gated on the node. */
+  chainProtections: CHAIN_PROTECTIONS,
   explorer: true,
   pop: true,
   mining: true,

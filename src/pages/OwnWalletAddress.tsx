@@ -27,6 +27,8 @@ import { palette } from '../components/DesignSystem/tokens';
 
 // The device-key card and sign-in load on demand; if they cannot load, the wallet page simply goes without them.
 const DeviceKeyCard = lazy(() => import('../components/wallet/DeviceKeyCard').catch(() => ({ default: () => null })));
+// Chain-enforced protections (12-word wallet only; flag + node gated inside the card).
+const ChainProtectionsCard = lazy(() => import('../components/wallet/ChainProtectionsCard').catch(() => ({ default: () => null })));
 
 /** `0x7d29a4c1…6c5e0cb2`: the first 10 and last 8 characters. */
 export function maskAddress(address: string): string {
@@ -207,6 +209,11 @@ export default function OwnWalletAddress() {
             <Suspense fallback={null}>
               <DeviceKeyCard ownerAddress={ownerAddress} canUnlock={!!vaultAddress && vaultAddress === ownerAddress?.toLowerCase()} />
             </Suspense>
+            {FEATURES.chainProtections && ownsVault && (
+              <Suspense fallback={null}>
+                <ChainProtectionsCard ownerAddress={ownerAddress} />
+              </Suspense>
+            )}
             <PhoneStationStatusCard ownerAddress={ownerAddress} />
           </Box>
         }

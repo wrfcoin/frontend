@@ -79,6 +79,9 @@ function startVite() {
       // The wallet refuses to sign a login challenge unless the auth origin is configured; the
       // harness's own origin is the one the stubbed challenge carries.
       VITE_WALLET_AUTH_ORIGIN: process.env.VITE_WALLET_AUTH_ORIGIN || origin,
+      // Account protection screens are built in; they still show only when the (stubbed) node says the
+      // consensus features are active, so every capture without `protections: 'on'` is unchanged.
+      VITE_ENABLE_CHAIN_PROTECTIONS: 'true',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -536,6 +539,56 @@ async function runViewport(browser, vp, tall, theme) {
         console.log('FAIL unlocked flow', suffix, String(e).slice(0, 200));
         await page.screenshot({ path: path.join(outDir, `wallet-unlocked-FAILED-${suffix}.png`), fullPage: false }).catch(() => undefined);
         report.push({ name: 'wallet-unlocked', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] });
+      }
+    }
+    const protectionScenarios = ['wallet-protections', 'wallet-protections-add', 'wallet-protections-yubikey', 'wallet-send-chain-allowlist'];
+    if (protectionScenarios.some(want)) {
+      // Chain-enforced protections (security_key_spend, send_allowlist) with both features active.
+      // Own context: it creates its own wallet, independent of the other wallet scenarios.
+      const pctx = await browser.newContext({ viewport: { width: vp.width, height: tall ? vp.tall : vp.height }, isMobile: !!vp.isMobile, hasTouch: !!vp.hasTouch, deviceScaleFactor: vp.deviceScaleFactor || 1 });
+      await pctx.addInitScript(([key, mode]) => { try { window.localStorage.setItem(key, mode); } catch { /* storage blocked */ } }, [THEME_STORAGE_KEY, theme]);
+      const pp = await pctx.newPage();
+      const perrs = [];
+      pp.on('pageerror', e => perrs.push(String(e).slice(0, 200)));
+      try {
+        await installRoutes(pp, fx, { protections: 'on' });
+        await loadRoute(pp, '/', perrs);
+        perrs.length = 0;
+        await createWallet(pp, perrs);
+        await goClientSide(pp, '/wallet');
+        const card = pp.getByTestId('chain-protections');
+        const showCard = async (target = card) => { await target.waitFor({ timeout: 20_000 }); await target.scrollIntoViewIfNeeded(); await pp.waitForTimeout(400); };
+        if (want('wallet-protections')) { await showCard(pp.getByTestId('chain-allowlist-section')); await capture(pp, perrs, 'wallet-protections', '/wallet (Account protection)', suffix); }
+        if (want('wallet-protections-yubikey')) {
+          await card.getByTestId('security-key-enable').click();
+          await showCard(pp.getByTestId('protection-confirm'));
+          await capture(pp, perrs, 'wallet-protections-yubikey', '/wallet (Require my YubiKey: password step)', suffix);
+          await card.getByTestId('protection-confirm').getByRole('button', { name: 'Cancel' }).click();
+        }
+        if (want('wallet-protections-add')) {
+          await card.getByLabel('Add an address').fill('0x' + '9'.repeat(40));
+          await card.getByTestId('chain-allowlist-add').click();
+          await showCard(pp.getByTestId('protection-confirm'));
+          await capture(pp, perrs, 'wallet-protections-add', '/wallet (Add to the send allowlist)', suffix);
+          await card.getByTestId('protection-confirm').getByRole('button', { name: 'Cancel' }).click();
+        }
+        if (want('wallet-send-chain-allowlist')) {
+          await pp.locator('.pp-content').evaluate(el => el.scrollTo(0, 0)).catch(() => undefined);
+          await pp.getByRole('button', { name: /^Send$/ }).click();
+          await pp.getByLabel('Recipient address').fill('0x' + '9'.repeat(40));
+          await pp.getByLabel('Amount in WRF').fill('5');
+          await pp.getByTestId('send-chain-allowlist-refusal').waitFor({ timeout: 20_000 });
+          await pp.waitForTimeout(800);
+          await capture(pp, perrs, 'wallet-send-chain-allowlist', '/wallet (Send refused by the chain allowlist)', suffix);
+          await pp.keyboard.press('Escape');
+          await pp.waitForTimeout(500);
+        }
+      } catch (e) {
+        console.log('FAIL protections flow', suffix, String(e).slice(0, 200));
+        await pp.screenshot({ path: path.join(outDir, `wallet-protections-FAILED-${suffix}.png`), fullPage: false }).catch(() => undefined);
+        report.push({ name: 'wallet-protections', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] });
+      } finally {
+        await pctx.close();
       }
     }
     const deviceScenarios = ['wallet-device-off', 'wallet-device-setup', 'wallet-device-on', 'wallet-send-device', 'wallet-send-over-limit'];
