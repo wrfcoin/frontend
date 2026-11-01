@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { WrfButton } from '../components/DesignSystem/WrfButton';
@@ -11,6 +12,7 @@ import { AddressQr } from '../components/wallet/WalletEarningsPanel';
 import { formatBaseUnitsToWrf } from '../services/apiClient/number';
 import usePublicTestnetStats from '../hooks/usePublicTestnetStats';
 import { WRFCOIN_CHAIN_ID } from '../config/network';
+import FEATURES from '../config/features';
 import { registerPasskey, signPasskeyTransfer, passkeyRecordAddress, passkeyRpId, isWrfcoinPasskeyRpId, type PasskeyAuthenticatorChoice, type PasskeyCredentialRecord } from '../services/walletCrypto/passkey';
 import { wrfToBaseUnits } from '../services/walletCrypto/transferPayload';
 import { recipientStatus } from '../services/walletCrypto/recipientStatus';
@@ -249,6 +251,12 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
           {noFunds && <Typography role="status" variant="caption" sx={{ color: palette.text.secondary }}>This account has no funds yet, so sending is off.</Typography>}
           {exceeds && <WrfAlert severity="error" role="alert">That is more than the available balance.</WrfAlert>}
         </Box>
+      )}
+
+      {address && FEATURES.passkeyBondPayout && (
+        <Typography variant="body2" sx={{ mt: 2 }} data-testid="passkey-bond-payout-link">
+          Running a node? <RouterLink to="/wallet/passkey/bond-payout">Approve this wallet as a node bond's payout account</RouterLink>.
+        </Typography>
       )}
 
       {address && <NotifyMe address={address} title="Notify me about payouts" />}

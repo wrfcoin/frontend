@@ -90,6 +90,7 @@ export const PUBLIC_NON_MENU_PATHS: Readonly<Record<string, string>> = {
   '/challenges/:code': 'one friend challenge board, opened from a shared invite link, not a destination',
   '/duels/:id': 'one duel, opened from the duel board or a shared link, not a destination',
   '/wallet/passkey': 'flagged preview (VITE_ENABLE_PASSKEY_WALLET, default off): with the flag on it is a menu entry instead',
+  '/wallet/passkey/bond-payout': 'node bond payout approval, linked from the passkey wallet (VITE_ENABLE_PASSKEY_BOND_PAYOUT, default off), not a destination',
 };
 
 /** Non-menu routes for a build: with the passkey flag on, /wallet/passkey is a menu entry, not listed here. */
