@@ -87,6 +87,8 @@ export const PUBLIC_NON_MENU_PATHS: Readonly<Record<string, string>> = {
   '/forecast-check': 'forecast accuracy check linked from the forecast page, not a separate menu destination',
   '/challenges': 'friend challenges for a signed-in wallet (demo item 8), reached by shared boards and the phone app; not yet a menu destination (owner decision)',
   '/challenges/:code': 'one friend challenge board, opened from a shared invite link, not a destination',
+  '/duels': 'free-play forecast duels (demo item 10), reached by shared links; not yet a menu destination (owner decision)',
+  '/duels/:id': 'one duel, opened from the duel board or a shared link, not a destination',
   '/wallet/passkey': 'flagged preview (VITE_ENABLE_PASSKEY_WALLET, default off): with the flag on it is a menu entry instead',
 };
 

@@ -46,6 +46,8 @@ const PUBLIC_ONBOARDING = [
   '/forecast-check',
   // Demo item 8: friend challenges (list for a signed-in wallet, public board by code).
   '/challenges', '/challenges/:code',
+  // Demo item 10: free-play forecast duels (board and one duel).
+  '/duels', '/duels/:id',
 ];
 
 // The baseline set for a flag combination, plus the onboarding loop when the

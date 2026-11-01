@@ -449,6 +449,16 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log('FAIL explore-notify-owner', suffix, String(e).slice(0, 160)); report.push({ name: 'explore-notify-owner', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    if (want('duels-off')) {
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { duels: 'off' });
+        await loadRoute(page, '/duels', errors);
+        await capture(page, errors, 'duels-off', '/duels (off)', suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log('FAIL duels-off', suffix, String(e).slice(0, 160)); report.push({ name: 'duels-off', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review') || want('wallet-address-book') || want('wallet-send-allowlist-refused') || want('challenges-signed-in')) {
       try {
         await createWallet(page, errors);

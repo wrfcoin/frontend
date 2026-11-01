@@ -120,6 +120,12 @@ export const PUBLIC_READONLY_PATHS = new Set([
   // /challenges/:code is the public board (GET /api/challenges/code/<code>). Exact entries.
   '/challenges',
   '/challenges/:code',
+  // backend#228/#1424 (owner demo queue 2026-11-01 item 10): free-play forecast duels, no stakes.
+  //   /duels       reads GET /api/duels (board); opening is POST /api/duels as the signed-in wallet
+  //   /duels/:id   reads GET /api/duels/<uuid>; accept/link are wallet POSTs, the record hand-in is public
+  // Exact entries.
+  '/duels',
+  '/duels/:id',
 ]);
 
 // Owner ruling 2026-10-02 FULL WEB JOIN PATH, frontend#437: admit the exact
