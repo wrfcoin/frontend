@@ -45,6 +45,7 @@ export const ROUTES = [
 export const SCENARIOS = [
   { name: 'forecast-filled', route: '/weather/forecast', note: 'coordinates entered, stubbed NOAA proxy' },
   { name: 'home-dismissed', route: '/', note: 'testnet banner dismissed; chip in the taskbar' },
+  { name: 'menu-open', route: '/', note: 'the Start menu opened: every public menu entry' },
   { name: 'downloads-unpublished', route: '/downloads', note: 'the shipped manifest (nothing published)' },
   { name: 'wallet-unlocked', route: '/wallet', note: 'after the real web-wallet setup and ed25519 login (stubbed challenge)' },
   { name: 'wallet-backup-warning', route: '/wallet', note: 'unlocked phrase wallet: the Back up recovery phrase warning (nothing revealed)' },

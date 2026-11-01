@@ -284,6 +284,16 @@ async function runViewport(browser, vp, tall, theme) {
         await capture(page, errors, 'home-dismissed', '/ (banner dismissed)', suffix);
       } catch (e) { console.log('FAIL home-dismissed', suffix, String(e).slice(0, 160)); report.push({ name: 'home-dismissed', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    if (want('menu-open')) {
+      try {
+        await loadRoute(page, '/', errors);
+        await dismissBanner(page);
+        await page.getByText('Start', { exact: true }).first().click();
+        await page.getByTestId('start-menu-item-Home').waitFor();
+        await page.waitForTimeout(1200); // let the open animation finish
+        await capture(page, errors, 'menu-open', '/ (Start menu open)', suffix);
+      } catch (e) { console.log('FAIL menu-open', suffix, String(e).slice(0, 160)); report.push({ name: 'menu-open', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     if (want('downloads-unpublished')) {
       try {
         await page.unroute(() => true);
