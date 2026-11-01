@@ -156,6 +156,10 @@ export default function PublicForecastPage() {
       <header className="pf-head">
         <h1>Weather forecast</h1>
         <p className="pf-lede">Current conditions, the next 24 hours and a 7-day outlook for any place in the United States.</p>
+        <p className="pf-lede pf-check-link">
+          How close do forecasts get? <a href="/forecast-check" data-testid="forecast-check-link">See the forecast check</a>: forecasts
+          committed on chain, scored against what stations measured, next to NOAA.
+        </p>
       </header>
 
       <WrfCard component="section" aria-label="Location" className="pf-locbar">

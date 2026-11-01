@@ -261,16 +261,19 @@ describe('Stage 1.5 API traversal', () => {
 
   it('POST allowlist admits exactly the infra#1319 send route, the Wolfram reading check and the backend#389 notification writes, and every regex is well formed', () => {
     const post = (edge as unknown as { post: Array<{ path: string; query: string[]; requiresBearer: boolean }> }).post;
+    // Demo item 7 adds the forecast check hand-in: no Bearer (the record proves itself against the chain).
     expect(post.map(r => r.path)).toEqual([
       '^/api/wallet/send$',
       '^/api/integrations/wolfram/reading-check$',
       '^/api/notifications/subscriptions$',
       '^/api/notifications/subscriptions/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test$',
       '^/api/notifications/unsubscribe$',
+      '^/api/forecast-verification/forecasts$',
     ]);
     // Of the notification writes, only unsubscribe works without the wallet login (possession of the endpoint or topic).
     expect(post.filter(r => !r.requiresBearer && r.path.includes('/notifications/')).map(r => r.path)).toEqual(['^/api/notifications/unsubscribe$']);
     expect(post[0].requiresBearer).toBe(true);
+    expect(post.find(r => r.path === '^/api/forecast-verification/forecasts$')?.requiresBearer).toBeUndefined();
     const own = '0x' + 'ab'.repeat(20);
     expect(edgeAdmits(`/api/wallet/${own}/nonce`)).toBe(true);
     expect(edgeAdmits(`/api/wallet/${own}/nonce?x=1`)).toBe(false);

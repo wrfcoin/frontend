@@ -130,3 +130,47 @@ export const COMPETITION_WEEK_RE = /^[0-9]{4}-W[0-9]{2}$/;
 export function competitionWeekPath(week: string): string | null {
   return COMPETITION_WEEK_RE.test(week) ? `/competitions/${week}` : null;
 }
+
+// ---- Forecast check: on-chain forecasts vs station readings and NOAA (backend PR#72/#1494, demo item 7) ----
+// backend forecast-verification-routes.ts (default export): GET summary, GET one record, POST a commit record.
+// No query strings anywhere. The POST carries no credential: the record proves itself (its hash is the
+// chain commit id) and is taken only after the forecast is revealed on chain.
+export const FORECAST_CHECK_SUMMARY_PATH = '/forecast-verification/summary';
+export const FORECAST_CHECK_SUBMIT_PATH = '/forecast-verification/forecasts';
+export function forecastCheckRecordPath(commitId: string): string | null {
+  return PROOF_COMMIT_ID_RE.test(commitId) ? `/forecast-verification/forecasts/${commitId}` : null;
+}
+
+export type PublicPostResult<T> =
+  | { kind: 'ok'; status: number; data: T }
+  | { kind: 'refused'; status: number; code: string | null; message: string | null }
+  | { kind: 'rate_limited'; retryAfterSeconds: number | null }
+  | { kind: 'error'; status: number | null };
+
+/** JSON POST with no credentials; a 4xx comes back as `refused` with the server's code and message. */
+export async function publicPost<T>(path: string, body: unknown): Promise<PublicPostResult<T>> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    });
+  } catch {
+    return { kind: 'error', status: null };
+  }
+  if (response.status === 429) {
+    const header = Number(response.headers?.get?.('Retry-After'));
+    return { kind: 'rate_limited', retryAfterSeconds: Number.isFinite(header) && header > 0 ? header : null };
+  }
+  const payload: { error?: { code?: unknown; message?: unknown } } | null = await response.json().catch(() => null);
+  if (response.ok) return { kind: 'ok', status: response.status, data: payload as unknown as T };
+  if (response.status >= 400 && response.status < 500) {
+    const error = payload?.error;
+    return {
+      kind: 'refused',
+      status: response.status,
+      code: typeof error?.code === 'string' ? error.code : null,
+      message: typeof error?.message === 'string' ? error.message : null,
+    };
+  }
+  return { kind: 'error', status: response.status };
+}

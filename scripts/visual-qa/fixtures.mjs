@@ -217,7 +217,45 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     history: [],
     trustRoots: [{ rootId: 'wrfcoin-owner-testnet', subject: 'WRFCoin owner (testnet)', publicKeyHex: CAL_ROOT_KEY, fingerprintSha256: hex(64) }],
   };
-  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, downloadsManifest: readFixture('downloads-manifest.json') };
+  // Forecast check (demo item 7) in the exact shape forecast-verification-routes.ts answers: three
+  // scored forecasts (two with a NOAA capture), one waiting, one with no reading in its target hour.
+  const hourIso = hoursAgo => new Date(Math.floor((now - hoursAgo * 3_600_000) / 3_600_000) * 3_600_000).toISOString();
+  const fcRecord = (i, status, alias, f, t, noaa, hoursAgo) => ({
+    commitId: `f${i}`.padEnd(64, '0'), stationAlias: alias, modelId: i % 2 ? 'learned-conv1d/v1' : 'persistence-trend/v1',
+    issuedAt: hourIso(hoursAgo + 6), validAt: hourIso(hoursAgo), horizonHours: 6, status,
+    unavailableReason: status === 'unavailable' ? 'no_chain_reading_in_target_hour' : null,
+    forecast: { temperature_c: f, pressure_hpa: 1012.4 },
+    truth: status === 'scored' ? { readings: 46, values: { temperature_c: t, pressure_hpa: 1013.1 }, provenance: ['real'], heights: { from: 44100 + i * 50, to: 44146 + i * 50 } } : null,
+    scores: status === 'scored' ? {
+      temperature_c: { forecast: f, truth: t, error: Math.round((f - t) * 1e4) / 1e4, noaa: noaa === null ? null : { value: noaa, error: Math.round((noaa - t) * 1e4) / 1e4, leadHours: 7 } },
+      pressure_hpa: { forecast: 1012.4, truth: 1013.1, error: -0.7, noaa: null },
+    } : null,
+    noaa: noaa === null || status !== 'scored' ? null : { source: 'nws:HourlyForecastGenerator', leadHours: 7 },
+    noaaReason: status === 'scored' && noaa === null ? 'no NOAA forecast was captured for this station and hour before the forecast was issued' : null,
+    submittedAt: iso((hoursAgo - 1) * 3_600_000), scoredAt: status === 'scored' ? iso((hoursAgo - 2) * 3_600_000) : null,
+  });
+  const FORECAST_CHECK = {
+    windowDays: 30, status: 'available', reason: null, counts: { pending: 1, scored: 3, unavailable: 1 },
+    variables: [
+      { variable: 'temperature_c', chain: { n: 3, mae: 0.6333, bias: 0.1, rmse: 0.7234 }, vsNoaa: { n: 2, chainMae: 0.55, noaaMae: 1.2, chainBias: 0.25, noaaBias: -0.8 }, vsNoaaReason: null },
+      { variable: 'pressure_hpa', chain: { n: 3, mae: 0.7, bias: -0.7, rmse: 0.7 }, vsNoaa: null, vsNoaaReason: 'NOAA hourly forecasts do not include pressure.' },
+      { variable: 'humidity_pct', chain: null, vsNoaa: null, vsNoaaReason: 'No scored forecast has a NOAA forecast for the same station and hour, captured before it was issued.' },
+    ],
+    stations: [{ stationAlias: 'st_7d29a4c1e0b8', scored: 2, temperature: { n: 2, mae: 0.55, bias: 0.25, rmse: 0.6 } }, { stationAlias: 'st_31c0e9a2b4d7', scored: 1, temperature: { n: 1, mae: 0.8, bias: -0.2, rmse: 0.8 } }],
+    recent: [
+      fcRecord(1, 'pending', 'st_7d29a4c1e0b8', 9.8, null, null, -3),
+      fcRecord(2, 'scored', 'st_7d29a4c1e0b8', 11.4, 10.9, 9.8, 2),
+      fcRecord(3, 'scored', 'st_31c0e9a2b4d7', 7.2, 8.0, 8.9, 5),
+      fcRecord(4, 'unavailable', 'st_31c0e9a2b4d7', 6.1, null, null, 20),
+      fcRecord(5, 'scored', 'st_7d29a4c1e0b8', 12.3, 11.7, null, 27),
+    ],
+  };
+  const FORECAST_CHECK_EMPTY = {
+    ...FORECAST_CHECK, status: 'unavailable', reason: 'No forecast has been scored against station readings in this window yet.',
+    counts: { pending: 0, scored: 0, unavailable: 0 }, stations: [], recent: [],
+    variables: FORECAST_CHECK.variables.map(v => ({ ...v, chain: null, vsNoaa: null, vsNoaaReason: v.variable === 'pressure_hpa' ? v.vsNoaaReason : 'No scored forecast has a NOAA forecast for the same station and hour, captured before it was issued.' })),
+  };
+  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, FORECAST_CHECK, FORECAST_CHECK_EMPTY, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -234,6 +272,8 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * PUBLIC_BALANCE_READ_ENABLED is not true).
  * `options.calibration`: 'calibrated' (default), 'revoked', 'none' or 'off' (the 404 while
  * CALIBRATION_CERTIFICATES_ENABLED is not true).
+ * `options.forecastCheck`: 'populated' (default), 'empty' (nothing scored yet) or 'off' (the 404 while
+ * FORECAST_VERIFICATION_ENABLED is not true).
  * `options.proofCard`: 'populated' (default), 'not_located' (the reveal is outside the server's
  * bounded block search) or 'off' (the 404 while PROOF_CARDS_ENABLED is not true).
  * `options.networkNodes`: 'populated' (default), 'partial' (bonds and attesters unavailable) or 'off'
@@ -257,6 +297,7 @@ export async function installRoutes(page, fx, options = {}) {
   const sessionKeysMode = options.sessionKeys || 'off';
   fx.sessionKeyRecords ??= new Map();
   const calibrationMode = options.calibration || 'calibrated';
+  const forecastCheckMode = options.forecastCheck || 'populated';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -345,6 +386,10 @@ export async function installRoutes(page, fx, options = {}) {
         return json(route, { ...base, status: 'revoked', certificate: { ...base.certificate, status: 'revoked', reasonCodes: ['CAL_OK'], revocation: { reason: 'sensor_replaced', revokedAt: base.checkedAt } } });
       }
       return json(route, base);
+    }
+    if (p === '/api/forecast-verification/summary') {
+      if (forecastCheckMode === 'off') return json(route, { error: 'Not found' }, 404);
+      return json(route, forecastCheckMode === 'empty' ? fx.FORECAST_CHECK_EMPTY : fx.FORECAST_CHECK);
     }
     if ((m = /^\/api\/proofs\/([0-9a-f]{64})$/.exec(p))) {
       if (proofCardMode === 'off' || m[1] !== fx.PROOF_COMMIT) return json(route, { error: 'Not found' }, 404);
