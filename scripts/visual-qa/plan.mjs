@@ -70,6 +70,8 @@ export const SCENARIOS = [
   { name: 'explore-address-off', route: '/explore', note: 'the 404 while the public balance read is switched off' },
   { name: 'explore-notify-visitor', route: '/explore', note: 'notifications on, not signed in: how to turn them on (backend#389)' },
   { name: 'explore-notify-owner', route: '/explore', note: 'signed in with the looked-up address: browser push and ntfy topics' },
+  { name: 'station-detail-calibration-revoked', route: '/weather/station/st-0', note: 'the newest calibration certificate was revoked by its signer' },
+  { name: 'station-detail-calibration-off', route: '/weather/station/st-0', note: 'the 404 while CALIBRATION_CERTIFICATES_ENABLED is not true: no badge, no section' },
 ];
 
 /** Public navigation paths with route params are reached through a fixture id. */

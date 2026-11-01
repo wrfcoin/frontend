@@ -9,6 +9,7 @@
     "/api/blockchain",
     "/api/bridges",
     "/api/bridges/wormhole",
+    "/api/calibration-certificates",
     "/api/chain",
     "/api/cross-chain",
     "/api/defi",

@@ -1,10 +1,10 @@
 {
-  "backendCommit": "dbd7cdf579fcc94609bcbabf6129b731e53827bf",
+  "backendCommit": "ec43ab8e9e74618c23dfa871f5d59853cc4aadd5",
   "sourcePath": "server/enhanced_unified_api_optimized.ts",
   "sources": [
     {
       "path": "server/enhanced_unified_api_optimized.ts",
-      "sha256": "2f51f54c22699ddb9eacf5c45aa65a2e4e3ce608987645d0ae3307995ba14de8"
+      "sha256": "30bd8d903229a2bad766118006b28ef354a488140183b58e605f057058e58627"
     },
     {
       "path": "server/routes/weather-routes.js",
@@ -159,5 +159,5 @@
       "line": 435
     }
   ],
-  "checksum": "75b3153ad3944b46f62464b2820e2198609b4b9f35030b4cd70fa6fb73a1a0a7"
+  "checksum": "e862a1662f6afa033eedbea0739faddb618c9d2141f484c17c26b7e09b0c0747"
 }

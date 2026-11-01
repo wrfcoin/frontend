@@ -1,6 +1,7 @@
 import { resolveServiceBaseUrls } from './runtime';
 import { ApiClient } from './client';
 import { WeatherService } from './weatherService';
+import { CalibrationService } from './calibrationService';
 import { EarningsService } from './earningsService';
 import { GovernanceService } from './governanceService';
 import { WalletService } from './walletService';
@@ -12,6 +13,7 @@ export const serviceBaseUrls = resolveServiceBaseUrls();
 
 export const apiClient = new ApiClient({ baseUrl: serviceBaseUrls.api });
 export const weatherService = new WeatherService(serviceBaseUrls);
+export const calibrationService = new CalibrationService(serviceBaseUrls);
 export const earningsService = new EarningsService(serviceBaseUrls);
 export const governanceService = new GovernanceService(serviceBaseUrls);
 export const walletService = new WalletService(serviceBaseUrls);

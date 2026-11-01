@@ -200,7 +200,24 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     pod: { title: 'Historical temperatures', text: 'low: -11.7 °C | average low: 1.1 °C | average high: 11.7 °C | high: 25.6 °C' },
     query: WOLFRAM_QUERY, resultsUrl: `https://www.wolframalpha.com/input?i=${encodeURIComponent(WOLFRAM_QUERY)}`, attribution: 'Wolfram|Alpha',
   };
-  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, downloadsManifest: readFixture('downloads-manifest.json') };
+  // Calibration certificate status (backend calibration-certificate-routes.ts) in the exact shape it
+  // answers: the owner-held testnet root signed this station's sensor certificate a month ago.
+  const CAL_ROOT_KEY = '3b6a27bcceb6a42d62a3a8d02a6f0d73653215771de243a63ac048a18b59da29';
+  const CALIBRATION = {
+    success: true, status: 'calibrated', checkedAt: iso(0),
+    certificate: {
+      cid: 'bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku', artifactId: 'cal-2f9c4e1a', status: 'calibrated', reasonCodes: ['CAL_OK'],
+      issuer: { issuerId: 'WRFCoin owner (testnet)', trustRootId: 'wrfcoin-owner-testnet' },
+      issuedAt: iso(30 * 86_400_000), expiresAt: new Date(now + 335 * 86_400_000).toISOString(),
+      ownerAddress: '0x7d29a4c1e0b8f36d5a92c4e7b1f08d3a6c5e0cb2',
+      calibration: { sensor: 'Davis 6152 Vantage Pro2 temperature/humidity', method: 'Two-point check: ice bath and 75% RH salt chamber', reference: 'NIST-traceable reference thermometer, certificate 2026-117' },
+      revocation: null,
+      artifact: { schemaVersion: 'wrf-calibration-attestation/v1', artifactId: 'cal-2f9c4e1a', signature: { algorithm: 'ed25519-sha3-256-json-v1', signerPublicKey: CAL_ROOT_KEY, value: 'ab'.repeat(64) } },
+    },
+    history: [],
+    trustRoots: [{ rootId: 'wrfcoin-owner-testnet', subject: 'WRFCoin owner (testnet)', publicKeyHex: CAL_ROOT_KEY, fingerprintSha256: hex(64) }],
+  };
+  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -215,6 +232,8 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * 'unavailable' (the 503 a network without the public audit list answers).
  * `options.publicBalance`: 'populated' (default) or 'off' (the 404 while
  * PUBLIC_BALANCE_READ_ENABLED is not true).
+ * `options.calibration`: 'calibrated' (default), 'revoked', 'none' or 'off' (the 404 while
+ * CALIBRATION_CERTIFICATES_ENABLED is not true).
  * `options.proofCard`: 'populated' (default), 'not_located' (the reveal is outside the server's
  * bounded block search) or 'off' (the 404 while PROOF_CARDS_ENABLED is not true).
  * `options.networkNodes`: 'populated' (default), 'partial' (bonds and attesters unavailable) or 'off'
@@ -237,6 +256,7 @@ export async function installRoutes(page, fx, options = {}) {
   const competitionsMode = options.competitions || 'populated';
   const sessionKeysMode = options.sessionKeys || 'off';
   fx.sessionKeyRecords ??= new Map();
+  const calibrationMode = options.calibration || 'calibrated';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -317,6 +337,15 @@ export async function installRoutes(page, fx, options = {}) {
       return json(route, { address: m[1].toLowerCase(), balance: '37925925888', height: 10114, earned: '37925925888' });
     }
     if (p === '/api/integrations/wolfram/reading-check' && req.method() === 'POST') return json(route, fx.WOLFRAM_ANSWER);
+    if ((m = /^\/api\/calibration-certificates\/station\/(st_[0-9a-f]{12})$/.exec(p))) {
+      if (calibrationMode === 'off') return json(route, { error: { code: 'NOT_FOUND' } }, 404);
+      const base = { ...fx.CALIBRATION, stationAlias: m[1] };
+      if (calibrationMode === 'none') return json(route, { ...base, status: 'none', certificate: null });
+      if (calibrationMode === 'revoked') {
+        return json(route, { ...base, status: 'revoked', certificate: { ...base.certificate, status: 'revoked', reasonCodes: ['CAL_OK'], revocation: { reason: 'sensor_replaced', revokedAt: base.checkedAt } } });
+      }
+      return json(route, base);
+    }
     if ((m = /^\/api\/proofs\/([0-9a-f]{64})$/.exec(p))) {
       if (proofCardMode === 'off' || m[1] !== fx.PROOF_COMMIT) return json(route, { error: 'Not found' }, 404);
       if (proofCardMode === 'not_located') return json(route, { ...fx.PROOF_CARD, reading: null, inclusion: { status: 'not_located', block: null }, attestation: null });

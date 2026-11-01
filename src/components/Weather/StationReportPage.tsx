@@ -47,6 +47,7 @@ import {
 import { proofPagePath } from '../../services/publicReadonlyApi';
 import {
   useLatestObservations,
+  useStationCalibration,
   useStationQuality,
   useSubmissionLog,
   useWeatherStations,
@@ -62,6 +63,8 @@ import {
 } from '../../lib/weatherViewModels';
 import FirstEarnCelebration from './FirstEarnCelebration';
 import StationOwnershipCard from '../station/StationOwnershipCard';
+import StationCalibrationCard, { CalibrationBadge } from '../station/StationCalibrationCard';
+import ApiError from '../../utils/apiError';
 import { useStationOwner } from '../../hooks/api/useStationOwnerQueries';
 import { formatBaseUnitsToWrf } from '../../services/apiClient/number';
 import { buildStationReportEarningsChartData } from './stationReportPrecision';
@@ -206,6 +209,10 @@ const StationReportPage: React.FC = () => {
   const observationsQuery = useLatestObservations(knownStationId);
   const qualityQuery = useStationQuality(knownStationId);
   const submissionsQuery = useSubmissionLog(knownStationId);
+  // Calibration certificate (core4#388/#435): public, read by the station's alias. A 404 means the
+  // feature is off on this network, so the section is not shown at all.
+  const calibrationQuery = useStationCalibration(knownStationId);
+  const calibrationOff = calibrationQuery.error instanceof ApiError && calibrationQuery.error.status === 404;
   const earningsSummaryQuery = useWeatherEarnings(earningsStationId);
   const earningsHistoryQuery = useWeatherEarningsHistory(earningsStationId);
   // "My first WRF earned" is the owner's moment (frontend#387). The public
@@ -400,6 +407,7 @@ const StationReportPage: React.FC = () => {
                     '& .MuiChip-label': { whiteSpace: 'normal', py: 0.25 },
                   }}
                 />
+                <CalibrationBadge view={calibrationQuery.data} />
               </Stack>
               <Stack direction="row" spacing={3} flexWrap="wrap">
                 {/* Owner ruling 07:15Z: the public build shows the name only. */}
@@ -617,6 +625,14 @@ const StationReportPage: React.FC = () => {
           </CardContent>
         </Card>
       </Box>
+
+      {knownStationId && !calibrationOff && (
+        <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, color: palette.text, mb: 3 }}>
+          <CardContent sx={{ p: 3 }}>
+            <StationCalibrationCard view={calibrationQuery.data} unavailable={calibrationQuery.isError} />
+          </CardContent>
+        </Card>
+      )}
 
       {publicProjection && knownStationId && (
         <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, color: palette.text }}>
