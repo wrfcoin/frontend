@@ -331,6 +331,17 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    for (const [name, mode] of [['forecast-check-empty', 'empty'], ['forecast-check-off', 'off']]) {
+      if (!want(name)) continue;
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { forecastCheck: mode });
+        await loadRoute(page, '/forecast-check', errors);
+        await capture(page, errors, name, `/forecast-check (${mode})`, suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     for (const [name, mode] of [['proof-card-not-located', 'not_located'], ['proof-card-off', 'off']]) {
       if (!want(name)) continue;
       try {

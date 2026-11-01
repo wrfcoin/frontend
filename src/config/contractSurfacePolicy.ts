@@ -111,6 +111,10 @@ export const PUBLIC_READONLY_PATHS = new Set([
   //   /nodes                       reads GET /api/network/nodes (no query)
   // Exact entry. The /network prefix stays NEVER_PUBLIC (legacy network dashboards).
   '/nodes',
+  // Owner demo queue 2026-11-01 item 7 (backend PR#72, #1494): forecasts committed on chain scored against
+  // station readings and NOAA. Reads GET /api/forecast-verification/summary; the hand-in form POSTs
+  // /api/forecast-verification/forecasts (no credential: the record proves itself). Exact entry.
+  '/forecast-check',
 ]);
 
 // Owner ruling 2026-10-02 FULL WEB JOIN PATH, frontend#437: admit the exact

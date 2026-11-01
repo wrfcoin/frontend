@@ -42,6 +42,8 @@ const PUBLIC_ONBOARDING = [
   '/proof/:commitId',
   // Owner demo 2026-11-01: the exact producers and bonded nodes page.
   '/nodes',
+  // Demo item 7: the forecast check page.
+  '/forecast-check',
 ];
 
 // The baseline set for a flag combination, plus the onboarding loop when the

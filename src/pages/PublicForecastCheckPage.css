@@ -1,0 +1,43 @@
+/* Forecast check (demo item 7). Builds on PublicForecastersPage.css; colours are the --fc-* design tokens
+   injected by useForecasterThemeVars, so both themes follow the body theme. */
+.fv-page { max-width: 1120px; }
+.fv-stats { margin-bottom: 8px; }
+.fv-table td { vertical-align: top; }
+.fv-vs { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.fv-better { color: var(--fc-success-light); font-weight: 700; }
+.fv-reason { display: block; font-size: 0.75rem; color: var(--fc-text-muted); max-width: 48ch; }
+.fv-err { display: inline-flex; flex-direction: column; gap: 2px; }
+.fv-err-main { font-variant-numeric: tabular-nums; font-weight: 600; }
+.fv-err-sub { font-size: 0.75rem; color: var(--fc-text-secondary); font-variant-numeric: tabular-nums; }
+.fv-status { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--fc-border); white-space: nowrap; }
+.fv-status--scored { color: var(--fc-success-light); }
+.fv-status--pending { color: var(--fc-info-light); }
+.fv-status--unavailable { color: var(--fc-warning-light); }
+
+.fv-form { padding: 16px 20px 20px; }
+.fv-form-lede { margin: 0 0 12px; font-size: 0.875rem; color: var(--fc-text-secondary); max-width: 80ch; }
+.fv-form code { font-family: var(--fc-mono); font-size: 0.8125rem; }
+.fv-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.fv-fields label { display: flex; flex-direction: column; gap: 6px; font-size: 0.8125rem; font-weight: 600; color: var(--fc-text-secondary); }
+.fv-fields textarea { font-family: var(--fc-mono); font-size: 0.8125rem; padding: 10px; border-radius: var(--fc-r-md); border: 1px solid var(--fc-border); background: var(--fc-bg-primary); color: var(--fc-text); resize: vertical; min-width: 0; }
+.fv-fields textarea:focus-visible { outline: 2px solid var(--fc-primary-light); outline-offset: 1px; }
+.fv-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+.fv-submit { border: 0; background: var(--fc-primary-light); color: var(--fc-bg-primary); font: inherit; font-size: 0.875rem; font-weight: 700; padding: 9px 18px; border-radius: 8px; cursor: pointer; }
+.fv-submit:disabled { opacity: 0.6; cursor: progress; }
+.fv-submit:focus-visible { outline: 2px solid var(--fc-text); outline-offset: 2px; }
+.fv-message { margin-top: 12px; }
+
+@media (max-width: 600px) {
+  /* Phone: each table row becomes a small card, labels from data-label; no sideways scroll. */
+  .fv-page .fv-stack thead { display: none; }
+  .fv-page .fv-stack, .fv-page .fv-stack tbody { display: block; width: 100%; }
+  .fv-page .fv-stack tr { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; padding: 12px 16px; border-bottom: 1px solid var(--fc-border); }
+  .fv-page .fv-stack tr:last-child { border-bottom: 0; }
+  .fv-page .fv-stack td { padding: 0; border: 0; text-align: left; min-width: 0; }
+  .fv-page .fv-stack td.fc-hide-phone { display: none; }
+  .fv-page .fv-stack td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fc-text-muted); }
+  .fv-page .fv-stack .fv-wide, .fv-page .fv-stack .fv-head-cell:first-child { grid-column: 1 / -1; }
+  .fv-page .fv-stack td.fc-num { text-align: left; }
+  .fv-fields { grid-template-columns: 1fr; }
+  .fv-form { padding: 12px 16px 16px; }
+}
