@@ -26,7 +26,7 @@ export function hexToBytes(hex: string): Uint8Array {
   return out;
 }
 
-function concat(...parts: Uint8Array[]): Uint8Array {
+export function concat(...parts: Uint8Array[]): Uint8Array {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
   let at = 0;
   for (const p of parts) { out.set(p, at); at += p.length; }
@@ -34,8 +34,8 @@ function concat(...parts: Uint8Array[]): Uint8Array {
 }
 
 const u32le = (n: number): Uint8Array => { const b = new Uint8Array(4); new DataView(b.buffer).setUint32(0, n, true); return b; };
-const u64le = (n: bigint): Uint8Array => { const b = new Uint8Array(8); new DataView(b.buffer).setBigUint64(0, n, true); return b; };
-const framed = (s: string): Uint8Array => { const b = encoder.encode(s); return concat(u32le(b.length), b); };
+export const u64le = (n: bigint): Uint8Array => { const b = new Uint8Array(8); new DataView(b.buffer).setBigUint64(0, n, true); return b; };
+export const framed = (s: string): Uint8Array => { const b = encoder.encode(s); return concat(u32le(b.length), b); };
 
 export interface PasskeyTransferFields {
   chainId: string;
@@ -211,17 +211,15 @@ export async function registerPasskey(
   return { credentialId: asBytes(created.rawId), publicKeyXY: publicKeyXYFromSpki(asBytes(spki)), rpId };
 }
 
-/** Ask the authenticator to authorize one transfer; returns the exact `/send-passkey` request body. */
-export async function signPasskeyTransfer(
+/**
+ * One WebAuthn `get()` over `challenge` with the saved credential (user verification required), returned
+ * as the `passkey_auth` wire form core4 and the backend verify. Shared by transfers and signed requests.
+ */
+export async function assertPasskey(
   record: PasskeyCredentialRecord,
-  fields: PasskeyTransferFields,
+  challenge: Uint8Array,
   credentials: CredentialsLike = navigator.credentials,
-) {
-  const rpIdHash = sha256(encoder.encode(record.rpId));
-  if (fields.from.toLowerCase() !== passkeyAddress(rpIdHash, record.publicKeyXY).toLowerCase()) {
-    throw new Error('Sender does not match the passkey account');
-  }
-  const challenge = passkeyTransferChallenge(passkeyTransferMessage(fields));
+): Promise<PasskeyAuthJson> {
   const assertion = await credentials.get({
     publicKey: {
       challenge,
@@ -233,17 +231,31 @@ export async function signPasskeyTransfer(
   });
   if (!assertion?.response) throw new Error('Passkey signing was cancelled');
   const r = assertion.response;
+  return buildPasskeyAuth({
+    publicKeyXY: record.publicKeyXY,
+    rpIdHash: sha256(encoder.encode(record.rpId)),
+    authenticatorData: asBytes(r.authenticatorData),
+    clientDataJSON: asBytes(r.clientDataJSON),
+    signatureDer: asBytes(r.signature),
+  });
+}
+
+/** Ask the authenticator to authorize one transfer; returns the exact `/send-passkey` request body. */
+export async function signPasskeyTransfer(
+  record: PasskeyCredentialRecord,
+  fields: PasskeyTransferFields,
+  credentials: CredentialsLike = navigator.credentials,
+) {
+  const rpIdHash = sha256(encoder.encode(record.rpId));
+  if (fields.from.toLowerCase() !== passkeyAddress(rpIdHash, record.publicKeyXY).toLowerCase()) {
+    throw new Error('Sender does not match the passkey account');
+  }
+  const passkeyAuth = await assertPasskey(record, passkeyTransferChallenge(passkeyTransferMessage(fields)), credentials);
   return {
     from: fields.from,
     to: fields.to,
     amount: fields.amountBaseUnits.toString(),
     nonce: fields.nonce.toString(),
-    passkey_auth: buildPasskeyAuth({
-      publicKeyXY: record.publicKeyXY,
-      rpIdHash,
-      authenticatorData: asBytes(r.authenticatorData),
-      clientDataJSON: asBytes(r.clientDataJSON),
-      signatureDer: asBytes(r.signature),
-    }),
+    passkey_auth: passkeyAuth,
   };
 }

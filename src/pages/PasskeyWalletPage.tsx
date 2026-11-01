@@ -18,6 +18,7 @@ import AddressBookButton, { ContactPicks, useRecipientGuard } from '../component
 import { clearStoredPasskey, getPasskeyNonce, loadStoredPasskey, saveStoredPasskey, submitPasskeyTransfer } from '../services/walletCrypto/passkeySend';
 import { getPasskeyPublicBalance } from '../services/walletCrypto/passkeyBalance';
 import { PasskeyFaucetPanel } from '../components/wallet/PasskeyFaucetPanel';
+import NotifyMe from '../components/explorer/NotifyMe';
 import { UNSUPPORTED_MESSAGE, SECURITY_KEY_UNSUPPORTED_MESSAGE } from './passkeyMessages';
 
 const mono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
@@ -249,6 +250,8 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
           {exceeds && <WrfAlert severity="error" role="alert">That is more than the available balance.</WrfAlert>}
         </Box>
       )}
+
+      {address && <NotifyMe address={address} title="Notify me about payouts" />}
 
       <WrfModal
         open={confirmOpen && address !== null}

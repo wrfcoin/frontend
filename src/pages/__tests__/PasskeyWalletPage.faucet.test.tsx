@@ -31,6 +31,8 @@ await jest.unstable_mockModule('../../services/walletCrypto/passkeySend', () => 
   saveStoredPasskey: jest.fn(),
   submitPasskeyTransfer: jest.fn(),
 }));
+// The payout-notification card has its own tests (NotifyMe.passkey.test.tsx); keep its config read out of this fetch script.
+await jest.unstable_mockModule('../../components/explorer/NotifyMe', () => ({ default: () => null }));
 const { default: PasskeyWalletPage, SECURITY_KEY_NOTE, SECURITY_KEY_UNSUPPORTED_MESSAGE, UNSUPPORTED_MESSAGE } = await import('../PasskeyWalletPage');
 const { FAUCET_MESSAGES, describeFaucetFailure, shortTxHash } = await import('../../components/wallet/PasskeyFaucetPanel');
 const { setAuthToken, clearAuthToken } = await import('../../services/authTokenStore');
