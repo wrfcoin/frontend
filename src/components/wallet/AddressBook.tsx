@@ -52,8 +52,10 @@ export function ContactPicks({ onPick, disabled }: { onPick: (address: string) =
  * again at the moment of sending (callers pass Date.now()), so a stale render never lets a send through.
  */
 export function useRecipientGuard() {
-  const { book } = useAddressBook();
+  const { book, ready } = useAddressBook();
   return {
+    /** False until the stored book has loaded; before that the allowlist cannot be judged. */
+    ready,
     allowlistOn: (now = Date.now()) => allowlistOn(book, now),
     refusal: (recipient: string, now = Date.now()) => refusalMessage(checkRecipient(book, recipient, now), now),
     contactName: (recipient: string) => {

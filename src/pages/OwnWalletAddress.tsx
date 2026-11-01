@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -25,6 +25,9 @@ import { useIsDarkTheme } from '../theme/ThemeProvider';
 import { WrfTooltip } from '../components/DesignSystem/WrfTooltip';
 import { palette } from '../components/DesignSystem/tokens';
 
+// The device-key card and sign-in load on demand; if they cannot load, the wallet page simply goes without them.
+const DeviceKeyCard = lazy(() => import('../components/wallet/DeviceKeyCard').catch(() => ({ default: () => null })));
+
 /** `0x7d29a4c1…6c5e0cb2`: the first 10 and last 8 characters. */
 export function maskAddress(address: string): string {
   return address.length <= 20 ? address : `${address.slice(0, 10)}…${address.slice(-8)}`;
@@ -43,7 +46,33 @@ export const PASSKEY_LOCKED_TITLE = 'Open or create your wallet';
 export const PASSKEY_LOCKED_DESCRIPTION =
   'Create one with Face ID, fingerprint or a security key: no recovery phrase to write down, no email, no password. A 12-word wallet saved in this browser opens with its browser password, never with the words.';
 
-/** Only the first-party signing account can supply this page's address. */
+export const DEVICE_SIGNED_IN_LABEL = 'Signed in with this device';
+
+// One silent device sign-in attempt per wallet address per page load (the
+// backend rate-limits login challenges per address).
+const deviceSignInTried = new Set<string>();
+
+/**
+ * Sign in with this browser's device key (a registered session key) when the
+ * wallet is locked. Without a device key for `vaultAddress` this does nothing
+ * and never signs. Returns the owner address once signed in.
+ */
+export function useDeviceSignIn(vaultAddress: string | null, unlocked: boolean): string | null {
+  const [owner, setOwner] = useState<string | null>(null);
+  useEffect(() => {
+    if (unlocked || !vaultAddress || deviceSignInTried.has(vaultAddress)) return undefined;
+    deviceSignInTried.add(vaultAddress);
+    let live = true;
+    import('../services/walletCrypto/deviceSession')
+      .then(({ signInWithThisDevice }) => signInWithThisDevice(vaultAddress))
+      .then(session => { if (live && session) setOwner(vaultAddress); })
+      .catch(() => { /* Not set up, removed, or the feature is off: stay locked. */ });
+    return () => { live = false; };
+  }, [vaultAddress, unlocked]);
+  return unlocked ? null : owner;
+}
+
+/** Only the first-party signing account (or this device's registered key) can supply this page's address. */
 export default function OwnWalletAddress() {
   const { account, activeProvider, isConnected, receiveOnly } = useWallet();
   const identity = walletProviderManager.getLoginIdentity();
@@ -53,7 +82,9 @@ export default function OwnWalletAddress() {
     // Every ordinary Receive/address/QR consumer must stay behind this guard.
     // An unknown third-party address is never verified by this owner check.
     && recipientStatus(account) !== 'known-legacy-receive-only';
-  const ownerAddress = ownsAddress ? account : null;
+  const vaultAddress = readVault()?.address.toLowerCase() ?? null;
+  const deviceOwner = useDeviceSignIn(vaultAddress, ownsAddress);
+  const ownerAddress = ownsAddress ? account : deviceOwner;
   const navigate = useNavigate();
   const isDark = useIsDarkTheme();
   const openSetup = useCallback(() => navigate('/onboarding'), [navigate]);
@@ -103,7 +134,7 @@ export default function OwnWalletAddress() {
                   {copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
                 </IconButton>
               </WrfTooltip>
-              <WrfBadge status="active" label="Unlocked" />
+              <WrfBadge status="active" label={ownsAddress ? 'Unlocked' : DEVICE_SIGNED_IN_LABEL} />
             </Box>
           )}
         </Box>
@@ -171,7 +202,14 @@ export default function OwnWalletAddress() {
       <WalletEarningsPanel
         onAvailableUnits={setAvailableUnits}
         ownerAddress={ownerAddress}
-        aside={<PhoneStationStatusCard ownerAddress={ownerAddress} />}
+        aside={
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+            <Suspense fallback={null}>
+              <DeviceKeyCard ownerAddress={ownerAddress} canUnlock={!!vaultAddress && vaultAddress === ownerAddress?.toLowerCase()} />
+            </Suspense>
+            <PhoneStationStatusCard ownerAddress={ownerAddress} />
+          </Box>
+        }
       />
     </Box>
   );
