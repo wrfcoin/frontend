@@ -115,6 +115,11 @@ export const PUBLIC_READONLY_PATHS = new Set([
   // station readings and NOAA. Reads GET /api/forecast-verification/summary; the hand-in form POSTs
   // /api/forecast-verification/forecasts (no credential: the record proves itself). Exact entry.
   '/forecast-check',
+  // backend#249 (owner demo queue 2026-11-01 item 8): friend challenges. /challenges lists the signed-in
+  // wallet's challenges (GET/POST /api/challenges and POST /api/challenges/join as that wallet);
+  // /challenges/:code is the public board (GET /api/challenges/code/<code>). Exact entries.
+  '/challenges',
+  '/challenges/:code',
 ]);
 
 // Owner ruling 2026-10-02 FULL WEB JOIN PATH, frontend#437: admit the exact

@@ -112,6 +112,14 @@ export function proofCardPath(commitId: string, height?: number | string | null)
 }
 
 /** The public page for a reading: `/proof/<commit id>` plus the height hint when it is known. */
+// ---- Friend challenge board (backend#249, demo item 8) ------------------------------------------------------
+// backend challenge-routes.ts: GET /api/challenges/code/<ABCD-2345>, no login, no query. Writes are wallet
+// calls (services/walletApi.ts), not public reads.
+export const CHALLENGE_CODE_RE = /^[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+export function challengeCodePath(code: string): string | null {
+  return CHALLENGE_CODE_RE.test(code) ? `/challenges/code/${code}` : null;
+}
+
 export function proofPagePath(commitId: string, height?: number | string | null): string | null {
   const api = proofCardPath(commitId, height);
   return api ? api.replace(/^\/proofs\//, '/proof/') : null;

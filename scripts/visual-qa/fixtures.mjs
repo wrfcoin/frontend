@@ -255,7 +255,30 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     counts: { pending: 0, scored: 0, unavailable: 0 }, stations: [], recent: [],
     variables: FORECAST_CHECK.variables.map(v => ({ ...v, chain: null, vsNoaa: null, vsNoaaReason: v.variable === 'pressure_hpa' ? v.vsNoaaReason : 'No scored forecast has a NOAA forecast for the same station and hour, captured before it was issued.' })),
   };
-  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, FORECAST_CHECK, FORECAST_CHECK_EMPTY, downloadsManifest: readFixture('downloads-manifest.json') };
+  // Friend challenges (backend#249) in the exact shape challenge-routes.ts answers. The signed-in wallet
+  // (read from the request's Bearer) is a player, so the page marks it "You".
+  const CHALLENGE_CODE = 'RAIN-7K2Q';
+  const challengeFor_ = (you, over = {}) => ({
+    id: '6f1d2c4e-8a8b-4c1e-9d6a-1f2e3d4c5b6a', title: 'Coast collection race', description: 'Who lands more readings this week?',
+    format: 'headToHead', status: 'live', inviteCode: CHALLENGE_CODE, targetScore: 250,
+    startsAt: iso(2 * 86_400_000), endsAt: new Date(now + 5 * 86_400_000).toISOString(), completedAt: null,
+    lastUpdatedAt: iso(90_000), metricLabel: 'readings on chain',
+    scoring: { source: 'chain', note: 'Counts are readings from stations each wallet owns that landed on chain during the challenge. Points only: nothing is paid.', countedAt: iso(90_000) },
+    participants: [
+      { id: '0x5ca1ab1e000000000000000000000000000d00d1', name: 'Collector D00D', score: 183, teamName: '', subtitle: 'Challenge host', stations: 1 },
+      { id: you, name: `Collector ${you.slice(-4).toUpperCase()}`, score: 141, teamName: '', subtitle: 'Joined by invite code', stations: 1 },
+    ],
+    ...over,
+  });
+  const TEAM_CHALLENGE = you => challengeFor_(you, {
+    id: '0b7e4a52-3c2d-4f19-8e6b-2a1c9d8e7f60', title: 'Lakeshore team battle', description: '', format: 'team', inviteCode: 'LAKE-4M9X', targetScore: 500,
+    participants: [
+      { id: you, name: `Collector ${you.slice(-4).toUpperCase()}`, score: 96, teamName: 'North Front', subtitle: 'Challenge host', stations: 1 },
+      { id: '0x00000000000000000000000000000000000beef1', name: 'Collector BEEF1', score: 0, teamName: 'Rain Riders', subtitle: 'Joined by invite code', stations: 0 },
+    ],
+    status: 'live',
+  });
+  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, FORECAST_CHECK, FORECAST_CHECK_EMPTY, CHALLENGE_CODE, CHALLENGE: challengeFor_, TEAM_CHALLENGE, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -274,6 +297,7 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * CALIBRATION_CERTIFICATES_ENABLED is not true).
  * `options.forecastCheck`: 'populated' (default), 'empty' (nothing scored yet) or 'off' (the 404 while
  * FORECAST_VERIFICATION_ENABLED is not true).
+ * `options.challenges`: 'populated' (default) or 'off' (the 404 while FRIEND_CHALLENGES_ENABLED is not true).
  * `options.proofCard`: 'populated' (default), 'not_located' (the reveal is outside the server's
  * bounded block search) or 'off' (the 404 while PROOF_CARDS_ENABLED is not true).
  * `options.networkNodes`: 'populated' (default), 'partial' (bonds and attesters unavailable) or 'off'
@@ -298,6 +322,7 @@ export async function installRoutes(page, fx, options = {}) {
   fx.sessionKeyRecords ??= new Map();
   const calibrationMode = options.calibration || 'calibrated';
   const forecastCheckMode = options.forecastCheck || 'populated';
+  const challengesMode = options.challenges || 'populated';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -390,6 +415,17 @@ export async function installRoutes(page, fx, options = {}) {
     if (p === '/api/forecast-verification/summary') {
       if (forecastCheckMode === 'off') return json(route, { error: 'Not found' }, 404);
       return json(route, forecastCheckMode === 'empty' ? fx.FORECAST_CHECK_EMPTY : fx.FORECAST_CHECK);
+    }
+    if ((m = /^\/api\/challenges\/code\/([A-Z0-9]{4}-[A-Z0-9]{4})$/.exec(p))) {
+      if (challengesMode === 'off' || m[1] !== fx.CHALLENGE_CODE) return json(route, { error: 'Not found' }, 404);
+      return json(route, { challenge: fx.CHALLENGE('0x7e57ab1e00000000000000000000000000c0ffee') });
+    }
+    if (p === '/api/challenges' && req.method() === 'GET') {
+      if (challengesMode === 'off') return json(route, { error: 'Not found' }, 404);
+      const bearer = (req.headers().authorization || '').split('.')[1] || '';
+      let you = '0x7e57ab1e00000000000000000000000000c0ffee';
+      try { you = JSON.parse(Buffer.from(bearer.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString()).sub || you; } catch { /* fixture default */ }
+      return json(route, { challenges: [fx.CHALLENGE(you), fx.TEAM_CHALLENGE(you)] });
     }
     if ((m = /^\/api\/proofs\/([0-9a-f]{64})$/.exec(p))) {
       if (proofCardMode === 'off' || m[1] !== fx.PROOF_COMMIT) return json(route, { error: 'Not found' }, 404);

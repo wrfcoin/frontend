@@ -44,6 +44,8 @@ const PUBLIC_ONBOARDING = [
   '/nodes',
   // Demo item 7: the forecast check page.
   '/forecast-check',
+  // Demo item 8: friend challenges (list for a signed-in wallet, public board by code).
+  '/challenges', '/challenges/:code',
 ];
 
 // The baseline set for a flag combination, plus the onboarding loop when the

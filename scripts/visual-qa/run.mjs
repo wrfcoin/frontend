@@ -413,6 +413,16 @@ async function runViewport(browser, vp, tall, theme) {
         await capture(page, errors, 'onboarding-advanced', '/onboarding (Advanced open)', suffix);
       } catch (e) { console.log('FAIL onboarding-advanced', suffix, String(e).slice(0, 160)); report.push({ name: 'onboarding-advanced', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    if (want('challenge-board-off')) {
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { challenges: 'off' });
+        await loadRoute(page, '/challenges/RAIN-7K2Q', errors);
+        await capture(page, errors, 'challenge-board-off', '/challenges/<code> (off)', suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log('FAIL challenge-board-off', suffix, String(e).slice(0, 160)); report.push({ name: 'challenge-board-off', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     if (want('explore-notify-visitor')) {
       try {
         await page.unroute(() => true);
@@ -439,10 +449,15 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log('FAIL explore-notify-owner', suffix, String(e).slice(0, 160)); report.push({ name: 'explore-notify-owner', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
-    if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review') || want('wallet-address-book') || want('wallet-send-allowlist-refused')) {
+    if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review') || want('wallet-address-book') || want('wallet-send-allowlist-refused') || want('challenges-signed-in')) {
       try {
         await createWallet(page, errors);
         if (want('wallet-unlocked')) { await goClientSide(page, '/wallet'); await page.getByText('Recent activity').first().waitFor({ timeout: 20_000 }).catch(() => undefined); await capture(page, errors, 'wallet-unlocked', '/wallet', suffix); }
+        if (want('challenges-signed-in')) {
+          await goClientSide(page, '/challenges');
+          await page.getByTestId('challenge-card').first().waitFor({ timeout: 20_000 }).catch(() => undefined);
+          await capture(page, errors, 'challenges-signed-in', '/challenges (signed in)', suffix);
+        }
         if (want('wallet-backup-warning')) {
           await goClientSide(page, '/wallet');
           await page.getByRole('button', { name: 'Back up recovery phrase' }).click();

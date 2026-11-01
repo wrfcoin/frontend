@@ -1,0 +1,55 @@
+/* Friend challenges (backend#249, demo item 8). Builds on PublicForecastersPage.css; colours are the --fc-*
+   design tokens injected by useForecasterThemeVars, so both themes follow the body theme. */
+.ch-page { max-width: 1040px; }
+.ch-signin { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 16px 20px; }
+.ch-signin p { margin: 0; font-size: 0.875rem; color: var(--fc-text-secondary); max-width: 60ch; }
+.ch-signin strong { color: var(--fc-text); }
+.ch-signin--code { border-top: 1px solid var(--fc-border); }
+.ch-form { display: flex; flex-direction: column; gap: 12px; padding: 16px 20px 20px; }
+.ch-inline { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.ch-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.ch-field { display: flex; flex-direction: column; gap: 6px; font-size: 0.8125rem; font-weight: 600; color: var(--fc-text-secondary); min-width: 0; }
+.ch-field input, .ch-field select { font: inherit; font-size: 0.875rem; font-weight: 400; padding: 9px 10px; border-radius: 8px; border: 1px solid var(--fc-border); background: var(--fc-bg-primary); color: var(--fc-text); min-width: 0; }
+.ch-field input:focus-visible, .ch-field select:focus-visible { outline: 2px solid var(--fc-primary-light); outline-offset: 1px; }
+.ch-action { display: inline-flex; align-items: center; justify-content: center; border: 0; background: var(--fc-primary-light); color: var(--fc-bg-primary); font: inherit; font-size: 0.875rem; font-weight: 700; padding: 9px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; white-space: nowrap; }
+.ch-action:disabled { opacity: 0.55; cursor: not-allowed; }
+.ch-action:focus-visible { outline: 2px solid var(--fc-text); outline-offset: 2px; }
+.ch-action--ghost { background: transparent; color: var(--fc-primary-light); border: 1px solid var(--fc-border); }
+.ch-forms { grid-template-columns: 1.4fr 1fr; }
+.ch-notice { margin: 0 0 16px; }
+.ch-list { display: flex; flex-direction: column; gap: 16px; }
+.ch-list > .fc-section-head { margin-top: 8px; }
+
+.ch-board { border: 1px solid var(--fc-border); border-radius: var(--fc-r-lg, 12px); background: var(--fc-bg-secondary); overflow: hidden; }
+.ch-board-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 16px 20px 8px; }
+.ch-board-head h3 { margin: 0; font-size: 1.0625rem; font-weight: 600; }
+.ch-desc { margin: 4px 0 0; font-size: 0.875rem; color: var(--fc-text-secondary); }
+.ch-status { flex: none; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--fc-border); white-space: nowrap; }
+.ch-status--live { color: var(--fc-success-light); }
+.ch-status--pending { color: var(--fc-info-light); }
+.ch-status--completed { color: var(--fc-text-secondary); }
+.ch-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0 20px 12px; font-size: 0.8125rem; color: var(--fc-text-secondary); }
+.ch-code strong { font-family: var(--fc-mono); color: var(--fc-text); letter-spacing: 0.04em; }
+.ch-teams { display: flex; gap: 16px; padding: 0 20px 8px; font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.ch-players { list-style: none; margin: 0; padding: 0 20px 12px; display: flex; flex-direction: column; gap: 10px; }
+.ch-players li { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) 48px; align-items: center; gap: 12px; }
+.ch-name { display: flex; flex-direction: column; font-size: 0.9375rem; font-weight: 600; min-width: 0; }
+.ch-sub { font-size: 0.75rem; font-weight: 400; color: var(--fc-text-muted); font-family: var(--fc-mono); overflow-wrap: anywhere; }
+.ch-bar { display: block; height: 10px; border-radius: 999px; background: var(--fc-bg-primary); border: 1px solid var(--fc-border); overflow: hidden; }
+.ch-bar span { display: block; height: 100%; background: var(--fc-primary-light); }
+.ch-you .ch-bar span { background: var(--fc-success-light); }
+.ch-score { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 1.0625rem; }
+.ch-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 20px; border-top: 1px solid var(--fc-border); font-size: 0.75rem; color: var(--fc-text-muted); }
+.ch-share { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+@media (max-width: 900px) {
+  .ch-forms { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .ch-fields { grid-template-columns: 1fr; }
+  .ch-form, .ch-signin { padding: 12px 16px 16px; }
+  .ch-board-head, .ch-foot { padding-left: 16px; padding-right: 16px; }
+  .ch-meta, .ch-teams, .ch-players { padding-left: 16px; padding-right: 16px; }
+  .ch-players li { grid-template-columns: minmax(0, 1fr) 40px; }
+  .ch-players .ch-bar { grid-column: 1 / -1; grid-row: 2; }
+}

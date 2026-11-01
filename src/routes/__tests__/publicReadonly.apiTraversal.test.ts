@@ -262,6 +262,7 @@ describe('Stage 1.5 API traversal', () => {
   it('POST allowlist admits exactly the infra#1319 send route, the Wolfram reading check, the backend#389 notification writes and the passkey-signed ones, and every regex is well formed', () => {
     const post = (edge as unknown as { post: Array<{ path: string; query: string[]; requiresBearer: boolean }> }).post;
     // Demo item 7 adds the forecast check hand-in: no Bearer (the record proves itself against the chain).
+    // Demo item 8 adds the friend challenge writes, behind a wallet Bearer like the send.
     expect(post.map(r => r.path)).toEqual([
       '^/api/wallet/send$',
       '^/api/integrations/wolfram/reading-check$',
@@ -272,6 +273,7 @@ describe('Stage 1.5 API traversal', () => {
       '^/api/notifications/passkey/challenge$',
       '^/api/notifications/passkey/subscriptions$',
       '^/api/notifications/passkey/unsubscribe$',
+      '^/api/challenges(/join|/sync)?$',
     ]);
     // Of the notification writes, only these work without the wallet login: unsubscribe (possession of the endpoint
     // or topic) and the passkey routes (a WebAuthn assertion over a server nonce; passkey wallets have no login).
