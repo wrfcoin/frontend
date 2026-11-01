@@ -2,17 +2,21 @@
  * Node bond payout approval by passkey. The NodeBondAuthorization body, the V2 framing and the
  * NodeBondPossession subject are pinned against core4's own golden file (node-bond-golden.json, copied
  * from shared-protocol/tests/fixtures/golden/node_share_contracts_v1.jsonc). The payout passkey subject
- * uses the same framing with its own tag over the authorization hash.
+ * challenge, every intermediate and an example approval are pinned against core4's
+ * passkey_bond_payout_vectors.json (copied unchanged).
  */
 import { jest } from '@jest/globals';
 import { p256 } from '@noble/curves/nist.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { sha3_256 } from '@noble/hashes/sha3.js';
 import golden from './node-bond-golden.json';
+import pkVectors from './passkey_bond_payout_vectors.json';
 import { bytesToHex, hexToBytes, passkeyRecordAddress, type PasskeyCredentialRecord } from '../passkey';
 import {
   BondPacketError,
   NODE_BOND_PAYOUT_PASSKEY_TAG,
+  accountHex,
+  nodeBondPayoutPasskeyBody,
   approvalRefusal,
   approveBondPayout,
   domainPreimageV2,
@@ -185,5 +189,63 @@ describe('approveBondPayout', () => {
     const packet = parseBondPacket(JSON.stringify(lifecycle({ payout_account: Array(20).fill(5) })));
     await expect(approveBondPayout(packet, record, identity, creds)).rejects.toThrow(/not this passkey wallet/);
     expect(creds.get).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------
+// core4 passkey_bond_payout golden vectors (shared-protocol/tests/fixtures/passkey_bond_payout_vectors.json)
+
+describe('core4 passkey_bond_payout vectors', () => {
+  const pk = pkVectors.passkey_address;
+  const vectorRecord: PasskeyCredentialRecord = { credentialId: new Uint8Array([1]), publicKeyXY: hexToBytes(pk.public_key_p256_xy_hex), rpId: pk.rp_id };
+
+  test('the vector passkey address matches this wallet code', () => {
+    expect(bytesToHex(sha256(new TextEncoder().encode(pk.rp_id)))).toBe(pk.rp_id_hash_hex);
+    expect(passkeyRecordAddress(vectorRecord)).toBe(pk.address_hex);
+  });
+
+  describe.each(pkVectors.cases.map(c => [c.name, c] as const))('%s', (_name, c) => {
+    const id = { chainId: c.chain_id, networkId: c.network_id };
+    const packet = parseBondPacket(JSON.stringify({ id: null, tx_type: 'NodeBondLifecycle', data: c.unsigned_lifecycle_json }));
+    const a = packet.authorization;
+
+    test('the exact tx.data string parses to the same lifecycle object', () => {
+      expect(packet.lifecycle).toEqual(c.unsigned_lifecycle);
+      expect(accountHex(a.payoutAccount)).toBe(c.payout_account_hex);
+    });
+
+    test('every intermediate matches core4', () => {
+      const authBody = nodeBondAuthorizationBody(a);
+      expect(bytesToHex(authBody)).toBe(c.authorization_canonical_body_hex);
+      expect(bytesToHex(domainPreimageV2(pkVectors.authorization_domain_tag, id, authBody))).toBe(c.authorization_v2_preimage_hex);
+      const authHash = nodeBondAuthorizationHash(a, id);
+      expect(bytesToHex(authHash)).toBe(c.authorization_preimage_hash_hex);
+      const approvalBody = nodeBondPayoutPasskeyBody(authHash);
+      expect(bytesToHex(approvalBody)).toBe(c.approval_canonical_body_hex);
+      expect(bytesToHex(domainPreimageV2(pkVectors.approval_domain_tag, id, approvalBody))).toBe(c.approval_v2_preimage_hex);
+      expect(NODE_BOND_PAYOUT_PASSKEY_TAG).toBe(pkVectors.approval_domain_tag);
+    });
+
+    test('challenge matches core4 (hex and base64url)', () => {
+      const challenge = nodeBondPayoutPasskeyChallenge(a, id);
+      expect(bytesToHex(challenge)).toBe(c.challenge_hex);
+      expect(Buffer.from(challenge).toString('base64url')).toBe(c.challenge_base64url);
+    });
+
+    test('the page output carries exactly the example payout_passkey that core4 verifies', async () => {
+      const ex = c.example_payout_passkey;
+      const get = jest.fn(async (options: any) => {
+        expect(bytesToHex(options.publicKey.challenge)).toBe(c.challenge_hex);
+        return { response: { authenticatorData: hexToBytes(ex.authenticator_data), clientDataJSON: hexToBytes(ex.client_data_json), signature: hexToBytes(ex.signature) } };
+      });
+      const { json } = await approveBondPayout(packet, vectorRecord, id, { get });
+      const data = JSON.parse(JSON.parse(json).data);
+      expect(data.payout_passkey).toEqual(ex);
+      expect(Object.keys(data.payout_passkey).sort()).toEqual(Object.keys(ex).sort());
+      expect(data.payout_key).toBeNull();
+      expect(data.payout_signature).toEqual([]);
+      expect(data.signed).toEqual(c.unsigned_lifecycle.signed);
+      expect(JSON.parse(new TextDecoder().decode(hexToBytes(ex.client_data_json))).challenge).toBe(c.challenge_base64url);
+    });
   });
 });
