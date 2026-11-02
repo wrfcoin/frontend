@@ -6,7 +6,6 @@ import DeprecatedRedirect from '../components/common/DeprecatedRedirect';
 import FEATURES from '../config/features';
 
 const ProposalDetail = lazy(() => import('../components/Governance/ProposalDetail'));
-const ComprehensiveGovernanceDashboard = lazy(() => import('../components/Governance/ComprehensiveGovernanceDashboard'));
 const QuadraticVotingPanel = lazy(() => import('../components/GovernanceAdvanced'));
 const ConvictionVotingPanel = lazy(() => import('../components/GovernanceAdvanced/ConvictionVotingPanel'));
 const DelegationManager = lazy(() => import('../components/GovernanceAdvanced/DelegationManager'));
@@ -29,13 +28,13 @@ export default function governanceRoutes() {
     <Route path="/governance/public" element={<PageWrapper tabType="governance"><PublicGovernanceListPage /></PageWrapper>} />
     <Route path="/governance/public/:proposalId" element={<PageWrapper tabType="governance"><PublicGovernanceProposalPage /></PageWrapper>} />
 
-    {/* Main governance redirects */}
-    <Route path="/governance" element={<DeprecatedRedirect to="/governance/comprehensive" />} />
-    <Route path="/governance/proposals/enhanced" element={<DeprecatedRedirect to="/governance/comprehensive" />} />
-    <Route path="/governance/foundation" element={<DeprecatedRedirect to="/governance/comprehensive" />} />
+    {/* Old governance links land on the read-only page: proposals can't be created from the web. */}
+    <Route path="/governance" element={<DeprecatedRedirect to="/governance/public" />} />
+    <Route path="/governance/proposals/enhanced" element={<DeprecatedRedirect to="/governance/public" />} />
+    <Route path="/governance/foundation" element={<DeprecatedRedirect to="/governance/public" />} />
     <Route path="/governance/eip712" element={<DeprecatedRedirect to="/resources" />} />
     <Route path="/governance/proposals/:id" element={<PageWrapper tabType="governance"><ProposalDetail /></PageWrapper>} />
-    <Route path="/governance/comprehensive" element={<PageWrapper tabType="governance"><ComprehensiveGovernanceDashboard /></PageWrapper>} />
+    <Route path="/governance/comprehensive" element={<DeprecatedRedirect to="/governance/public" />} />
 
     {/* Advanced Governance */}
     {FEATURES.governanceAdvanced && <>

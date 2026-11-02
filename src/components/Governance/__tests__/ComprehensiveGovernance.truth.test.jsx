@@ -215,28 +215,6 @@ describe('Overview: delegation', () => {
   });
 });
 
-describe('Foundation tab', () => {
-  it('default build: honest not-live state and no invented proposals or delegates', async () => {
-    await renderDashboard();
-    fireEvent.click(screen.getByRole('tab', { name: /Foundation/ }));
-    expect(await screen.findByTestId('governance-foundation-not-live')).not.toBeNull();
-    const page = document.body.textContent ?? '';
-    for (const literal of FABRICATED) expect(page).not.toContain(literal);
-  });
-
-  it('demo build: sample under its badge, and its vote buttons cannot act', async () => {
-    featureFlags.demoSurfaces = true;
-    await renderDashboard();
-    fireEvent.click(screen.getByRole('tab', { name: /Foundation/ }));
-    const sample = await screen.findByTestId('governance-foundation-sample');
-    expect(within(sample).getByTestId('governance-foundation-sample-badge')).not.toBeNull();
-    const voteButtons = await within(sample).findAllByRole('button', { name: /Vote (For|Against)/ });
-    expect(voteButtons.length).toBeGreaterThan(0);
-    for (const button of voteButtons) expect(button.disabled).toBe(true);
-    expect(sample.textContent).toContain('Sample only: votes and proposals are not submitted anywhere.');
-  });
-});
-
 // Codex round 15 on #391: account-specific results are bound to the session
 // that started them. A completion that lands after the subject changed
 // (success or error) is not shown to the new account.

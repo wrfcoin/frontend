@@ -23,7 +23,7 @@ const NAVIGABLE_PAGES = filterPublicNavigation([
   { path: '/dag-explorer', title: 'DAG Visualizer' },
   { path: '/nfts/enhanced', title: 'NFT' },
   { path: '/resources', title: 'Resources' },
-  { path: '/governance/comprehensive', title: 'Governance' },
+  { path: '/governance/public', title: 'Governance' },
   { path: '/bridge', title: 'Cross-Chain Bridge' },
   { path: '/forecast', title: 'Forecasts' },
   { path: '/pipelines', title: 'Data Pipelines' },

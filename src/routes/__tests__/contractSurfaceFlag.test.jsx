@@ -237,14 +237,15 @@ describe('public-testnet policy', () => {
         expect(isPublicTestnetPath(path, true, false, false)).toBe(false);
         // frontend#437 / W28: the public build flag admits the exact /wallet and /connect-station of these
         // preview paths, and no descendant.
-        expect(isPublicTestnetPath(path, true, true)).toBe(['/wallet', '/connect-station'].includes(path));
+        // The exact /governance is a redirect-only entry to /governance/public.
+        expect(isPublicTestnetPath(path, true, true)).toBe(['/wallet', '/connect-station', '/governance'].includes(path));
       }
     });
 
     it('preview alone (full studio off) exposes nothing new', () => {
       for (const path of [...previewPaths, ...neverPublicPaths]) {
         expect(isPublicTestnetPath(path, false, false, true)).toBe(false);
-        expect(isPublicTestnetPath(path, false, true, true)).toBe(['/wallet', '/connect-station'].includes(path));
+        expect(isPublicTestnetPath(path, false, true, true)).toBe(['/wallet', '/connect-station', '/governance'].includes(path));
       }
     });
 

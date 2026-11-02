@@ -2,26 +2,20 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useIsDarkTheme } from '../theme/ThemeProvider';
 import { publicPageSurfaceVars } from '../theme/publicPageTheme';
 import { Link, useParams } from 'react-router-dom';
-import { WrfAlert, WrfBadge, WrfButton, WrfCard, WrfEmptyState, WrfStatCard } from '../components/DesignSystem';
+import { WrfAlert, WrfBadge, WrfButton, WrfCard, WrfEmptyState } from '../components/DesignSystem';
 import {
-  accentPurple, bgPrimary, bgSecondary, borders, categoryColors, errorLight, fontFamily, glows, primary, primaryLight,
-  radii, shadows, success, successLight, textMuted, textPrimary, textSecondary,
+  bgPrimary, bgSecondary, borders, errorLight, fontFamily, primaryLight,
+  radii, success, successLight, textMuted, textPrimary, textSecondary,
 } from '../components/DesignSystem/tokens';
 import { governanceService } from '../services/governanceService';
 import { GOVERNANCE_PAGE_SIZE } from '../services/publicReadonlyApi';
-import { declaredWrfAmount, groupThousands, undeclaredReason } from '../utils/declaredWrfAmount';
 import './PublicGovernancePage.css';
 
 /**
- * Public read-only governance (S4, rebuilt for launch in #558): proposals list, one proposal, treasury summary.
- * Reads only GET /api/governance/proposals?limit&offset, /proposals/<id> and /treasury (the three admitted
- * edge matchers). No votes, delegation or writes: those stay in the signed-in app. Treasury figures are shown
- * as WRF only when the node declares their units (same rule as the app); otherwise the reason is shown.
+ * Public read-only governance (S4, rebuilt for launch in #558): proposals list and one proposal.
+ * Reads only GET /api/governance/proposals?limit&offset and /proposals/<id>. No votes, delegation or writes.
+ * No treasury: the chain has none that holds funds, so this page shows no treasury figures.
  */
-
-// Voting happens in the WRFCoin app. Until the Android release (mobile#443) is published this points at
-// onboarding, which explains how to get the app.
-export const VOTE_IN_APP_HREF = '/onboarding';
 
 const TOKEN_VARS = {
   '--pg-bg-primary': bgPrimary,
@@ -31,14 +25,10 @@ const TOKEN_VARS = {
   '--pg-text-muted': textMuted,
   '--pg-border': borders.default,
   '--pg-primary-light': primaryLight,
-  '--pg-purple-dark': '#7C3AED',
   '--pg-success': success,
   '--pg-success-light': successLight,
   '--pg-error-light': errorLight,
   '--pg-r-lg': `${radii.lg}px`,
-  '--pg-shadow-md': shadows.md,
-  '--pg-shadow-lg': shadows.lg,
-  '--pg-glow-purple': glows.mining,
   '--pg-font': fontFamily.display,
   '--pg-mono': fontFamily.mono,
 };
@@ -83,92 +73,13 @@ function Unavailable({ result, what, onRetry }) {
   );
 }
 
-/** "1,250,000" + ".00000000 WRF" split for the big figure; null when the units are not declared. */
-function splitWrf(declared) {
-  if (!declared) return null;
-  const [amount] = declared.split(' ');
-  const grouped = groupThousands(amount);
-  const dot = grouped.indexOf('.');
-  return dot === -1 ? { whole: grouped, frac: '' } : { whole: grouped.slice(0, dot), frac: grouped.slice(dot) };
-}
-
-function Treasury() {
-  const [state, setState] = useState({ loading: true, result: null });
-  const load = useCallback(() => {
-    const controller = new globalThis.AbortController();
-    setState({ loading: true, result: null });
-    governanceService
-      .getTreasurySummary(controller.signal)
-      .then(result => setState({ loading: false, result }))
-      .catch(() => {});
-    return () => controller.abort();
-  }, []);
-  useEffect(() => load(), [load]);
-  const { loading, result } = state;
-
-  if (loading) {
-    return (
-      <section className="pg-treasury pg-treasury--plain" aria-label="Treasury" data-testid="public-treasury">
-        <p className="pg-treasury__label">DAO treasury</p>
-        <p className="pg-treasury__value pg-treasury__value--un" role="status">Loading treasury…</p>
-      </section>
-    );
-  }
-  if (result?.kind !== 'ok') {
-    return (
-      <section className="pg-treasury pg-treasury--plain" aria-label="Treasury" data-testid="public-treasury">
-        <p className="pg-treasury__label">DAO treasury</p>
-        <p className="pg-treasury__value pg-treasury__value--un">Balance unavailable</p>
-        <Unavailable result={result} what="Treasury summary" onRetry={load} />
-      </section>
-    );
-  }
-
-  const { balance, totalDeposits, totalWithdrawals, transactionCount, amountUnits } = result.data;
-  const declared = {
-    balance: declaredWrfAmount(balance, amountUnits, 'balance'),
-    totalDeposits: declaredWrfAmount(totalDeposits, amountUnits, 'totalDeposits'),
-    totalWithdrawals: declaredWrfAmount(totalWithdrawals, amountUnits, 'totalWithdrawals'),
-  };
-  const reason = undeclaredReason(amountUnits);
-  const big = splitWrf(declared.balance);
-  // Integer large, fraction + unit smaller (the wallet stat cards' split), so a full 8-decimal
-  // figure fits the card at 1440 and 390 instead of clipping at the card edge.
-  const statValue = key => {
-    const parts = splitWrf(declared[key]);
-    return parts
-      ? <span className="pg-stat-value">{parts.whole}<small>{parts.frac} WRF</small></span>
-      : <span className="pg-stat-value pg-stat-value--un">Not declared</span>;
-  };
-
-  return (
-    <div className="pg-top" data-testid="public-treasury">
-      <section className={`pg-treasury${big ? '' : ' pg-treasury--plain'}`} aria-label="Treasury">
-        <p className="pg-treasury__label">DAO treasury</p>
-        {big ? (
-          <p className="pg-treasury__value">{big.whole}<span className="frac">{big.frac}</span>{' '}<span className="sym">WRF</span></p>
-        ) : (
-          <p className="pg-treasury__value pg-treasury__value--un">Balance not declared</p>
-        )}
-        <p className="pg-treasury__sub">{big ? 'Balance reported by the node' : `Reported figure ${text(balance)}. ${reason}`}</p>
-      </section>
-      <div className="pg-stats">
-        <WrfStatCard label="Total deposits" value={statValue('totalDeposits')} color={categoryColors.governance} />
-        <WrfStatCard label="Total withdrawals" value={statValue('totalWithdrawals')} color={accentPurple} />
-        <WrfStatCard label="Transactions" value={<span className="pg-stat-value">{Number.isFinite(transactionCount) ? transactionCount : '—'}</span>} color={primary} />
-      </div>
-    </div>
-  );
-}
-
 function votePercents(p) {
   const f = Number(p.votesFor ?? p.forVotes);
   const a = Number(p.votesAgainst ?? p.againstVotes);
-  const ab = Number(p.votesAbstain ?? p.abstainVotes ?? 0);
-  if (![f, a, ab].every(n => Number.isFinite(n) && n >= 0)) return null;
-  const total = f + a + ab;
+  if (![f, a].every(n => Number.isFinite(n) && n >= 0)) return null;
+  const total = f + a;
   if (total <= 0) return null;
-  return { f: Math.round((f / total) * 100), a: Math.round((a / total) * 100), ab: Math.round((ab / total) * 100) };
+  return { f: Math.round((f / total) * 100), a: Math.round((a / total) * 100) };
 }
 
 function ProposalRow({ p }) {
@@ -195,7 +106,7 @@ function ProposalRow({ p }) {
         {votes ? (
           <>
             <div className="pg-vbar"><span style={{ width: `${votes.f}%` }} /></div>
-            <div className="pg-vnum"><span className="f">For {votes.f}%</span><span className="a">Against {votes.a}%</span><span className="ab">Abstain {votes.ab}%</span></div>
+            <div className="pg-vnum"><span className="f">For {votes.f}%</span><span className="a">Against {votes.a}%</span></div>
           </>
         ) : <span className="pg-count">—</span>}
       </td>
@@ -233,15 +144,9 @@ export function PublicGovernanceListPage() {
       <header className="pg-head">
         <div>
           <h1>Governance</h1>
-          <p className="pg-lede">Read-only view of testnet proposals and the treasury. Voting happens in the WRFCoin app.</p>
-        </div>
-        <div className="pg-vote">
-          <WrfButton component={Link} to={VOTE_IN_APP_HREF} variant="outline">Vote in the app</WrfButton>
-          <p className="pg-vote__note">Get the WRFCoin app to vote on proposals.</p>
+          <p className="pg-lede">Read-only view of testnet proposals. Submitting proposals and voting aren't available on testnet yet.</p>
         </div>
       </header>
-
-      <Treasury />
 
       <WrfCard
         component="section"
@@ -259,7 +164,7 @@ export function PublicGovernanceListPage() {
             {offset === 0 ? (
               <WrfEmptyState
                 title="No proposals yet"
-                description="Proposals submitted from the WRFCoin app will appear here with their status and vote totals."
+                description="Submitting proposals isn't available on testnet yet."
                 sx={{ background: 'transparent' }}
               />
             ) : (

@@ -44,9 +44,10 @@ describe('Deprecated route redirects', () => {
 
   const cases = [
     ['/dashboard/legacy', '/'],
-    ['/governance', '/governance/comprehensive'],
-    ['/governance/proposals/enhanced', '/governance/comprehensive'],
-    ['/governance/foundation', '/governance/comprehensive'],
+    ['/governance', '/governance/public'],
+    ['/governance/comprehensive', '/governance/public'],
+    ['/governance/proposals/enhanced', '/governance/public'],
+    ['/governance/foundation', '/governance/public'],
     ['/governance/eip712', '/resources'],
     ['/bridge/monitor', '/bridge'],
     ['/bridge/analytics', '/bridge'],

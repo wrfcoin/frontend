@@ -9,8 +9,6 @@ import test from 'node:test';
 const checker = path.resolve('scripts/check-ungated-fabrication.mjs');
 
 const RETIRED = [
-  // Gated sample: no backend concept of foundation proposals; no fake vote.
-  'src/components/Governance/FoundationGovernanceVoting.jsx',
   // Wired to /voting-power, /delegations, /delegate and /analytics/delegates.
   'src/components/GovernanceAdvanced/DelegationManager.jsx',
   // Wired to /analytics/{dashboard,participation,treasury,delegates}.

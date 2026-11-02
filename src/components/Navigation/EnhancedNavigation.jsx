@@ -16,7 +16,6 @@ import {
   Dashboard as DashboardIcon,
   AccountBalance as NFTIcon,
   Nature as EnvironmentalIcon,
-  HowToVote as GovernanceIcon,
   Speed as PerformanceIcon,
   Security as SecurityIcon,
 } from '@mui/icons-material';
@@ -40,13 +39,6 @@ const EnhancedNavigation = ({ open, onClose }) => {
       badge: 'NEW',
     },
     {
-      path: '/governance/proposals/new',
-      label: 'Create Proposal (Enhanced)',
-      icon: <GovernanceIcon />,
-      description: 'Step-by-step proposal creation',
-      badge: 'NEW',
-    },
-    {
       path: '/nft/create/basic',
       label: 'Create NFT (Basic)',
       icon: <NFTIcon />,
@@ -57,12 +49,6 @@ const EnhancedNavigation = ({ open, onClose }) => {
       label: 'Submit Environmental Data (Basic)',
       icon: <EnvironmentalIcon />,
       description: 'Original environmental data form',
-    },
-    {
-      path: '/governance/proposals/new/basic',
-      label: 'Create Proposal (Basic)',
-      icon: <GovernanceIcon />,
-      description: 'Original proposal creation form',
     },
   ];
 

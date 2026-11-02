@@ -9,7 +9,8 @@ describe('Stage 1.5 public route policy', () => {
   it('admits exactly the read-only and onboarding paths when enabled', () => {
     const candidates = [
       '/explore', '/explorer', '/map', '/search', '/weather/station/:stationId', '/leaderboard/contributors',
-      '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
+      '/governance/public', '/governance/public/:proposalId', '/governance', '/governance/comprehensive',
+      '/weather/forecast', '/contributor/:key',
       '/forecasters', '/forecasters/:profileKey', '/competitions',
       '/faucet/bond-grants', '/faucet', '/faucet/bond-grant', '/faucet/bond-grants/x',
       '/proof/:commitId', '/proof', '/proofs/:commitId', '/proof/:commitId/x',
@@ -17,7 +18,7 @@ describe('Stage 1.5 public route policy', () => {
       '/forecast-check', '/forecast-check/x',
       '/challenges', '/challenges/:code', '/challenges/:code/x', '/challenge',
       '/duels', '/duels/:id', '/duels/:id/x', '/duel',
-      '/wallet', '/onboarding', '/governance', '/nfts', '/miner', '/dashboard',
+      '/wallet', '/onboarding', '/nfts', '/miner', '/dashboard',
       '/earnings', '/weather/dashboard', '/connect-station', '/earn', '/connect-station/x', '/earn/x',
       '/leaderboard', '/leaderboard/contributors/x', '/leaderboard/nearby', '/leaderboard/profile/:address',
     ];
@@ -27,7 +28,9 @@ describe('Stage 1.5 public route policy', () => {
     expect(admitted).toEqual([...PUBLIC_READONLY_PATHS, '/wallet', '/onboarding', '/connect-station', '/earn']);
     // S4-S6 added exact entries only; their parents and descendants must not ride along by prefix.
     expect(PUBLIC_READONLY_PATHS.has('/governance/public')).toBe(true);
-    expect(isPublicTestnetPath('/governance', false, true)).toBe(false);
+    // /governance and /governance/comprehensive are redirect-only; other descendants stay closed.
+    expect(isPublicTestnetPath('/governance/proposals/:id', false, true)).toBe(false);
+    expect(isPublicTestnetPath('/governance/treasury', false, true)).toBe(false);
     expect(isPublicTestnetPath('/governance/public/x/votes', false, true)).toBe(false);
     expect(isPublicTestnetPath('/weather/forecast/studio', false, true)).toBe(false);
     expect(isPublicTestnetPath('/forecast', false, true)).toBe(false);
@@ -78,7 +81,8 @@ describe('Stage 1.5 station detail', () => {
   it('is the only addition to the prior four read-only paths (plus the public leaderboard)', () => {
     expect([...PUBLIC_READONLY_PATHS]).toEqual([
       '/explore', '/explorer', '/map', '/search', STATION, '/leaderboard/contributors',
-      '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
+      '/governance/public', '/governance/public/:proposalId', '/governance', '/governance/comprehensive',
+      '/weather/forecast', '/contributor/:key',
       '/forecasters', '/forecasters/:profileKey', '/competitions',
       '/faucet/bond-grants',
       '/proof/:commitId',

@@ -261,11 +261,11 @@ export const comprehensiveSearch = async query => {
     {
       id: 'governance-proposals',
       title: 'Governance Proposals',
-      description: 'Participate in Wrfcoin governance voting',
+      description: 'Read testnet governance proposals',
       category: 'Governance',
       content:
         'governance proposals voting DAO community decisions protocol upgrades',
-      url: '/governance',
+      url: '/governance/public',
       icon: 'how_to_vote',
     },
   ];

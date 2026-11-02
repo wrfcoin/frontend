@@ -54,11 +54,13 @@ Routes are extracted from `App.jsx`. The "Feature Flag" column shows the guard f
 
 | Route Pattern | Component | Feature Flag | Module | Status |
 |---|---|---|---|---|
-| `/governance` | `<Navigate to="/governance/comprehensive" />` | always | governance | redirect |
-| `/governance/comprehensive` | ComprehensiveGovernanceDashboard | always | governance | active |
+| `/governance/public` | PublicGovernanceListPage | public read-only | governance | active |
+| `/governance/public/:proposalId` | PublicGovernanceProposalPage | public read-only | governance | active |
+| `/governance` | `<Navigate to="/governance/public" />` | public read-only | governance | redirect |
+| `/governance/comprehensive` | `<Navigate to="/governance/public" />` | public read-only | governance | redirect |
 | `/governance/proposals/:id` | ProposalDetail | always | governance | active |
-| `/governance/proposals/enhanced` | `<Navigate to="/governance/comprehensive" />` | always | governance | redirect |
-| `/governance/foundation` | `<Navigate to="/governance/comprehensive" />` | always | governance | redirect |
+| `/governance/proposals/enhanced` | `<Navigate to="/governance/public" />` | always | governance | redirect |
+| `/governance/foundation` | `<Navigate to="/governance/public" />` | always | governance | redirect |
 | `/governance/eip712` | `<Navigate to="/resources" />` | always | governance | redirect |
 | `/governance/quadratic` | QuadraticVotingPanel | `governanceAdvanced` | governance | active (non-MVP) |
 | `/governance/conviction` | ConvictionVotingPanel | `governanceAdvanced` | governance | active (non-MVP) |
@@ -322,9 +324,10 @@ Routes are extracted from `App.jsx`. The "Feature Flag" column shows the guard f
 | Route Pattern | Target | Notes |
 |---|---|---|
 | `/dashboard/legacy` | `/` | Legacy dashboard removed |
-| `/governance` | `/governance/comprehensive` | All governance to comprehensive |
-| `/governance/proposals/enhanced` | `/governance/comprehensive` | |
-| `/governance/foundation` | `/governance/comprehensive` | |
+| `/governance` | `/governance/public` | All governance to the read-only page |
+| `/governance/comprehensive` | `/governance/public` | |
+| `/governance/proposals/enhanced` | `/governance/public` | |
+| `/governance/foundation` | `/governance/public` | |
 | `/governance/eip712` | `/resources` | EIP-712 moved to resources |
 | `/staking/vault` | `/resources` | Staking vault moved to resources |
 | `/bridge/monitor` | `/bridge` | Monitor tab merged |
