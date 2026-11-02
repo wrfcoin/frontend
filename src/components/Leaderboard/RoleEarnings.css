@@ -35,3 +35,6 @@
   .role-payment-summary dl { grid-template-columns: 1fr; }
   .role-payment-summary dt { font-weight: 600; }
 }
+.lb-role-payments .lb-addr {
+  display: block;
+}

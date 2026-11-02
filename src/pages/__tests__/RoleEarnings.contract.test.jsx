@@ -1,7 +1,7 @@
 import React from 'react';
 import { jest } from '@jest/globals';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { board, header, profile, row, unsupported } from '../../utils/__fixtures__/roleEarningsFixtures';
+import { board, header, profile, row, unsupported, weatherBoard, weatherEntry } from '../../utils/__fixtures__/roleEarningsFixtures';
 
 const state = { leaderboard: 'configured', earnings: 'configured', loading: false, error: null };
 await jest.unstable_mockModule('../../hooks/useCapabilities', () => ({ useCapabilities: () => ({
@@ -21,7 +21,7 @@ const { CapabilitiesProvider } = await import('../../contexts/CapabilitiesContex
 const { default: Page } = await import('../ContributorLeaderboardPage');
 const { default: Recap } = await import('../WeatherRecapPage');
 const { default: GlobalLeaderboard } = await import('../../components/Leaderboard/GlobalLeaderboard');
-const { earningsQuery, EARNING_ROLES, EARNING_PERIODS } = await import('../../utils/roleEarnings');
+const { earningsQuery, EARNING_ROLES, EARNING_PERIODS, NODE_PAYMENT_NOTICE, validateWeatherBoard, weatherBoardQuery } = await import('../../utils/roleEarnings');
 const response = (body, status = 200) => ({ ok: status === 200, status, json: async () => body });
 const legacy = () => response({ entries: [], updatedAt: '2026-10-11T12:01:00Z' });
 const serve = handler => { global.fetch = jest.fn((url, options) => String(url).startsWith('/api/earnings/') ? handler(String(url), options) : Promise.resolve(legacy())); };
@@ -100,10 +100,107 @@ test.each(['leaderboard-off', 'loading', 'poll-error'])('existing leaderboardRea
   expect(global.fetch.mock.calls.some(([url]) => String(url).startsWith('/api/earnings/'))).toBe(false);
 });
 
+test('the old "not implemented" node text is gone', () => {
+  expect(NODE_PAYMENT_NOTICE).not.toMatch(/not implemented/i);
+});
+
+describe('Weather data tab reads the weather board', () => {
+  const weatherUrl = period => `/api/weather/leaderboard?metric=earnings&period=${period}&limit=30`;
+  const serveWeather = handler => { global.fetch = jest.fn(async url => {
+    const target = String(url);
+    if (target.startsWith('/api/earnings/')) return response(board());
+    if (target.startsWith('/api/weather/leaderboard') && target.includes('limit=30')) return handler(target);
+    return legacy();
+  }); };
+  const calls = () => global.fetch.mock.calls.map(([url]) => String(url));
+
+  test('shows lifetime amounts from the exact base units, with no call to the role board', async () => {
+    serveWeather(async () => response(weatherBoard('all', { entries: [
+      weatherEntry({ value: 1 }),
+      weatherEntry({ rank: 2, profileKey: 'c_abcdef0123456789abcdef01', displayName: 'Harbor station', isYou: true, walletAddress: `0x${'b2'.repeat(20)}`, earningsBaseUnits: '9007199254740993', earningsWrf: '90071992.54740993' }),
+    ] })));
+    mount();
+    selectRole('Weather data');
+    expect(await within(roleSection()).findByText('Ridge Road station')).toBeTruthy();
+    expect(within(roleSection()).getByText('1,234.5 WRF')).toBeTruthy();
+    expect(within(roleSection()).getByText('90,071,992.54740993 WRF')).toBeTruthy();
+    expect(within(roleSection()).getByText('you')).toBeTruthy();
+    expect(within(roleSection()).getByText(/Lifetime amounts paid to real stations/)).toBeTruthy();
+    expect(within(roleSection()).queryByText(/Confirmed canonical/)).toBeNull();
+    expect(within(roleSection()).queryByText(/Role payments unavailable/)).toBeNull();
+    expect(calls()).toContain(weatherUrl('all'));
+    expect(calls().some(url => url.includes('role=contribution'))).toBe(false);
+  });
+
+  test.each(['7d', '30d'])('period %s asks the board for that period', async period => {
+    serveWeather(async target => response(weatherBoard(new URL(target, 'http://x').searchParams.get('period'))));
+    mount(); selectRole('Weather data');
+    await within(roleSection()).findByText('Ridge Road station');
+    fireEvent.click(within(roleSection()).getByRole('tab', { name: period === '7d' ? '7 days' : '30 days' }));
+    await waitFor(() => expect(calls()).toContain(weatherUrl(period)));
+    expect(await within(roleSection()).findByText('Ridge Road station')).toBeTruthy();
+  });
+
+  test('every query is in the shape the edge admits', () => {
+    for (const { key } of EARNING_PERIODS) {
+      expect(weatherBoardQuery(key)).toBe(weatherUrl(key));
+      expect(weatherBoardQuery(key).split('?')[1]).toMatch(/^metric=(earnings|submissions|quality_score|streak)&period=(7d|30d|all)&limit=([1-9]|[12][0-9]|30)$/);
+    }
+    expect(() => weatherBoardQuery('1y')).toThrow();
+    expect(() => weatherBoardQuery('all', 31)).toThrow();
+  });
+
+  test('an empty clean answer has its own message', async () => {
+    serveWeather(async () => response(weatherBoard('all', { entries: [] })));
+    mount(); selectRole('Weather data');
+    expect(await within(roleSection()).findByText('No station rewards have been paid yet.')).toBeTruthy();
+    expect(within(roleSection()).queryByRole('table')).toBeNull();
+  });
+
+  test('a failure shows Retry, and Retry fetches again', async () => {
+    let status = 503;
+    serveWeather(async () => (status === 200 ? response(weatherBoard()) : response({ success: false, unavailable: ['earnings'] }, status)));
+    mount(); selectRole('Weather data');
+    expect(await within(roleSection()).findByRole('alert')).toBeTruthy();
+    status = 200;
+    fireEvent.click(within(roleSection()).getByRole('button', { name: 'Retry role payments' }));
+    expect(await within(roleSection()).findByText('Ridge Road station')).toBeTruthy();
+  });
+
+  test.each([
+    ['not successful', { success: false }],
+    ['wrong metric', { metric: 'streak' }],
+    ['wrong period', { period: '7d' }],
+    ['not lifetime', { earningsScope: 'window' }],
+    ['marked unavailable', { unavailable: ['earnings'] }],
+    ['amounts unavailable', { amountUnits: { ...weatherBoard().amountUnits, available: false } }],
+    ['wrong denomination', { amountUnits: { ...weatherBoard().amountUnits, denomination: 'GWEI' } }],
+    ['entries not a list', { entries: null }],
+    ['too many rows', { entries: Array.from({ length: 31 }, (_, i) => weatherEntry({ rank: i + 1, profileKey: null })) }],
+    ['null amount', { entries: [weatherEntry({ earningsBaseUnits: null, earningsWrf: null })] }],
+    ['number amount', { entries: [weatherEntry({ earningsBaseUnits: 123 })] }],
+    ['display disagrees', { entries: [weatherEntry({ earningsWrf: '1' })] }],
+    ['rank gap', { entries: [weatherEntry({ rank: 2 })] }],
+    ['repeated key', { entries: [weatherEntry(), weatherEntry({ rank: 2 })] }],
+    ['raw address on another row', { entries: [weatherEntry({ walletAddress: `0x${'a1'.repeat(20)}` })] }],
+    ['address in a name', { entries: [weatherEntry({ displayName: `0x${'a1'.repeat(20)}` })] }],
+    ['blank name', { entries: [weatherEntry({ displayName: ' ' })] }],
+    ['bad key', { entries: [weatherEntry({ profileKey: '0xabc' })] }],
+  ])('refuses the whole board: %s', (_, over) => {
+    expect(() => validateWeatherBoard(weatherBoard('all', over), 'all')).toThrow('Role payments unavailable');
+  });
+
+  test('the row carries no `value` double', () => {
+    const { rows } = validateWeatherBoard(weatherBoard('all', { entries: [weatherEntry({ value: 999 })] }), 'all');
+    expect(rows[0].paidBaseUnits).toBe('123450000000');
+    expect(rows[0].value).toBeUndefined();
+  });
+});
+
 test('unsupported nodes show exact notice and no ranking/zero payment', async () => {
   serve(async url => response(url.includes('role=node') ? unsupported() : board()));
   mount(); await within(roleSection()).findByText('90,071,992.54740993 WRF'); selectRole('Nodes');
-  expect(await within(roleSection()).findByText('Node payments are not implemented yet')).toBeTruthy();
+  expect(await within(roleSection()).findByText('Bonded nodes are paid. This list does not show node payments yet.')).toBeTruthy();
   expect(within(roleSection()).queryByRole('table')).toBeNull();
   expect(roleSection().textContent).not.toContain('0 WRF');
 });
@@ -168,7 +265,7 @@ test('mounted chain-only WeatherRecap fetches public role totals without private
   expect(global.fetch.mock.calls[0][0]).toBe(`/api/operators/${row().profileKey}/profile`);
   expect(within(section).getByText('90,071,992.54740993 WRF', { exact: false })).toBeTruthy();
   expect(within(section).getByText('0 WRF')).toBeTruthy();
-  expect(within(section).getByText('Node payments are not implemented yet')).toBeTruthy();
+  expect(within(section).getByText('Bonded nodes are paid. This list does not show node payments yet.')).toBeTruthy();
   expect(within(section).getAllByText('Payments unavailable')).toHaveLength(2);
   expect(screen.queryByText('Readings submitted')).toBeNull();
   expect(screen.queryByText('WRF earned')).toBeNull();

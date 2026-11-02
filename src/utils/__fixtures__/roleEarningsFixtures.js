@@ -16,8 +16,21 @@ export const board = (role = 'producer', period = 'all', over = {}) => ({
 });
 export const unsupported = () => ({
   success: true, units: header().units, role: 'node', status: 'unsupported', complete: false,
-  paidBaseUnits: null, message: 'Node payments are not implemented yet', requestedScope: 'all', effectiveScope: null,
+  paidBaseUnits: null, message: 'Bonded nodes are paid. This list does not show node payments yet.', requestedScope: 'all', effectiveScope: null,
   coverage: null, asOf: null, finalityPolicy: null, rows: [],
+});
+// Shape of backend weather-leaderboard-routes.ts, metric=earnings.
+export const weatherEntry = (over = {}) => ({
+  rank: 1, walletAddress: '0xa1a1…a1a1', profileKey: 'c_0123456789abcdef01234567', isYou: false, displayName: 'Ridge Road station',
+  value: 1234.5, badgeLevel: 'gold', streak: null, country: null, city: null,
+  earningsBaseUnits: '123450000000', earningsWrf: '1234.5', ...over,
+});
+export const weatherBoard = (period = 'all', over = {}) => ({
+  success: true, metric: 'earnings', period, country: null, region: null, near: null, updatedAt: '2026-11-02T02:30:52.537Z',
+  earningsScope: 'lifetime', earningsDescription: 'Lifetime real-station rewards paid to the address (node-proven).',
+  amountUnits: { denomination: 'WRF', baseUnitDecimals: 8, baseUnitsPerUnit: '100000000', available: true,
+    fields: { 'entries[].earningsBaseUnits': 'base_units', 'entries[].earningsWrf': 'display_units' } },
+  entries: [weatherEntry()], ...over,
 });
 export const profile = (over = {}) => ({
   walletAddress: '0xa1a1…a1a1', profileKey: row().profileKey, isYou: false, displayName: 'Operator-01234567',
