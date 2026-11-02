@@ -81,8 +81,36 @@ describe('own-wallet reads against the edge grammar', () => {
     expect(re.test('limit=1&offset=0')).toBe(true);
     expect(re.test('limit=50&offset=999999')).toBe(true);
     expect(re.test('offset=0&limit=10')).toBe(false);
-    expect(re.test('limit=10&offset=0&creditLimit=5')).toBe(false);
+    expect(re.test('limit=10&offset=0&page=2')).toBe(false);
     expect(re.test('limit=51&offset=0')).toBe(false);
+  });
+});
+
+describe('reward paging on the edge pattern', () => {
+  const re = new RegExp(edge.get.find(r => r.name === 'public_wallet_transactions').queryPattern);
+  const cursor = 'f662f1e6a3e3c2cf'.repeat(4);
+
+  it.each([
+    'limit=10&offset=0&creditLimit=1',
+    'limit=10&offset=0&creditLimit=100',
+    `limit=10&offset=0&creditAfter=${cursor}`,
+    `limit=10&offset=0&creditLimit=5&creditAfter=${cursor}`,
+  ])('admits %s', query => {
+    expect(re.test(query)).toBe(true);
+  });
+
+  it.each([
+    'limit=10&offset=0&creditLimit=0',
+    'limit=10&offset=0&creditLimit=101',
+    'limit=10&offset=0&creditAfter=',
+    `limit=10&offset=0&creditAfter=${cursor.slice(1)}`,
+    `limit=10&offset=0&creditAfter=${cursor}a`,
+    `limit=10&offset=0&creditAfter=${cursor.toUpperCase()}`,
+    `limit=10&offset=0&creditAfter=${cursor.slice(3)}%26`,
+    `limit=10&offset=0&creditAfter=${cursor}&creditLimit=5`,
+    'limit=10&creditLimit=5&offset=0',
+  ])('refuses %s', query => {
+    expect(re.test(query)).toBe(false);
   });
 });
 

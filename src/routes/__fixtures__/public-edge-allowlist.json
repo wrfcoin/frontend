@@ -24,7 +24,7 @@
     { "name": "public_earnings_leaderboard", "path": "^/api/earnings/leaderboard$", "query": [], "queryPattern": "^role=(contribution|attester|producer|node|forecast)&period=(all|7d|30d)&limit=([1-9]|[12][0-9]|30)$" },
     { "name": "public_operator_profile", "path": "^/api/operators/c_[0-9a-f]{24}/profile$", "query": [""] },
     { "name": "public_wallet_info", "path": "^/api/wallet/0x[0-9A-Fa-f]{40}$", "query": [""], "requiresBearer": true },
-    { "name": "public_wallet_transactions", "path": "^/api/wallet/0x[0-9A-Fa-f]{40}/transactions$", "query": [], "queryPattern": "^limit=([1-9]|[1-4][0-9]|50)&offset=[0-9]{1,6}$", "requiresBearer": true },
+    { "name": "public_wallet_transactions", "path": "^/api/wallet/0x[0-9A-Fa-f]{40}/transactions$", "query": [], "queryPattern": "^limit=([1-9]|[1-4][0-9]|50)&offset=[0-9]{1,6}(&creditLimit=([1-9]|[1-9][0-9]|100))?(&creditAfter=[0-9a-f]{64})?$", "requiresBearer": true },
     { "name": "public_wallet_send_nonce", "path": "^/api/wallet/0x[0-9a-f]{40}/nonce$", "query": [""], "requiresBearer": true },
     { "name": "public_wallet_security_key", "path": "^/api/wallet/0x[0-9a-f]{40}/security-key$", "query": [""], "requiresBearer": true },
     { "name": "public_wallet_send_allowlist", "path": "^/api/wallet/0x[0-9a-f]{40}/send-allowlist$", "query": [""], "requiresBearer": true },
