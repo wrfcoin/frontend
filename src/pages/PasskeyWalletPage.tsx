@@ -20,6 +20,7 @@ import AddressBookButton, { ContactPicks, useRecipientGuard } from '../component
 import { clearStoredPasskey, getPasskeyNonce, loadStoredPasskey, saveStoredPasskey, submitPasskeyTransfer } from '../services/walletCrypto/passkeySend';
 import { getPasskeyPublicBalance } from '../services/walletCrypto/passkeyBalance';
 import { PasskeyFaucetPanel } from '../components/wallet/PasskeyFaucetPanel';
+import PasskeyUseExisting from '../components/wallet/PasskeyUseExisting';
 import NotifyMe from '../components/explorer/NotifyMe';
 import { UNSUPPORTED_MESSAGE, SECURITY_KEY_UNSUPPORTED_MESSAGE } from './passkeyMessages';
 
@@ -75,6 +76,8 @@ export function passkeySiteSentence(rpId: string): string {
 
 /** After a faucet claim, read the balance again once the next blocks have had time to include it. */
 const FAUCET_SETTLE_MS = 15_000;
+/** Said next to the buttons, because the two look alike and only one of them keeps your address. */
+export const CREATE_OR_EXISTING_NOTE = '"Create" makes a new wallet with a different address, even if you already have a passkey. "Use an existing passkey" opens the wallet you already have.';
 
 function describeError(error: unknown): string {
   const message = error instanceof Error ? error.message : '';
@@ -99,6 +102,10 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
   const [to, setTo] = useState('');
   const [amount, setAmount] = useState('');
   const [sent, setSent] = useState<string | null>(null);
+  const [opened, setOpened] = useState(false);
+  // True from the first "Use an existing passkey" touch until that flow ends: nothing else may prompt or change the wallet.
+  const [recovering, setRecovering] = useState(false);
+  const locked = busy !== false || recovering;
   const address = useMemo(() => (record ? passkeyRecordAddress(record) : null), [record]);
   const [balanceRead, setBalanceRead] = useState(0);
   const balance = usePasskeyBalance(address, balanceRead);
@@ -122,7 +129,7 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
   }, [address]);
 
   const create = useCallback(async (choice: PasskeyAuthenticatorChoice) => {
-    setBusy(choice); setError(null);
+    setBusy(choice); setError(null); setOpened(false);
     try {
       const created = await registerPasskey(newRpId, 'WRFCoin passkey wallet', undefined, choice);
       saveStoredPasskey(created);
@@ -132,6 +139,12 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
         : choice === 'security-key' ? SECURITY_KEY_UNSUPPORTED_MESSAGE : UNSUPPORTED_MESSAGE);
     } finally { setBusy(false); }
   }, [newRpId]);
+
+  const openExisting = useCallback((found: PasskeyCredentialRecord) => {
+    saveStoredPasskey(found);
+    setRecord(found);
+    setTo(''); setAmount(''); setSent(null); setError(null); setOpened(true);
+  }, []);
 
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (settleTimer.current) clearTimeout(settleTimer.current); }, []);
@@ -164,7 +177,7 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
     } catch (e) { setError(describeError(e)); } finally { setBusy(false); }
   }, [record, address, to, amount, noFunds, exceeds, guard]);
 
-  const forget = useCallback(() => { clearStoredPasskey(); setRecord(null); setSent(null); setError(null); setConfirmOpen(false); setTypedTail(''); }, []);
+  const forget = useCallback(() => { clearStoredPasskey(); setRecord(null); setSent(null); setError(null); setOpened(false); setConfirmOpen(false); setTypedTail(''); }, []);
   const tailOk = address !== null && typedTail.trim().toLowerCase() === addressTail(address);
 
   return (
@@ -184,20 +197,23 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
               {PREVIEW_HOST_NOTE} <a href={CANONICAL_PASSKEY_URL}>{CANONICAL_PASSKEY_URL}</a>.
             </Typography>
           )}
-          <WrfButton variant="primary" onClick={() => void create('any')} disabled={busy !== false} data-testid="passkey-create">
+          <Typography data-testid="passkey-create-or-existing" sx={{ fontWeight: 600 }}>{CREATE_OR_EXISTING_NOTE}</Typography>
+          <WrfButton variant="primary" onClick={() => void create('any')} disabled={locked} data-testid="passkey-create">
             {busy === 'any' ? 'Waiting for your device…' : 'Create passkey account'}
           </WrfButton>
-          <WrfButton variant="outline" onClick={() => void create('security-key')} disabled={busy !== false} data-testid="passkey-create-security-key">
-            {busy === 'security-key' ? 'Touch your security key…' : 'Use a security key (YubiKey)'}
+          <WrfButton variant="outline" onClick={() => void create('security-key')} disabled={locked} data-testid="passkey-create-security-key">
+            {busy === 'security-key' ? 'Touch your security key…' : 'Create on a security key (YubiKey)'}
           </WrfButton>
           <Typography variant="body2" data-testid="passkey-security-key-note" sx={{ color: palette.text.secondary }}>
             {SECURITY_KEY_NOTE}
           </Typography>
+          <PasskeyUseExisting rpId={newRpId} current={null} disabled={busy !== false} onOpen={openExisting} onActiveChange={setRecovering} />
         </Box>
       )}
 
       {record && address && (
         <Box sx={{ display: 'grid', gap: 2 }}>
+          {opened && <WrfAlert severity="success" data-testid="passkey-opened">Wallet opened from your existing passkey. Check that this is the address you expect: a different passkey is a different wallet.</WrfAlert>}
           <Box>
             <Typography variant="overline" sx={{ color: palette.text.secondary }}>Your address</Typography>
             <Typography data-testid="passkey-address" sx={{ fontFamily: mono, fontSize: '0.8125rem', wordBreak: 'break-all' }}>{address}</Typography>
@@ -234,7 +250,7 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
               {chain.blockHeight !== null ? `Current block: ${chain.blockHeight.toLocaleString('en-US')}.` : 'Current block: unavailable.'}
             </Typography>
           </Box>
-          <PasskeyFaucetPanel address={address} onClaimed={faucetClaimed} />
+          <PasskeyFaucetPanel key={address} address={address} onClaimed={faucetClaimed} />
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', justifyContent: 'space-between' }}>
             <ContactPicks onPick={setTo} disabled={busy !== false} />
             <AddressBookButton size="sm" />
@@ -243,13 +259,14 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
           <WrfInput label="Amount (WRF)" value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" autoComplete="off" />
           {allowlistRefusal && <WrfAlert severity="error" data-testid="passkey-allowlist-refusal">{allowlistRefusal}</WrfAlert>}
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-            <WrfButton variant="primary" onClick={() => void send()} disabled={busy !== false || !to.trim() || !amount.trim() || noFunds || exceeds || Boolean(allowlistRefusal)}>
+            <WrfButton variant="primary" onClick={() => void send()} disabled={locked || !to.trim() || !amount.trim() || noFunds || exceeds || Boolean(allowlistRefusal)}>
               {busy === 'send' ? 'Waiting for your device…' : 'Send with passkey'}
             </WrfButton>
-            <WrfButton variant="outline" onClick={() => { setTypedTail(''); setConfirmOpen(true); }} disabled={busy !== false}>Forget on this device</WrfButton>
+            <WrfButton variant="outline" onClick={() => { setTypedTail(''); setConfirmOpen(true); }} disabled={locked}>Forget on this device</WrfButton>
           </Box>
           {noFunds && <Typography role="status" variant="caption" sx={{ color: palette.text.secondary }}>This account has no funds yet, so sending is off.</Typography>}
           {exceeds && <WrfAlert severity="error" role="alert">That is more than the available balance.</WrfAlert>}
+          <PasskeyUseExisting rpId={newRpId} current={record} disabled={busy !== false} onOpen={openExisting} onActiveChange={setRecovering} />
         </Box>
       )}
 
@@ -259,7 +276,7 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
         </Typography>
       )}
 
-      {address && <NotifyMe address={address} title="Notify me about payouts" />}
+      {address && <NotifyMe key={address} address={address} title="Notify me about payouts" />}
 
       <WrfModal
         open={confirmOpen && address !== null}
@@ -275,7 +292,7 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
         )}
       >
         <Typography sx={{ mb: 1.5 }}>
-          This removes the pointer to your passkey account from this device. Without it this device can no longer open the account, and it cannot be recovered here afterwards. Any funds sent to it stay on the chain but you will not be able to spend them from here.
+          This removes the pointer to your passkey account from this device. To open it here again you need the same passkey: choose "Use an existing passkey". If that passkey is gone too, the account cannot be recovered, and any funds sent to it stay on the chain but cannot be spent.
         </Typography>
         <Typography sx={{ mb: 1.5 }}>
           To confirm, type the last 4 characters of your address: <strong data-testid="passkey-forget-hint" style={{ fontFamily: mono }}>{address ? addressTail(address) : ''}</strong>

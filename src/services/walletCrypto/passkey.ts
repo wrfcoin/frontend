@@ -153,12 +153,12 @@ export interface PasskeyCredentialRecord {
 export const passkeyRecordAddress = (r: PasskeyCredentialRecord): string =>
   passkeyAddress(sha256(encoder.encode(r.rpId)), r.publicKeyXY);
 
-interface CredentialsLike {
+export interface CredentialsLike {
   create?: (options: any) => Promise<any>;
   get: (options: any) => Promise<any>;
 }
 
-const asBytes = (b: ArrayBuffer | ArrayBufferView): Uint8Array =>
+export const asBytes = (b: ArrayBuffer | ArrayBufferView): Uint8Array =>
   b instanceof Uint8Array ? b : ArrayBuffer.isView(b) ? new Uint8Array(b.buffer, b.byteOffset, b.byteLength) : new Uint8Array(b);
 
 /**
