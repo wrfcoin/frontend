@@ -31,6 +31,8 @@ export const ROUTES = [
   { name: 'duel', route: '/duels/6f1d2c4e-8a8b-4c1e-9d6a-1f2e3d4c5b6a' },
   { name: 'governance', route: '/governance/public' },
   { name: 'governance-proposal', route: '/governance/public/WIP-12' },
+  { name: 'governance-old-link', route: '/governance' },
+  { name: 'governance-old-dashboard-link', route: '/governance/comprehensive' },
   { name: 'forecast', route: '/weather/forecast' },
   { name: 'wallet-locked', route: '/wallet' },
   { name: 'wallet-passkey', route: '/wallet/passkey' },

@@ -133,9 +133,9 @@ const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false })
     {
       name: 'Governance',
       icon: 'bi-people',
-      path: '/governance/comprehensive',
+      path: '/governance/public',
       submenu: [
-        { name: 'Overview', path: '/governance/comprehensive', icon: 'bi-speedometer2' },
+        { name: 'Overview', path: '/governance/public', icon: 'bi-speedometer2' },
         { name: 'Quadratic Voting', path: '/governance/quadratic', icon: 'bi-calculator' },
         { name: 'Conviction Voting', path: '/governance/conviction', icon: 'bi-hourglass-split' },
         { name: 'Delegation', path: '/governance/delegation', icon: 'bi-arrow-left-right' },

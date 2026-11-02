@@ -36,7 +36,7 @@ function visible(fullStudio, publicReadonly, operatorPreview) {
 // core4#3604 A4 ([post-GO]) adds the exact forecaster track record pages (c_ key only).
 const PUBLIC_ONBOARDING = [
   '/onboarding', '/wallet', '/connect-station', '/earn', '/leaderboard/contributors',
-  '/governance/public', '/governance/public/:proposalId', '/weather/forecast', '/contributor/:key',
+  '/governance/public', '/governance/public/:proposalId', '/governance', '/governance/comprehensive', '/weather/forecast', '/contributor/:key',
   '/forecasters', '/forecasters/:profileKey', '/competitions',
   // backend#229: the exact proof card page for one station reading.
   '/proof/:commitId',

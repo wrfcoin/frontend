@@ -40,18 +40,14 @@ const mount = (element, route, initial) =>
 afterEach(() => { cleanup(); jest.restoreAllMocks(); });
 
 describe('S4 governance', () => {
-  it('lists proposals and the treasury with edge-admitted requests only', async () => {
+  it('lists proposals with edge-admitted requests only', async () => {
     mockFetch(path => {
       if (path === '/api/governance/proposals') return { body: { success: true, proposals: [{ id: 'p-1', title: 'Raise the cap', status: 'ACTIVE' }] } };
-      if (path === '/api/governance/treasury') return { body: { success: true, data: { balance: '12.50000000', totalDeposits: '20', totalWithdrawals: '7.5', transactionCount: 4,
-        // figures are shown as WRF only when the node declares their units (app parity, #558)
-        amountUnits: { denomination: 'WRF', baseUnitDecimals: 8, baseUnitsPerUnit: '100000000', available: true, fields: { balance: 'display_units', totalDeposits: 'display_units', totalWithdrawals: 'display_units' } } } } };
       return { status: 404 };
     });
     mount(<PublicGovernanceListPage />, '/governance/public', '/governance/public');
     await screen.findByText('Raise the cap');
-    await waitFor(() => expect(screen.getByTestId('public-treasury')).toHaveTextContent(/12\.50000000 WRF/));
-    expect(targets().sort()).toEqual(['/api/governance/proposals?limit=20&offset=0', '/api/governance/treasury']);
+    expect(targets()).toEqual(['/api/governance/proposals?limit=20&offset=0']);
     expect(targets().every(edgeAdmits)).toBe(true);
     expect(calls.every(c => c.init?.credentials === 'omit' && !c.init?.headers)).toBe(true);
     // no page param, no write surfaces
@@ -68,7 +64,7 @@ describe('S4 governance', () => {
     mockFetch(() => ({ status: 429, headers: { 'retry-after': '30' } }));
     mount(<PublicGovernanceListPage />, '/governance/public', '/governance/public');
     await screen.findAllByText(/Too many requests/);
-    expect(calls.length).toBe(2);
+    expect(calls.length).toBe(1);
   });
 
   it('detail: valid id is requested; 404 says not found; invalid id makes no request', async () => {

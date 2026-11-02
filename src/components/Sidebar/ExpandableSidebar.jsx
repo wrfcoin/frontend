@@ -384,18 +384,11 @@ const ExpandableSidebar = ({
     governance: {
       title: 'Governance',
       items: [
-        { name: 'Dashboard', path: '/governance', icon: 'bi-people' },
         {
           name: 'Proposals',
-          path: '/governance/proposals',
+          path: '/governance/public',
           icon: 'bi-list-check',
         },
-        {
-          name: 'Create Proposal',
-          path: '/governance/proposals/new',
-          icon: 'bi-file-plus',
-        },
-        { name: 'Voting', path: '/governance/voting', icon: 'bi-check-square' },
       ],
     },
     nfts: {

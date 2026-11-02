@@ -1,7 +1,7 @@
 /**
  * Comprehensive Governance Dashboard
- * Hub for governance features: Overview, Create Proposal, Foundation,
- * plus navigation tabs to dedicated governance pages
+ * Hub for governance features in the full-studio mobile shell: Overview,
+ * Trust Weights, plus navigation tabs to dedicated governance pages
  */
 
 import React, { useState } from 'react';
@@ -14,21 +14,17 @@ import {
   Toolbar,
 } from '@mui/material';
 import {
-  HowToVote,
   Gavel,
   AccountBalance,
   TrendingUp,
   Analytics,
   Assessment,
   SwapHoriz,
-  Security,
   Dashboard,
   Tune,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router';
 
-import EnhancedCreateProposal from './EnhancedCreateProposal';
-import FoundationGovernanceVoting from './FoundationGovernanceVoting';
 import TrustWeightGovernancePanel from './TrustWeightGovernancePanel';
 import GovernancePanel from '../DeFi/GovernancePanel';
 
@@ -47,11 +43,11 @@ function TabPanel({ children, value, index, ...other }) {
 }
 
 const REDIRECT_TABS = {
-  4: '/governance/delegation',
-  5: '/governance/treasury',
-  6: '/governance/analytics',
-  7: '/governance/quadratic',
-  8: '/governance/conviction',
+  2: '/governance/delegation',
+  3: '/governance/treasury',
+  4: '/governance/analytics',
+  5: '/governance/quadratic',
+  6: '/governance/conviction',
 };
 
 const ComprehensiveGovernanceDashboard = () => {
@@ -85,8 +81,6 @@ const ComprehensiveGovernanceDashboard = () => {
           scrollButtons="auto"
         >
           <Tab label="Overview" icon={<Analytics />} />
-          <Tab label="Create Proposal" icon={<HowToVote />} />
-          <Tab label="Foundation" icon={<Security />} />
           <Tab label="Trust Weights" icon={<Tune />} />
           <Tab label="Delegation" icon={<SwapHoriz />} />
           <Tab label="Treasury" icon={<AccountBalance />} />
@@ -101,14 +95,6 @@ const ComprehensiveGovernanceDashboard = () => {
       </TabPanel>
 
       <TabPanel value={activeTab} index={1}>
-        <EnhancedCreateProposal />
-      </TabPanel>
-
-      <TabPanel value={activeTab} index={2}>
-        <FoundationGovernanceVoting />
-      </TabPanel>
-
-      <TabPanel value={activeTab} index={3}>
         <TrustWeightGovernancePanel />
       </TabPanel>
     </Box>

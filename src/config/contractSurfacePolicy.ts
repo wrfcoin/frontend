@@ -81,13 +81,16 @@ export const PUBLIC_READONLY_PATHS = new Set([
   // GET /api/weather/leaderboard in the one shape the public edge admits (metric, period, limit<=30,
   // no geo). `/leaderboard` and every subpath stay operator-preview, so this entry never widens by prefix.
   '/leaderboard/contributors',
-  // Website parity S4-S6 (owner ruling 2026-10-15). Exact entries, never prefixes: `/governance`,
+  // Website parity S4-S6 (owner ruling 2026-10-15). Exact entries, never prefixes: descendants of `/governance`,
   // `/forecast`, `/impact` and `/leaderboard` descendants stay operator-preview / full-studio only.
-  //   /governance/public[/:proposalId] reads GET /api/governance/proposals, /proposals/<id>, /treasury
+  //   /governance/public[/:proposalId] reads GET /api/governance/proposals, /proposals/<id>
   //   /weather/forecast                reads GET /api/weather/current|forecast/<lat,lon at 0.1 degree>
   //   /contributor/:key                reads GET /api/operators/c_<24 hex>/profile (opaque key only)
   '/governance/public',
   '/governance/public/:proposalId',
+  // Redirects only, to /governance/public: they read nothing, and keep old links from ending in a 404.
+  '/governance',
+  '/governance/comprehensive',
   '/weather/forecast',
   '/contributor/:key',
   // Phase A item A4 of wrfcoin/core4#3604 ([post-GO], owner 2026-10-19): the public forecaster track record.
