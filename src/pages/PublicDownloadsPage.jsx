@@ -211,7 +211,8 @@ function WindowsNode({ state, artifact }) {
       </ol>
       <p className="dl-req" data-testid="windows-node-use"><strong>Using it</strong> From the Start menu, <strong>WRFCoin Node</strong> starts the node in the background and opens its dashboard at <span className="dl-mono">{WINDOWS_DASHBOARD_URL}</span>. <strong>Stop WRFCoin Node</strong> stops it. Your node keeps its data in <span className="dl-mono">%LOCALAPPDATA%\WRFCoin</span>. It only syncs and needs no incoming connections, so choosing <em>Deny</em> if Windows Firewall asks is fine.</p>
       <WrfAlert severity="info" role="note" className="dl-alert" data-testid="windows-node-unsigned">
-        This is a testnet preview and the installer is not code-signed yet, so Windows may say it protected your PC. If the hash matched, choose <strong>More info</strong>, then <strong>Run anyway</strong>.
+        This is a testnet preview and the installer is not code-signed yet, so Windows may say it protected your PC and Microsoft Defender may flag it. A matching hash proves this is the file we published, not that it is harmless. If the hash matched, choose <strong>More info</strong>, then <strong>Run anyway</strong>.
+        {' '}If Defender quarantines it, leave it there: <strong>do not add an antivirus exclusion or turn Defender off</strong>. Update Defender, download again and check the hash. If it is still flagged, wait for a newer build and <a href={LINKS.reportBug} target="_blank" rel="noopener noreferrer">tell us</a>.
       </WrfAlert>
       <ExternalLink className="dl-link" href={LINKS.windowsGuide}>Windows node guide</ExternalLink>
     </section>

@@ -216,6 +216,7 @@ body.light-mode .dl-hero { background: linear-gradient(135deg, #EFF6FF 0%, var(-
 .dl-rel-note { font-size: 0.75rem; color: var(--dl-text-secondary); margin: 0 0 12px; }
 
 .dl-alert { margin-bottom: 12px; }
+.dl-alert a { color: inherit; font-weight: 600; text-decoration: underline; }
 
 /* Sync node: per-OS sub-sections and the native Windows download */
 .dl-page .dl-sub { font-size: 0.9375rem; margin: 4px 0 8px; display: flex; align-items: center; gap: 8px; }

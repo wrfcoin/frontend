@@ -289,6 +289,9 @@ it('renders the Windows download from the manifest: link, size, SHA-256 next to 
   expect(screen.getByTestId('windows-node-use')).toHaveTextContent('%LOCALAPPDATA%\\WRFCoin');
   expect(screen.getByTestId('windows-node-unsigned')).toHaveTextContent('testnet preview and the installer is not code-signed yet');
   expect(screen.getByTestId('windows-node-unsigned')).toHaveTextContent('If the hash matched, choose More info, then Run anyway.');
+  expect(screen.getByTestId('windows-node-unsigned')).toHaveTextContent('Microsoft Defender may flag it');
+  expect(screen.getByTestId('windows-node-unsigned')).toHaveTextContent('If Defender quarantines it, leave it there: do not add an antivirus exclusion or turn Defender off.');
+  expect(within(screen.getByTestId('windows-node-unsigned')).getByRole('link', { name: 'tell us' })).toHaveAttribute('href', LINKS.reportBug);
   expect(within(win).getByRole('link', { name: /Windows node guide/ })).toHaveAttribute('href', LINKS.windowsGuide);
   expect(win.textContent).not.toMatch(/WSL2|Docker Desktop/);
 
