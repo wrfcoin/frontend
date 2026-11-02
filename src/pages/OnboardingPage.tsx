@@ -100,7 +100,7 @@ export const PASSKEY_PRIMARY_POINTS = [
   'WRFCoin never sees the passkey, and we never ask for your email or name. The wallet is the account.',
 ] as const;
 export const PASSKEY_PRIMARY_NOTE =
-  'For now this browser keeps the link to your wallet address, so come back in the same browser. There is no recovery yet if the passkey is lost: keep test-sized amounts on it.';
+  'This browser keeps the link to your wallet address. In another browser, open it with "Use an existing passkey" on the passkey wallet page. There is no recovery yet if the passkey is lost: keep test-sized amounts on it.';
 export const PHRASE_ADVANCED_LABEL = 'Advanced: a wallet with a 12-word recovery phrase';
 export const PHRASE_ADVANCED_HINT =
   'For people who want a written backup they control, or who already have 12 words. You will have to keep the words safe yourself.';

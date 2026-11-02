@@ -2,7 +2,7 @@
 /**
  * "Get test coins" on the passkey wallet page: the public onboarding faucet (sum question, then claim to
  * the passkey address) through the real StationRegistrationService and ApiClient, with fetch stubbed.
- * Also the creation choice: the default passkey and "Use a security key (YubiKey)".
+ * Also the creation choice: the default passkey and "Create on a security key (YubiKey)".
  */
 import React from 'react';
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
@@ -200,10 +200,10 @@ describe('passkey wallet: creation choice', () => {
     expect(registerPasskey).toHaveBeenCalledWith('localhost', 'WRFCoin passkey wallet', undefined, 'any');
   });
 
-  it('"Use a security key (YubiKey)" asks for a roaming key', async () => {
+  it('"Create on a security key (YubiKey)" asks for a roaming key', async () => {
     registerPasskey.mockResolvedValue(record);
     render(<PasskeyWalletPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Use a security key (YubiKey)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create on a security key (YubiKey)' }));
     await screen.findByTestId('passkey-address');
     expect(registerPasskey).toHaveBeenCalledWith('localhost', 'WRFCoin passkey wallet', undefined, 'security-key');
   });
@@ -211,7 +211,7 @@ describe('passkey wallet: creation choice', () => {
   it('a security key that cannot be used gets key-specific advice; the default keeps its own', async () => {
     registerPasskey.mockRejectedValue(Object.assign(new Error('nope'), { name: 'InvalidStateError' }));
     render(<PasskeyWalletPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Use a security key (YubiKey)' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create on a security key (YubiKey)' }));
     expect(await screen.findByText(SECURITY_KEY_UNSUPPORTED_MESSAGE)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Create passkey account' }));
     expect(await screen.findByText(UNSUPPORTED_MESSAGE)).toBeInTheDocument();

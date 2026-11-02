@@ -68,7 +68,7 @@ describe('passkey wallet: forget confirmation', () => {
     getBalance.mockResolvedValue({ balance: '100000000' });
     render(<PasskeyWalletPage />);
     open();
-    expect(await screen.findByText(/cannot be recovered here afterwards/)).toBeInTheDocument();
+    expect(await screen.findByText(/If that passkey is gone too/)).toBeInTheDocument();
     expect(clearStoredPasskey).not.toHaveBeenCalled();
     expect(screen.getByTestId('passkey-forget-confirm')).toBeDisabled();
   });
