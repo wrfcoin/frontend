@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import CapabilitiesContext from '../contexts/CapabilitiesContext';
 import { getAuthToken } from '../services/authTokenStore';
-import { earningsQuery, validateRoleBoard } from '../utils/roleEarnings';
+import { earningsQuery, validateRoleBoard, validateWeatherBoard, weatherBoardQuery } from '../utils/roleEarnings';
 
 export function useRoleEarningsEnabled() {
   const capabilities = useContext(CapabilitiesContext);
@@ -24,12 +24,14 @@ export function useRoleEarnings(role, period, enabled) {
     const current = () => id === generation.current && !request.signal.aborted;
     try {
       const token = getAuthToken();
-      const response = await fetch(earningsQuery(role, period), {
+      const weather = role === 'contribution';
+      const response = await fetch(weather ? weatherBoardQuery(period) : earningsQuery(role, period), {
         signal: request.signal,
         ...(token ? { headers: { Authorization: `Bearer ${token}` } } : {}),
       });
       if (!response.ok) throw new Error('Role payments unavailable');
-      const data = validateRoleBoard(await response.json(), role, period);
+      const body = await response.json();
+      const data = weather ? validateWeatherBoard(body, period) : validateRoleBoard(body, role, period);
       if (current()) setResult({ key, loading: false, data, unavailable: false });
     } catch {
       if (current()) setResult({ key, loading: false, data: null, unavailable: true });

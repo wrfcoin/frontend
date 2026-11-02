@@ -36,12 +36,13 @@ function EnabledRoleBoard() {
     {loading ? <p role="status">Loading role payments…</p> : unavailable ? <div role="alert">
       Role payments unavailable. <button type="button" onClick={() => refetch()}>Retry role payments</button>
     </div> : data?.status === 'unsupported' ? <p>{NODE_PAYMENT_NOTICE}</p> : data && <>
-      <p>Confirmed canonical payments through height {data.asOf.height}; totals may change after a chain rollback.</p>
-      {data.rows.length === 0 ? <p>{role === 'forecast' ? 'No forecast payments observed' : 'No payments observed for this role and period.'}</p> :
-        <table className="lb-table"><thead><tr><th>Rank</th><th>Operator</th><th>WRF paid</th></tr></thead><tbody>
-          {data.rows.map(row => <tr key={row.profileKey}><td>{row.rank}</td><td>
-            {profileBase() && CONTRIBUTOR_KEY_RE.test(String(row.profileKey)) ? <a href={`${profileBase()}/${row.profileKey}`}>{roleDisplayName(row.displayName)}</a> :
-              <span>{roleDisplayName(row.displayName)}</span>}
+      {data.lifetimeAmounts ? <p>Lifetime amounts paid to real stations. The period changes the ranking, not the amount.</p> :
+        <p>Confirmed canonical payments through height {data.asOf.height}; totals may change after a chain rollback.</p>}
+      {data.rows.length === 0 ? <p>{role === 'forecast' ? 'No forecast payments observed' : role === 'contribution' ? 'No station rewards have been paid yet.' : 'No payments observed for this role and period.'}</p> :
+        <table className="lb-table"><thead><tr><th>Rank</th><th>{data.lifetimeAmounts ? 'Contributor' : 'Operator'}</th><th>{data.lifetimeAmounts ? 'WRF paid, lifetime' : 'WRF paid'}</th></tr></thead><tbody>
+          {data.rows.map(row => <tr key={row.rank}><td>{row.rank}</td><td>
+            {profileBase() && CONTRIBUTOR_KEY_RE.test(String(row.profileKey)) ? <a href={`${profileBase()}/${row.profileKey}`}>{data.lifetimeAmounts ? row.displayName : roleDisplayName(row.displayName)}</a> :
+              <span>{data.lifetimeAmounts ? row.displayName : roleDisplayName(row.displayName)}</span>}
             <span className="lb-addr">{shortAddr(row.shortAddress)}</span>{row.isYou === true && <span className="lb-you-pill">you</span>}
           </td><td>{formatRolePayment(row.paidBaseUnits)}</td></tr>)}
         </tbody></table>}

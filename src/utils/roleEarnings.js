@@ -8,7 +8,8 @@ export const EARNING_ROLES = [
 export const EARNING_PERIODS = [
   { key: 'all', label: 'All time' }, { key: '7d', label: '7 days' }, { key: '30d', label: '30 days' },
 ];
-export const NODE_PAYMENT_NOTICE = 'Node payments are not implemented yet';
+// The earnings list has no node board. Bonded nodes are still paid, so this says what the list lacks.
+export const NODE_PAYMENT_NOTICE = 'Bonded nodes are paid. This list does not show node payments yet.';
 
 function require(condition) {
   if (!condition) throw new Error('Role payments unavailable');
@@ -47,6 +48,14 @@ export function earningsQuery(role, period, limit = 30) {
   return `/api/earnings/leaderboard?${new URLSearchParams({ role, period, limit: String(limit) })}`;
 }
 
+// Weather data has no role board: station rewards live on the weather board. Same fixed
+// order the edge admits, the same request the phone sends.
+export function weatherBoardQuery(period, limit = 30) {
+  require(EARNING_PERIODS.some(p => p.key === period));
+  require(Number.isInteger(limit) && limit >= 1 && limit <= 30);
+  return `/api/weather/leaderboard?metric=earnings&period=${period}&limit=${limit}`;
+}
+
 export function completeEarningsHeader(data) {
   const height = data?.asOf?.height;
   return data?.units?.currency === 'WRF' && data.units.decimals === 8 && data.units.scale === '100000000' &&
@@ -80,6 +89,43 @@ export function validateRoleBoard(data, role, period) {
     previous = units;
   }
   return data;
+}
+
+// `earningsWrf` drops trailing zeros; `paidDisplay` always has eight decimals.
+function sameWrfAmount(served, baseUnits) {
+  if (typeof served !== 'string' || !/^(0|[1-9][0-9]*)(\.[0-9]{1,8})?$/.test(served)) return false;
+  const [whole, fraction = ''] = served.split('.');
+  return `${whole}.${fraction.padEnd(8, '0')}` === paidDisplay(baseUnits);
+}
+
+// All or nothing: an `unavailable` marker or a row that can't be proven fails the whole board, so a
+// short list can never look complete. The amount comes from the exact base-unit string, never the
+// `value` double. Amounts are lifetime totals; the period only ranks the rows.
+export function validateWeatherBoard(data, period) {
+  const units = data?.amountUnits;
+  require(data?.success === true && data.metric === 'earnings' && data.period === period &&
+    data.earningsScope === 'lifetime' && !(Array.isArray(data.unavailable) && data.unavailable.length > 0) &&
+    units?.denomination === 'WRF' && units.baseUnitDecimals === 8 && units.baseUnitsPerUnit === '100000000' &&
+    units.available === true && units.fields?.['entries[].earningsBaseUnits'] === 'base_units' &&
+    units.fields?.['entries[].earningsWrf'] === 'display_units' &&
+    Array.isArray(data.entries) && data.entries.length <= 30);
+  const seen = new Set();
+  const rows = data.entries.map((entry, i) => {
+    const units = exactPaidUnits(entry?.earningsBaseUnits);
+    const key = entry?.profileKey;
+    const name = entry?.displayName;
+    const address = entry?.walletAddress;
+    require(entry?.rank === i + 1 && typeof entry.isYou === 'boolean' && units !== null &&
+      sameWrfAmount(entry.earningsWrf, entry.earningsBaseUnits) &&
+      (key === null || key === undefined || (typeof key === 'string' && /^c_[0-9a-f]{24}$/.test(key) && !seen.has(key))) &&
+      typeof name === 'string' && name.trim().length > 0 && !/0x[0-9a-fA-F]{40}|[0-9a-fA-F]{64}/.test(name) &&
+      typeof address === 'string' &&
+      (/^[0-9a-zA-Z]{6}…[0-9a-fA-F]{4}$/.test(address) || (entry.isYou && /^(0x|wrf)[0-9a-fA-F]{40}$/.test(address))));
+    if (key) seen.add(key);
+    return { rank: entry.rank, profileKey: key ?? null, displayName: name, shortAddress: address,
+      paidBaseUnits: entry.earningsBaseUnits, isYou: entry.isYou };
+  });
+  return { status: 'available', lifetimeAmounts: true, rows };
 }
 
 export function visibleRoleAmount(header, entry, role) {
