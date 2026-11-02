@@ -134,7 +134,9 @@ export const PUBLIC_READONLY_PATHS = new Set([
 // W28 (same ruling): the exact /connect-station and /earn (both ConnectStationPage) join a station with that
 // same signed-in wallet; they never create a second one in the public build. Subpaths stay hidden through
 // OPERATOR_PREVIEW_PATH_PREFIXES (/connect-station) and FULL_STUDIO_ONLY_PATH_PREFIXES (/earn).
-export const PUBLIC_ONBOARDING_PATHS = new Set(['/onboarding', '/wallet', '/wallet/passkey', '/connect-station', '/earn']);
+// /wallet/passkey/bond-payout signs a node bond payout approval locally (no server call); it is a route
+// only in a passkey build and the wallet links to it only with VITE_ENABLE_PASSKEY_BOND_PAYOUT.
+export const PUBLIC_ONBOARDING_PATHS = new Set(['/onboarding', '/wallet', '/wallet/passkey', '/wallet/passkey/bond-payout', '/connect-station', '/earn']);
 
 // Routes in no other list that the public build must not reach. Listing them
 // makes the hiding explicit: they open with full studio only, never because a

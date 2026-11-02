@@ -52,7 +52,7 @@ describe('Stage 1.5 public route policy', () => {
     expect(isPublicTestnetPath('/challenges/:code/x', false, true)).toBe(false);
     // Demo item 10 duels: two exact entries.
     expect(isPublicTestnetPath('/duels/:id/x', false, true)).toBe(false);
-    expect([...PUBLIC_ONBOARDING_PATHS]).toEqual(['/onboarding', '/wallet', '/wallet/passkey', '/connect-station', '/earn']);
+    expect([...PUBLIC_ONBOARDING_PATHS]).toEqual(['/onboarding', '/wallet', '/wallet/passkey', '/wallet/passkey/bond-payout', '/connect-station', '/earn']);
   });
 
   it('leaves the default public route set unchanged when disabled', () => {

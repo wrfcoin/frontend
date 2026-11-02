@@ -32,6 +32,9 @@ const WALLET_SEND = isWalletSendEnabled(
 // Passkey (WebAuthn) wallet preview: exact string "true" only; default OFF. Needs the backend's
 // WRFCOIN_ENABLE_PASSKEY_SEND and core4's passkey_p256_auth (h3400 on chain 888).
 const PASSKEY_WALLET = import.meta.env?.VITE_ENABLE_PASSKEY_WALLET === 'true';
+// Link from the passkey wallet to /wallet/passkey/bond-payout (approve this wallet as a node bond's
+// payout account). Exact string "true" only; default OFF until core4's passkey_bond_payout is active.
+const PASSKEY_BOND_PAYOUT = import.meta.env?.VITE_ENABLE_PASSKEY_BOND_PAYOUT === 'true';
 
 // Chain-enforced account protections on the 12-word wallet ("require my YubiKey to spend", send allowlist):
 // exact string "true" only; default OFF. Even when on, each control shows only once the node reports its
@@ -78,6 +81,8 @@ export const FEATURES = {
   passkeyWallet: PASSKEY_WALLET,
   /** Chain-enforced protections on the 12-word wallet. Default FALSE; also gated on the node. */
   chainProtections: CHAIN_PROTECTIONS,
+  /** Passkey wallet link to the node bond payout approval page. Default FALSE. */
+  passkeyBondPayout: PASSKEY_BOND_PAYOUT,
   explorer: true,
   pop: true,
   mining: true,
