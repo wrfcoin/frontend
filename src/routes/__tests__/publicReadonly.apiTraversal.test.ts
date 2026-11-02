@@ -259,13 +259,16 @@ describe('Stage 1.5 API traversal', () => {
     expect(lastTargets.filter(target => !edgeAdmits(target))).toEqual([]);
   });
 
-  it('POST allowlist admits exactly the infra#1319 send route, the Wolfram reading check, the backend#389 notification writes and the passkey-signed ones, and every regex is well formed', () => {
+  it('POST allowlist admits exactly the infra#1319 send route, the infra#87 account-protection actions, the Wolfram reading check, the backend#389 notification writes and the passkey-signed ones, and every regex is well formed', () => {
     const post = (edge as unknown as { post: Array<{ path: string; query: string[]; requiresBearer: boolean }> }).post;
     // Demo item 7 adds the forecast check hand-in: no Bearer (the record proves itself against the chain).
     // Demo item 8 adds the friend challenge writes, behind a wallet Bearer like the send.
     // Demo item 10 adds the duel writes (wallet Bearer) and the record hand-in (no Bearer: it proves itself).
+    // infra#87 adds the two account-protection actions (security key, send allowlist), wallet Bearer + JSON.
     expect(post.map(r => r.path)).toEqual([
       '^/api/wallet/send$',
+      '^/api/wallet/security-key/actions$',
+      '^/api/wallet/send-allowlist/actions$',
       '^/api/integrations/wolfram/reading-check$',
       '^/api/notifications/subscriptions$',
       '^/api/notifications/subscriptions/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test$',
@@ -294,6 +297,12 @@ describe('Stage 1.5 API traversal', () => {
     expect(edgeAdmits(`/api/wallet/${own}/nonce?x=1`)).toBe(false);
     expect(edgeAdmits(`/api/wallet/0x${'AB'.repeat(20)}/nonce`)).toBe(false); // edge regex is lowercase-only
     expect(edgeAdmits('/api/wallet/send')).toBe(false); // POST-only route is not a GET route
+    expect(post.slice(0, 3).every(r => r.requiresBearer)).toBe(true);
+    expect(edgeAdmits(`/api/wallet/${own}/security-key`)).toBe(true);
+    expect(edgeAdmits(`/api/wallet/${own}/send-allowlist`)).toBe(true);
+    expect(edgeAdmits(`/api/wallet/${own}/send-allowlist?at=1`)).toBe(false);
+    expect(edgeAdmits(`/api/wallet/0x${'AB'.repeat(20)}/security-key`)).toBe(false);
+    expect(edgeAdmits('/api/wallet/security-key/actions')).toBe(false); // POST-only
     for (const route of [...edge.get, ...post]) {
       expect(() => new RegExp(route.path)).not.toThrow();
       expect(route.path).not.toMatch(/\s|\\ /); // no literal space joining two paths
