@@ -246,7 +246,7 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
               </Typography>
             )}
             <Typography variant="caption" component="p" sx={{ color: palette.text.secondary, m: 0 }} data-testid="passkey-activation">
-              Sending is active once the chain reports it active.{' '}
+              Passkey sending is live on this testnet.{' '}
               {chain.blockHeight !== null ? `Current block: ${chain.blockHeight.toLocaleString('en-US')}.` : 'Current block: unavailable.'}
             </Typography>
           </Box>

@@ -148,7 +148,8 @@ describe('passkey wallet: activation note', () => {
     render(<PasskeyWalletPage />);
     const note = screen.getByTestId('passkey-activation');
     expect(note).toHaveTextContent('Current block: 4,210.');
-    expect(note).toHaveTextContent('active once the chain reports it active');
+    expect(note).toHaveTextContent('Passkey sending is live on this testnet.');
+    expect(note).not.toHaveTextContent('once the chain reports it active');
     expect(document.body.textContent).not.toMatch(/3400/);
   });
   it('says the height is unavailable rather than guessing', async () => {
