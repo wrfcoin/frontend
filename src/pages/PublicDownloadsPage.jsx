@@ -125,11 +125,16 @@ const ANDROID_PLATFORMS = [
   { os: 'iOS', status: 'neutral', label: 'Not available' },
 ];
 
-const STATION_PLATFORMS = [
-  { os: 'Ambient Weather (WS-2000, WS-5000 and others)', status: 'active', label: 'Supported' },
-  { os: 'Phone as a station', status: 'warning', label: 'Not yet available' },
-  { os: 'Radio receivers (rtl_433)', status: 'neutral', label: 'Experimental' },
-];
+/** The phone row follows the manifest: it is available only once the APK is published. */
+function stationPlatforms(apkPublished) {
+  return [
+    { os: 'Ambient Weather (WS-2000, WS-5000 and others)', status: 'active', label: 'Supported' },
+    apkPublished
+      ? { os: 'Phone as a station', status: 'active', label: 'With the Android app' }
+      : { os: 'Phone as a station', status: 'warning', label: 'Not yet available' },
+    { os: 'Radio receivers (rtl_433)', status: 'neutral', label: 'Experimental' },
+  ];
+}
 
 /** Design-system badge: `dot` adds the status dot; otherwise the label alone. */
 function Badge({ status, label, dot = false, className }) {
@@ -256,6 +261,7 @@ export default function PublicDownloadsPage() {
   const release = manifest?.release ?? null;
   const windowsNode = byId.get(WINDOWS_NODE_ID);
   const windowsPublished = Boolean(windowsNode?.published);
+  const apkPublished = Boolean(byId.get('android-apk')?.published);
   const facts = (artifactId, extra) => (
     <ReleaseFacts state={state} release={release} artifact={byId.get(artifactId)} label={artifactId} {...extra} />
   );
@@ -304,9 +310,16 @@ export default function PublicDownloadsPage() {
       badge: <Badge status={byId.get('android-apk')?.published ? 'active' : 'warning'} label={byId.get('android-apk')?.published ? 'Published' : 'Not yet published'} dot />,
       body: (
         <>
-          <p className="dl-secondary">{byId.get('android-apk')?.published ? 'Download details are reported by the release manifest below.' : 'Signed Android downloads are not yet published. Signing is scheduled after launch without a promised release date.'}</p>
-          <PlatformRows rows={ANDROID_PLATFORMS.map((row, i) => i === 0 && byId.get('android-apk')?.published ? { ...row, status: 'active', label: 'Published' } : row)} />
-          <p className="dl-req"><strong>Until then</strong> use the web wallet and the public quickstart.</p>
+          <p className="dl-secondary">{apkPublished ? 'Install it, make a wallet, then turn on Collect: your phone becomes a weather station. Download details are below.' : 'Signed Android downloads are not yet published. Signing is scheduled after launch without a promised release date.'}</p>
+          <PlatformRows rows={ANDROID_PLATFORMS.map((row, i) => i === 0 && apkPublished ? { ...row, status: 'active', label: 'Published' } : row)} />
+          {apkPublished ? (
+            <>
+              <p className="dl-req" data-testid="android-install-note"><strong>Installing</strong> Android asks once to allow installs from your browser. Write down your wallet's recovery words: they are the only way back into it.</p>
+              <p className="dl-req" data-testid="android-activation-note"><strong>After Collect</strong> your station waits for the network to activate it. There's no set time, and you don't need to do anything. Readings taken before activation are removed; rewards start with readings taken after it.</p>
+            </>
+          ) : (
+            <p className="dl-req"><strong>Until then</strong> use the web wallet and the public quickstart.</p>
+          )}
           {facts('android-apk')}
           <p className="dl-rel-note">Compare the SHA-256 before installing; Android also verifies the signature.</p>
         </>
@@ -348,8 +361,8 @@ export default function PublicDownloadsPage() {
       badge: <Badge status="active" label="No install" />,
       body: (
         <>
-          <p className="dl-secondary">Put your station's readings on the chain and on the map. Nothing to download: connect it from the website with your wallet.</p>
-          <PlatformRows rows={STATION_PLATFORMS} />
+          <p className="dl-secondary">Put your station's readings on the chain and on the map. {apkPublished ? 'Connect a home station from the website with your wallet, or use your phone with the Android app.' : 'Nothing to download: connect it from the website with your wallet.'}</p>
+          <PlatformRows rows={stationPlatforms(apkPublished)} />
           <p className="dl-req"><strong>Privacy</strong> Station locations are published at 0.1° only. Use the quickstart for current station setup guidance.</p>
         </>
       ),
