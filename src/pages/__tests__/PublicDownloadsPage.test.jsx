@@ -64,6 +64,9 @@ it('reads only the same-origin manifest and shows every artifact as not yet publ
   expect(releaseText()).not.toMatch(HEX64);
   expect(screen.getByRole('button', { name: 'Download APK' })).toBeDisabled();
   expect(screen.queryByRole('link', { name: 'Download APK' })).toBeNull();
+  expect(screen.getByText(/Until then/)).toBeInTheDocument();
+  expect(screen.queryByTestId('android-activation-note')).toBeNull();
+  expect(screen.queryByText('With the Android app')).toBeNull();
   // The verify section prints the manifest the page actually read.
   expect(screen.getByTestId('manifest-json').textContent).toContain('"published": false');
 });
@@ -88,6 +91,12 @@ it('renders release, commit, file, size, SHA-256 and signer for a published arti
   expect(within(screen.getByTestId('download-android-app')).getAllByText('Published')).toHaveLength(2);
   // The CLI entry is absent from this manifest: still "not yet published", never invented.
   expect(screen.getByTestId('release-cli-source')).toHaveTextContent('Not yet published');
+  // Published: no "Until then" fallback; install and activation-wait notes instead.
+  const card = screen.getByTestId('download-android-app');
+  expect(within(card).queryByText(/Until then/)).toBeNull();
+  expect(screen.getByTestId('android-install-note')).toHaveTextContent('recovery words');
+  expect(screen.getByTestId('android-activation-note')).toHaveTextContent('Readings taken before activation are removed');
+  expect(screen.getByText('With the Android app')).toBeInTheDocument();
 });
 
 it('treats a published flag without a verifiable hash or commit as not published', () => {
