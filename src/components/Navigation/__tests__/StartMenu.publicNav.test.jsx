@@ -67,7 +67,7 @@ describe('StartMenu in the public build', () => {
     const names = items.map(el => el.dataset.testid.replace('start-menu-item-', ''));
     expect(names).toEqual([
       'Home', 'Get started', 'Weather map', 'Explore', 'Nodes', 'Forecasters', 'Competition', 'Challenges', 'Duels', 'Search',
-      'Leaderboard', 'Governance', 'Forecast', 'Forecast check', 'Wallet', 'Connect a station', 'Downloads', 'Terms', 'Privacy', 'API terms', 'Security',
+      'Leaderboard', 'Governance', 'Forecast', 'Make a forecast', 'Forecast check', 'Wallet', 'Connect a station', 'Downloads', 'Terms', 'Privacy', 'API terms', 'Security',
     ]);
     const paths = renderedPaths();
     expect(paths).not.toContain(undefined);

@@ -276,6 +276,12 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
         </Typography>
       )}
 
+      {address && (
+        <Typography variant="body2" sx={{ mt: 2, color: palette.text.secondary }} data-testid="passkey-forecast-note">
+          Passkeys can't sign a forecast yet. To make forecasts, use a <a href="/onboarding">12-word wallet</a>, then go to <a href="/forecast/new">Make a forecast</a>.
+        </Typography>
+      )}
+
       {address && <NotifyMe key={address} address={address} title="Notify me about payouts" />}
 
       <WrfModal

@@ -39,7 +39,7 @@ describe('station detail route (Stage 1.5)', () => {
       [...PRIOR_READONLY, STATION, '/leaderboard/contributors', '/onboarding', '/wallet', '/connect-station', '/earn',
         '/governance/public', '/governance/public/:proposalId', '/governance', '/governance/comprehensive', '/weather/forecast', '/contributor/:key',
         '/forecasters', '/forecasters/:profileKey', '/competitions',
-        '/faucet/bond-grants', '/proof/:commitId', '/nodes', '/forecast-check', '/challenges', '/challenges/:code', '/duels', '/duels/:id'].sort(),
+        '/faucet/bond-grants', '/proof/:commitId', '/nodes', '/forecast-check', '/challenges', '/challenges/:code', '/duels', '/duels/:id', '/forecast/new'].sort(),
     );
     expect(paths).not.toContain('/earnings');
   });

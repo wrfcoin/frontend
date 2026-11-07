@@ -18,6 +18,7 @@ describe('Stage 1.5 public route policy', () => {
       '/forecast-check', '/forecast-check/x',
       '/challenges', '/challenges/:code', '/challenges/:code/x', '/challenge',
       '/duels', '/duels/:id', '/duels/:id/x', '/duel',
+      '/forecast/new', '/forecast/new/x', '/forecast/studio',
       '/wallet', '/onboarding', '/nfts', '/miner', '/dashboard',
       '/earnings', '/weather/dashboard', '/connect-station', '/earn', '/connect-station/x', '/earn/x',
       '/leaderboard', '/leaderboard/contributors/x', '/leaderboard/nearby', '/leaderboard/profile/:address',
@@ -55,6 +56,9 @@ describe('Stage 1.5 public route policy', () => {
     expect(isPublicTestnetPath('/challenges/:code/x', false, true)).toBe(false);
     // Demo item 10 duels: two exact entries.
     expect(isPublicTestnetPath('/duels/:id/x', false, true)).toBe(false);
+    // Website forecast: one exact entry; /forecast and /forecast/studio stay closed.
+    expect(isPublicTestnetPath('/forecast/new/x', false, true)).toBe(false);
+    expect(isPublicTestnetPath('/forecast/studio', false, true)).toBe(false);
     expect([...PUBLIC_ONBOARDING_PATHS]).toEqual(['/onboarding', '/wallet', '/wallet/passkey', '/wallet/passkey/bond-payout', '/connect-station', '/earn']);
   });
 
@@ -90,6 +94,7 @@ describe('Stage 1.5 station detail', () => {
       '/forecast-check',
       '/challenges', '/challenges/:code',
       '/duels', '/duels/:id',
+      '/forecast/new',
     ]);
   });
 
