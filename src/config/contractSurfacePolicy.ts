@@ -129,6 +129,12 @@ export const PUBLIC_READONLY_PATHS = new Set([
   // Exact entries.
   '/duels',
   '/duels/:id',
+  // Website forecast (design 2026-11-05, epic 7, demo week of 12-07): a 12-word wallet makes a forecast.
+  //   /forecast/new  reads GET /api/forecasts/status (public), /api/weather/stations and
+  //                  /api/stations/<alias>/observations?limit=1; as the signed-in wallet it POSTs
+  //                  /api/forecasts/draft and /api/forecasts/submit and reads GET /api/forecasts/mine.
+  // Exact entry: /forecast and /forecast/studio stay behind the /forecast operator-preview prefix.
+  '/forecast/new',
 ]);
 
 // Owner ruling 2026-10-02 FULL WEB JOIN PATH, frontend#437: admit the exact

@@ -48,6 +48,8 @@ const PUBLIC_ONBOARDING = [
   '/challenges', '/challenges/:code',
   // Demo item 10: free-play forecast duels (board and one duel).
   '/duels', '/duels/:id',
+  // Website forecast (design 2026-11-05): a 12-word wallet makes a forecast.
+  '/forecast/new',
 ];
 
 // The baseline set for a flag combination, plus the onboarding loop when the

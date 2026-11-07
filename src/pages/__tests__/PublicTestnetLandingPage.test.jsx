@@ -133,7 +133,7 @@ describe('PublicTestnetLandingPage', () => {
       '/search',
       '/leaderboard/contributors',
       '/governance/public',
-      '/weather/forecast',
+      '/weather/forecast', '/forecast/new',
       '/forecast-check',
       '/wallet',
       '/connect-station',

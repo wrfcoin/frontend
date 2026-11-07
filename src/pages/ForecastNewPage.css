@@ -1,0 +1,19 @@
+/* Make a forecast (/forecast/new). Builds on PublicForecastersPage.css and FriendChallengesPage.css; colours
+   are the --fc-* tokens from useForecasterThemeVars, so both themes follow the body theme. */
+.fn-page .ch-form .fc-note { margin: 0; }
+.fn-suggest { font-size: 0.8125rem; }
+.fn-mono { font-family: var(--fc-mono); font-size: 0.8125rem; overflow-wrap: anywhere; }
+.fn-fail { margin: 0 20px 12px; font-size: 0.8125rem; color: var(--fc-error-light, #d32f2f); }
+.ch-form .fn-fail { margin: 0; }
+.fn-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 16px; margin: 0; padding: 0 20px 14px; }
+.fn-facts dt { font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--fc-text-muted); }
+.fn-facts dd { margin: 2px 0 0; font-size: 0.875rem; color: var(--fc-text); min-width: 0; }
+.fn-status--committing, .fn-status--committed, .fn-status--revealing { color: var(--fc-info-light); }
+.fn-status--revealed { color: var(--fc-success-light); }
+.fn-status--failed { color: var(--fc-error-light, #d32f2f); }
+.fn-page .ch-notice a, .fn-page .ch-notice .fn-mono { color: inherit; }
+
+@media (max-width: 600px) {
+  .fn-facts { grid-template-columns: 1fr; padding: 0 16px 12px; }
+  .fn-fail { margin: 0 16px 12px; }
+}

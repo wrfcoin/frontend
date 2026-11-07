@@ -22,6 +22,7 @@ const FriendChallengesPage = lazy(() => import('../pages/FriendChallengesPage'))
 const FriendChallengeBoardPage = lazy(() => import('../pages/FriendChallengeBoardPage'));
 const ForecastDuelsPage = lazy(() => import('../pages/ForecastDuelsPage'));
 const ForecastDuelPage = lazy(() => import('../pages/ForecastDuelPage'));
+const ForecastNewPage = lazy(() => import('../pages/ForecastNewPage'));
 
 // Community & Social
 const CommunityForums = lazy(() => import('../components/CommunityForums'));
@@ -86,6 +87,8 @@ export default function communityRoutes({ isFeatureEnabled = () => false } = {})
     {/* Free-play forecast duels (backend#228, demo item 10): no stakes; the public route policy decides reachability */}
     <Route path="/duels" element={<PageWrapper tabType="community"><ForecastDuelsPage /></PageWrapper>} />
     <Route path="/duels/:id" element={<PageWrapper tabType="community"><ForecastDuelPage /></PageWrapper>} />
+    {/* Make a forecast from the website (design 2026-11-05, epic 7): 12-word wallets only; the public route policy decides reachability */}
+    <Route path="/forecast/new" element={<PageWrapper tabType="community"><ForecastNewPage /></PageWrapper>} />
 
     {/* Community */}
     {isFeatureEnabled('community') && <Route path="/community" element={<PageWrapper tabType="weather"><CommunityForums /></PageWrapper>} />}
