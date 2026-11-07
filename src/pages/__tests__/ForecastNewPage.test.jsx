@@ -9,7 +9,8 @@ import '@testing-library/jest-dom/jest-globals';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-globalThis.__VITE_ENV__ = { VITE_WRFCOIN_CHAIN_ID: '888' };
+// Object.assign, not an assignment: a JS expando here would widen the global's type for every test file.
+Object.assign(globalThis, { __VITE_ENV__: { VITE_WRFCOIN_CHAIN_ID: '888' } });
 const MNEMONIC = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 const { deriveAccount } = await import('../../services/walletCrypto/firstPartyKeys');
 const account = deriveAccount(MNEMONIC);
