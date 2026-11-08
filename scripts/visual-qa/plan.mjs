@@ -86,6 +86,7 @@ export const SCENARIOS = [
   { name: 'challenges-signed-in', route: '/challenges', note: 'after the real web-wallet setup: your challenges with chain counts' },
   { name: 'challenge-board-off', route: '/challenges/RAIN-7K2Q', note: 'the 404 while FRIEND_CHALLENGES_ENABLED is not true' },
   { name: 'duels-off', route: '/duels', note: 'the 404 while FORECAST_DUELS_ENABLED is not true' },
+  { name: 'connect-station-passkey', route: '/connect-station', note: 'a passkey wallet saved in this browser (fixture record), no 12-word wallet signed in' },
   { name: 'explore-address-off', route: '/explore', note: 'the 404 while the public balance read is switched off' },
   { name: 'explore-notify-visitor', route: '/explore', note: 'notifications on, not signed in: how to turn them on (backend#389)' },
   { name: 'explore-notify-owner', route: '/explore', note: 'signed in with the looked-up address: browser push and ntfy topics' },
