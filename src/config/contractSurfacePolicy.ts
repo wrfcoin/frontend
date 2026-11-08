@@ -75,8 +75,11 @@ export const PUBLIC_READONLY_PATHS = new Set([
   // One transaction / one address (VITE_EXPLORER_URL=self). Exact entries, never prefixes:
   //   /explore/tx/:hash            reads GET /api/blockchain/transactions/<64 hex> (status, block, type, block time)
   //   /explore/address/:address    reads GET /api/public/balance/<0x address> (same read as the /explore box)
+  //   /explore/block/:height       reads GET /api/blockchain/blocks/<digits> (backend#65 projection: header,
+  //                                transaction types, block reward totals; never who was paid)
   '/explore/tx/:hash',
   '/explore/address/:address',
+  '/explore/block/:height',
   '/explorer',
   '/map',
   '/search',

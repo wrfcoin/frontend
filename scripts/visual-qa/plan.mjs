@@ -11,6 +11,8 @@ export const PROOF_COMMIT = 'c0ffee'.padEnd(64, '0').replace(/0{8}$/, '4d2a91e7'
 // The fixture tx (fixtures.mjs EXPLORE_TX); any address gets the public-balance stub.
 export const EXPLORE_TX = 'f0reca57'.replace(/[^0-9a-f]/g, '0').padEnd(64, 'a');
 export const EXPLORE_ADDRESS = '0x7e57ab1e00000000000000000000000000c0ffee';
+// The fixture block (fixtures.mjs EXPLORE_BLOCK_ANSWER): the block the fixture tx is in.
+export const EXPLORE_BLOCK = 44807;
 
 export const ROUTES = [
   { name: 'home', route: '/' },
@@ -20,6 +22,7 @@ export const ROUTES = [
   { name: 'explorer', route: '/explorer' },
   { name: 'explore-tx', route: `/explore/tx/0x${EXPLORE_TX}` },
   { name: 'explore-address-page', route: `/explore/address/${EXPLORE_ADDRESS}` },
+  { name: 'explore-block', route: `/explore/block/${EXPLORE_BLOCK}` },
   { name: 'search', route: '/search' },
   { name: 'station-detail', route: '/weather/station/st-0' },
   { name: 'leaderboard', route: '/leaderboard/contributors' },
@@ -109,6 +112,7 @@ export const PARAM_ROUTE_EXAMPLES = {
   '/proof/:commitId': `/proof/${PROOF_COMMIT}`,
   '/explore/tx/:hash': `/explore/tx/0x${EXPLORE_TX}`,
   '/explore/address/:address': `/explore/address/${EXPLORE_ADDRESS}`,
+  '/explore/block/:height': `/explore/block/${EXPLORE_BLOCK}`,
   '/challenges/:code': '/challenges/RAIN-7K2Q',
   '/duels/:id': '/duels/6f1d2c4e-8a8b-4c1e-9d6a-1f2e3d4c5b6a',
 };

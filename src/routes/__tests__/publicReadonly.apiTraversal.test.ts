@@ -66,6 +66,7 @@ const { default: PublicReadOnlyExplorer } = await import(
   '../../components/explorer/PublicReadOnlyExplorer'
 );
 const { default: ExploreTxPage } = await import('../../pages/ExploreTxPage');
+const { default: ExploreBlockPage } = await import('../../pages/ExploreBlockPage');
 const { default: ExploreAddressPage } = await import('../../pages/ExploreAddressPage');
 const { default: PublicReadOnlySearch } = await import(
   '../../components/Search/PublicReadOnlySearch'
@@ -161,6 +162,10 @@ async function renderPublicRoute(
               element: React.createElement(ExploreAddressPage),
             }),
             React.createElement(Route, {
+              path: '/explore/block/:height',
+              element: React.createElement(ExploreBlockPage),
+            }),
+            React.createElement(Route, {
               path: '/search',
               element: React.createElement(PublicReadOnlySearch),
             }),
@@ -254,12 +259,12 @@ describe('Stage 1.5 API traversal', () => {
     expect(edgeAdmits('/api/stations/st_406339c8ab53/ownership?x=1')).toBe(false);
   });
 
-  it('does not ask the edge for a block by height (never admitted)', async () => {
-    const requests = await renderPublicRoute('/search?q=42', { expectRequests: false });
-    await waitFor(() =>
-      expect(requests.container?.textContent).toContain('not available on the public site'),
-    );
-    expect([...requests]).toEqual([]);
+  it('a block number in search opens the block page, which asks only the admitted block read', async () => {
+    const requests = await renderPublicRoute('/search?q=42');
+    await waitFor(() => expect([...requests]).toContain('/api/blockchain/blocks/42'));
+    for (const target of requests) expect(edgeAdmits(target)).toBe(true);
+    expect(edgeAdmits('/api/blockchain/blocks/42?raw=true')).toBe(false);
+    expect(edgeAdmits('/api/blockchain/blocks/latest')).toBe(false);
   });
 
   it('never requests per-station earnings in the public build', async () => {
@@ -327,7 +332,8 @@ describe('Stage 1.5 API traversal', () => {
     expect(edgeAdmits('/api/stations/station-1/observations?limit=1')).toBe(true);
     expect(edgeAdmits('/api/stations/station-1/earnings')).toBe(true);
     for (const refused of [
-      '/api/blockchain/blocks/42',
+      '/api/blockchain/blocks/42?x=1',
+      '/api/blockchain/blocks/12345678901',
       '/api/stations/station-1/earnings?limit=5', // edge admits the bare path only (infra#1318 era)
       '/api/weather/stations?lat=40&lng=-100',
       '/api/stations/station-1/submissions?limit=100',

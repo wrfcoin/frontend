@@ -309,7 +309,24 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
   // /explore/tx/:hash (backend GET /api/blockchain/transactions/:hash): an included forecast commit.
   const EXPLORE_TX = 'f0reca57'.replace(/[^0-9a-f]/g, '0').padEnd(64, 'a');
   const EXPLORE_TX_ANSWER = { success: true, data: { hash: `0x${EXPLORE_TX}`, status: 'included', blockHeight: 44807, txType: 'ForecastCommit', timestamp: iso(7 * 77_000), windowLimited: true } };
-  return { EXPLORE_TX, EXPLORE_TX_ANSWER, NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, FORECAST_CHECK, FORECAST_CHECK_EMPTY, CHALLENGE_CODE, CHALLENGE: challengeFor_, TEAM_CHALLENGE, DUEL_ID, DUELS, DUEL_DECIDED, downloadsManifest: readFixture('downloads-manifest.json') };
+  // /explore/block/:height (backend GET /api/blockchain/blocks/:height, backend#65 projection): the block
+  // holding EXPLORE_TX, with aggregates only (no address, station id or per-identity amount).
+  const EXPLORE_BLOCK_ANSWER = {
+    height: 44807, hash: hex(64), previousHash: hex(64), timestamp: Math.floor((Date.now() - 7 * 77_000) / 1000), transactionCount: 4,
+    transactions: [
+      { type: 'ForecastCommit' },
+      { type: 'ContributionReveal', payload: { commit_id: PROOF_COMMIT } },
+      { type: 'OracleAttestation', payload: { commit_id: PROOF_COMMIT, oracle_id: 'oracle-1', approved: true } },
+      { type: 'OracleAttestation', payload: { commit_id: PROOF_COMMIT, oracle_id: 'oracle-2', approved: true } },
+    ],
+    metadata: {
+      rewards_minted_total: '100000000',
+      reward_entries_summary: { count: 1, total_amount: '100000000' },
+      attester_settlements_summary: { count: 2, total_amount: '20000000' },
+      producer_settlement: { amount: '50000000', height: 44807 },
+    },
+  };
+  return { EXPLORE_TX, EXPLORE_TX_ANSWER, EXPLORE_BLOCK_ANSWER, NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, FORECAST_CHECK, FORECAST_CHECK_EMPTY, CHALLENGE_CODE, CHALLENGE: challengeFor_, TEAM_CHALLENGE, DUEL_ID, DUELS, DUEL_DECIDED, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -497,6 +514,10 @@ export async function installRoutes(page, fx, options = {}) {
     if ((m = /^\/api\/blockchain\/transactions\/(?:0x)?([0-9a-fA-F]{64})$/.exec(p))) {
       if (m[1].toLowerCase() !== fx.EXPLORE_TX) return json(route, { success: true, data: { hash: `0x${m[1].toLowerCase()}`, status: 'unknown', blockHeight: null, txType: null, timestamp: null, windowLimited: true } });
       return json(route, fx.EXPLORE_TX_ANSWER);
+    }
+    if ((m = /^\/api\/blockchain\/blocks\/([0-9]{1,10})$/.exec(p))) {
+      if (Number(m[1]) !== fx.EXPLORE_BLOCK_ANSWER.height) return json(route, { error: true, message: 'Block not found' }, 404);
+      return json(route, fx.EXPLORE_BLOCK_ANSWER);
     }
     if (p === '/api/faucet/bond-grants') {
       if (bondGrantsMode === 'unavailable') return json(route, { error: { code: 'BOND_GRANTS_UNAVAILABLE', message: 'Bond grant history is unavailable' } }, 503);

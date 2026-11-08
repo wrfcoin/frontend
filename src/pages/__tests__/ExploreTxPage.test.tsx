@@ -35,6 +35,7 @@ describe('/explore/tx/:hash', () => {
     expect((await screen.findByTestId('explore-tx-status')).textContent).toBe('Confirmed');
     expect(screen.getByTestId('explore-tx-type').textContent).toContain('Forecast (sealed)');
     expect(screen.getByTestId('explore-tx-block').textContent).toContain('4,321');
+    expect(screen.getByTestId('explore-tx-block-link').getAttribute('href')).toBe('/explore/block/4321');
     expect(screen.getByTestId('explore-tx-hash').textContent).toBe(HASH);
     expect(requests).toEqual([`/api/blockchain/transactions/${HASH}`]);
   });

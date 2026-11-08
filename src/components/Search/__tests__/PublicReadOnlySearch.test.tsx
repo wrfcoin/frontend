@@ -68,10 +68,17 @@ describe('PublicReadOnlySearch (Stage 1.5)', () => {
     expect((await screen.findByTestId('landed')).textContent).toBe(`/explore/address/0x${'c'.repeat(40)}`);
   });
 
-  it('a block height sends nothing and points at the Explorer', async () => {
+  it('a block number opens its /explore/block page and sends nothing itself', async () => {
     answer(200);
-    renderSearch('24356');
-    expect(await screen.findByText(/Looking up a single block is not available on the public site/)).toBeTruthy();
+    renderSearchRouted('24356');
+    expect((await screen.findByTestId('landed')).textContent).toBe('/explore/block/24356');
+    expect(requests).toEqual([]);
+  });
+
+  it('a block number longer than the edge admits sends nothing and points at the Explorer', async () => {
+    answer(200);
+    renderSearch('12345678901');
+    expect(await screen.findByText(/That block number is too large/)).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Block Explorer' }).getAttribute('href')).toBe('/explore');
     await new Promise(resolve => setTimeout(resolve, 20));
     expect(requests).toEqual([]);

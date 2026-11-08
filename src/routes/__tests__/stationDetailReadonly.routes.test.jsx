@@ -40,7 +40,7 @@ describe('station detail route (Stage 1.5)', () => {
         '/governance/public', '/governance/public/:proposalId', '/governance', '/governance/comprehensive', '/weather/forecast', '/contributor/:key',
         '/forecasters', '/forecasters/:profileKey', '/competitions',
         '/faucet/bond-grants', '/proof/:commitId', '/nodes', '/forecast-check', '/challenges', '/challenges/:code', '/duels', '/duels/:id', '/forecast/new',
-        '/explore/tx/:hash', '/explore/address/:address'].sort(),
+        '/explore/tx/:hash', '/explore/address/:address', '/explore/block/:height'].sort(),
     );
     expect(paths).not.toContain('/earnings');
   });
