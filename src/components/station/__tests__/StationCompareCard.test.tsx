@@ -11,14 +11,14 @@ import { formatDifference, headline, normalizeStationCompare } from '../../../ut
 const body = (over: Record<string, unknown> = {}) => ({
   status: 'ok',
   observedAt: 1_790_000_000,
-  nearby: { stations: 2, radiusKm: 100, reason: null },
+  nearby: { stations: 3, radiusKm: 100, reason: null },
   nws: { stationIdentifier: 'KBFI', observedAt: 1_789_999_100, reason: null },
   variables: [
     { variable: 'temperature_c', mine: 12, closeWithin: 1.5,
-      nearby: { stations: 2, median: 10.5, lowest: 10, highest: 11, difference: 1.5, agreement: 'close' },
+      nearby: { stations: 3, median: 10.5, lowest: 10, highest: 11, difference: 1.5, agreement: 'close' },
       nws: { value: 11, difference: 1, agreement: 'close' } },
     { variable: 'humidity_pct', mine: 60, closeWithin: 8,
-      nearby: { stations: 2, median: 70, lowest: 68, highest: 72, difference: -10, agreement: 'lower' },
+      nearby: { stations: 3, median: 70, lowest: 68, highest: 72, difference: -10, agreement: 'lower' },
       nws: { value: 70, difference: -10, agreement: 'lower' } },
     { variable: 'dewpoint_c', mine: null, closeWithin: 1.5, nearby: null, nws: null },
   ],
@@ -40,7 +40,7 @@ describe('normalizeStationCompare', () => {
     const v = normalizeStationCompare(body({
       nws: { stationIdentifier: '<script>', observedAt: 'x', reason: null },
       variables: [
-        { variable: 'temperature_c', mine: 12, closeWithin: 1.5, nearby: { stations: 2, median: 'warm' }, nws: { value: 11, difference: 1, agreement: 'maybe' } },
+        { variable: 'temperature_c', mine: 12, closeWithin: 1.5, nearby: { stations: 3, median: 'warm' }, nws: { value: 11, difference: 1, agreement: 'maybe' } },
         { variable: 'latitude', mine: 47.6 },
       ],
     }));
@@ -76,7 +76,7 @@ describe('StationCompareCard', () => {
     render(<StationCompareCard view={normalizeStationCompare(body())} unavailable={false} />);
     const temp = screen.getByTestId('station-compare-row-temperature_c');
     expect(temp).toHaveTextContent('53.6°F'); // 12 °C
-    expect(within(temp).getByText('Nearby (2 stations)')).toBeInTheDocument();
+    expect(within(temp).getByText('Nearby (3 stations)')).toBeInTheDocument();
     expect(within(temp).getByText('NWS KBFI')).toBeInTheDocument();
     expect(temp).toHaveTextContent('range 50.0°F to 51.8°F');
     const hum = screen.getByTestId('station-compare-row-humidity_pct');
@@ -88,7 +88,7 @@ describe('StationCompareCard', () => {
   it('shows the reason when a reference is missing', () => {
     render(<StationCompareCard
       view={normalizeStationCompare(body({
-        nearby: { stations: 0, radiusKm: 100, reason: 'No other registered station is within 100 km.' },
+        nearby: { stations: 0, radiusKm: 100, reason: 'Not enough nearby stations: a nearby comparison needs at least 3 other stations within 100 km with a reading from about the same time.' },
         nws: { stationIdentifier: null, observedAt: null, reason: 'The National Weather Service did not answer for this area (it covers the US only).' },
         variables: [{ variable: 'temperature_c', mine: 25, closeWithin: 1.5, nearby: null, nws: null }],
       }))}
@@ -96,7 +96,7 @@ describe('StationCompareCard', () => {
     />);
     expect(screen.getByTestId('station-compare-headline')).toHaveTextContent('Nothing to compare with yet');
     const reasons = screen.getByTestId('station-compare-reasons');
-    expect(reasons).toHaveTextContent('Nearby: No other registered station is within 100 km.');
+    expect(reasons).toHaveTextContent('Nearby: Not enough nearby stations');
     expect(reasons).toHaveTextContent('US only');
   });
 

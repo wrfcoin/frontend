@@ -90,7 +90,7 @@ export default function StationCompareCard({ view, unavailable }: { view: Statio
           <Typography sx={{ color: text, mb: 0.5 }} data-testid="station-compare-headline">{headline(view)}</Typography>
           <Typography variant="body2" sx={{ color: textSecondary, mb: 2 }}>
             Newest reading on chain, {timeOf(view.observedAt)}. Nearby means other WRFCoin stations within {view.nearby.radiusKm} km
-            {' '}(their median, not any one station). NWS is the nearest National Weather Service observation.
+            {' '}(their median, shown only when at least 3 report, never any one station). NWS is the nearest National Weather Service observation.
           </Typography>
           <Stack spacing={1.5}>
             {view.rows.map(row => (
@@ -114,10 +114,10 @@ export default function StationCompareCard({ view, unavailable }: { view: Statio
                   <Typography variant="caption" sx={{ color: textSecondary }}>your station</Typography>
                 </Box>
                 <Cell
-                  label={row.nearby ? `Nearby (${row.nearby.stations} ${row.nearby.stations === 1 ? 'station' : 'stations'})` : 'Nearby'}
+                  label={row.nearby ? `Nearby (${row.nearby.stations} stations)` : 'Nearby'}
                   row={row}
                   reference={row.nearby ? { value: row.nearby.median, difference: row.nearby.difference, agreement: row.nearby.agreement } : null}
-                  extra={row.nearby && row.nearby.stations > 1
+                  extra={row.nearby
                     ? `range ${formatValue(row.variable, row.nearby.lowest)} to ${formatValue(row.variable, row.nearby.highest)}`
                     : undefined}
                 />

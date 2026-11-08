@@ -4,7 +4,8 @@
  * cannot read is dropped rather than guessed.
  *
  * The server sends aggregates only for nearby stations (how many, median, lowest,
- * highest) and never another station's id, name or location.
+ * highest), only when at least 3 stations contribute, and never another station's
+ * id, name or location.
  */
 
 export type CompareVariable = 'temperature_c' | 'humidity_pct' | 'dewpoint_c';

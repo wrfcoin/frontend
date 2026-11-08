@@ -1,5 +1,5 @@
 {
-  "backendCommit": "84997d9bf34e27e4690c89f229794af5ffed6d7f",
+  "backendCommit": "51d889b3bb033d8d9ef2345136f0729f67f92514",
   "sourcePath": "server/enhanced_unified_api_optimized.ts",
   "mounts": [
     "/api",
