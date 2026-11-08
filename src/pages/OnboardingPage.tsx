@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense, useCallback } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { Stepper, Step, StepLabel, Box, Typography, CircularProgress, Collapse } from '@mui/material';
 import { ExpandMore, ExpandLess } from '@mui/icons-material';
 import { WrfButton, WrfCard, WrfAlert, WrfInput } from '../components/DesignSystem';
@@ -10,6 +10,7 @@ import { SocialLoginButton } from '../components/auth/SocialLoginButton';
 import FEATURES from '../config/features';
 import { WRFCOIN_CHAIN_ID } from '../config/network';
 import WebWalletSetup from '../components/wallet/WebWalletSetup';
+import { unlockReturnPath } from './unlockReturn';
 
 // @ts-ignore - WalletContext is a .jsx file
 import { useWallet } from '../contexts/WalletContext.jsx';
@@ -969,6 +970,9 @@ export default function OnboardingPage() {
 
   const { isConnected, account, chainId } = useWallet();
   const [webWalletReady, setWebWalletReady] = useState(false);
+  const navigate = useNavigate();
+  // A page that sent the visitor here to unlock the 12-word wallet (e.g. /connect-station) gets them back after.
+  const returnTo = unlockReturnPath(useLocation()?.state);
   // The 12-word wallet is Advanced when the passkey wallet is served; open at once if this browser holds one.
   const [phraseOpen, setPhraseOpen] = useState(() => !FEATURES.passkeyWallet || Boolean(readSavedVaultAddress()));
   const walletStep = (isPublicBuild() && !webWalletReady) || currentStep === 0;
@@ -1015,6 +1019,8 @@ export default function OnboardingPage() {
           completeStep(0, { walletAddress: address });
         }
         setWebWalletReady(true);
+        // Client-side, so the unlocked wallet's signing identity stays in memory.
+        if (returnTo) navigate(returnTo);
       }} />;
     }
     switch (currentStep) {
