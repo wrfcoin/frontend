@@ -107,7 +107,9 @@ export default function ExploreTxPage() {
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
                   <Field label="Type" testId="explore-tx-type">{txTypeLabel(view.value.txType)}</Field>
                   <Field label="Block" testId="explore-tx-block">
-                    {view.value.blockHeight === null ? 'Not in a block yet' : view.value.blockHeight.toLocaleString()}
+                    {view.value.blockHeight === null
+                      ? 'Not in a block yet'
+                      : <RouterLink to={`/explore/block/${view.value.blockHeight}`} data-testid="explore-tx-block-link">{view.value.blockHeight.toLocaleString()}</RouterLink>}
                   </Field>
                   <Field label="Block time" testId="explore-tx-time">
                     {view.value.status === 'included' ? blockTime(view.value.timestamp) : '—'}

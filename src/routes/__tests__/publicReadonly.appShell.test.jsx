@@ -233,7 +233,8 @@ const ROUTES = [
   { path: `/search?q=${HASH}`, expect: [`/api/blockchain/transactions/0x${HASH}`], text: 'Transaction lookup is not switched on', url: `/explore/tx/0x${HASH}` },
   { path: `/explore/tx/0x${HASH}`, expect: [`/api/blockchain/transactions/0x${HASH}`], text: 'Transaction lookup is not switched on' },
   { path: `/explore/address/0x${'c'.repeat(40)}`, expect: [`/api/public/balance/0x${'c'.repeat(40)}`], text: 'Look up an address' },
-  { path: '/search?q=24356', expect: [], text: 'not available on the public site' },
+  { path: '/search?q=24356', expect: ['/api/blockchain/blocks/24356'], text: 'Block 24,356', url: '/explore/block/24356' },
+  { path: '/explore/block/24356', expect: ['/api/blockchain/blocks/24356'], text: 'Block 24,356' },
   { path: '/map', expect: ['/api/weather/stations'], text: 'Weather Network Map' },
   // frontend#437: the onboarding loop, with no keys on the web.
   { path: '/onboarding', expect: [], text: 'Create New Wallet' },

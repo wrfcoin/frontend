@@ -90,6 +90,7 @@ export const PUBLIC_NON_MENU_PATHS: Readonly<Record<string, string>> = {
   '/forecasters/:profileKey': 'track record reached from the forecasters page, not a destination',
   '/explore/tx/:hash': 'one transaction, opened from a hash link on the wallet, forecast or bond-grant pages, not a destination',
   '/explore/address/:address': 'one address, opened from the wallet address link, not a destination',
+  '/explore/block/:height': 'one block, opened from a transaction page, search or a block link, not a destination',
   '/faucet/bond-grants': 'bond-grant audit list linked from the node operator guide, not a destination',
   '/proof/:commitId': 'proof card for one station reading, opened from a station page or a shared link, not a destination',
   '/challenges/:code': 'one friend challenge board, opened from a shared invite link, not a destination',
