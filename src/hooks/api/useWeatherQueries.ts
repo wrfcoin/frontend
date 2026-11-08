@@ -4,6 +4,7 @@ import { queryKeys } from '../../lib/queryClient';
 import {
   calibrationService,
   earningsService,
+  stationCompareService,
   weatherService,
   type EarningsSummary,
   type StationObservation,
@@ -148,5 +149,20 @@ export function useStationCalibration(stationId: string | undefined) {
     enabled: Boolean(stationId),
     retry: retryStationCalibration,
     staleTime: 60_000,
+  });
+}
+
+/**
+ * "How does my station compare?" (Epic 8). Same retry rule as calibration: a 404 means the read is
+ * not live on this network (the card is then not shown), and only a server or network failure gets
+ * one more try. The backend caches each answer for two minutes.
+ */
+export function useStationCompare(stationId: string | undefined) {
+  return useQuery({
+    queryKey: ['weather', 'compare', stationId ?? ''] as const,
+    queryFn: () => stationCompareService.getStationCompare(stationId as string),
+    enabled: Boolean(stationId),
+    retry: retryStationCalibration,
+    staleTime: 120_000,
   });
 }
