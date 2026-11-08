@@ -48,6 +48,7 @@ import { proofPagePath } from '../../services/publicReadonlyApi';
 import {
   useLatestObservations,
   useStationCalibration,
+  useStationCompare,
   useStationQuality,
   useSubmissionLog,
   useWeatherStations,
@@ -64,6 +65,7 @@ import {
 import FirstEarnCelebration from './FirstEarnCelebration';
 import StationOwnershipCard from '../station/StationOwnershipCard';
 import StationCalibrationCard, { CalibrationBadge } from '../station/StationCalibrationCard';
+import StationCompareCard from '../station/StationCompareCard';
 import ApiError from '../../utils/apiError';
 import { useStationOwner } from '../../hooks/api/useStationOwnerQueries';
 import { formatBaseUnitsToWrf } from '../../services/apiClient/number';
@@ -213,6 +215,10 @@ const StationReportPage: React.FC = () => {
   // feature is off on this network, so the section is not shown at all.
   const calibrationQuery = useStationCalibration(knownStationId);
   const calibrationOff = calibrationQuery.error instanceof ApiError && calibrationQuery.error.status === 404;
+  // "How does my station compare?" (Epic 8). A 404 means the read is not live on this network yet
+  // (backend or edge), so the section is not shown at all.
+  const compareQuery = useStationCompare(knownStationId);
+  const compareOff = compareQuery.error instanceof ApiError && compareQuery.error.status === 404;
   const earningsSummaryQuery = useWeatherEarnings(earningsStationId);
   const earningsHistoryQuery = useWeatherEarningsHistory(earningsStationId);
   // "My first WRF earned" is the owner's moment (frontend#387). The public
@@ -630,6 +636,14 @@ const StationReportPage: React.FC = () => {
         <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, color: palette.text, mb: 3 }}>
           <CardContent sx={{ p: 3 }}>
             <StationCalibrationCard view={calibrationQuery.data} unavailable={calibrationQuery.isError} />
+          </CardContent>
+        </Card>
+      )}
+
+      {knownStationId && !compareOff && (
+        <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, color: palette.text, mb: 3 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <StationCompareCard view={compareQuery.data} unavailable={compareQuery.isError} />
           </CardContent>
         </Card>
       )}
