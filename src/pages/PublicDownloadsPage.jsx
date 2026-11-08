@@ -471,7 +471,7 @@ export default function PublicDownloadsPage() {
           </div>
           <div>
             <h3>3 · Trust the source</h3>
-            <p className="dl-secondary">Releases are GitHub Releases under the wrfcoin organization with their source commit. Check the join guide for the node build procedure. Mismatch or doubt: <span className="dl-mono">security@wrfcoin.com</span>.</p>
+            <p className="dl-secondary">Releases are served by this site or as GitHub Releases under the wrfcoin organization, each with its source commit. Check the join guide for the node build procedure. Mismatch or doubt: <span className="dl-mono">security@wrfcoin.com</span>.</p>
             <WrfButton variant="outline" size="sm" component={Link} to={LINKS.securityPolicy}>Security policy</WrfButton>
           </div>
         </div>

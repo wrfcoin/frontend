@@ -210,6 +210,8 @@ body.light-mode .dl-hero { background: linear-gradient(135deg, #EFF6FF 0%, var(-
 }
 .dl-rel-row dd { margin: 0; color: var(--dl-text); min-width: 0; display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
 .dl-rel-row dd .dl-mono { font-size: 0.75rem; color: var(--dl-code); word-break: break-all; line-height: 1.5; }
+/* A signer may name a certificate fingerprint: one long unbroken word that must wrap on a phone. */
+.dl-rel-row dd .dl-signer { overflow-wrap: anywhere; min-width: 0; }
 .dl-rel-row dd .dl-cmdline { display: block; width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; }
 .dl-rel-row dd .dl-copy { margin-top: -4px; }
 .dl-rel-hint { font-size: 0.75rem; color: var(--dl-text-secondary); }
