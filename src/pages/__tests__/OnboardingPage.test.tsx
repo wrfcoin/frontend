@@ -68,8 +68,10 @@ await jest.unstable_mockModule('../../utils/walletUtils.ts', () => ({
 }));
 
 const mockNavigate = jest.fn();
+let mockLocationState: unknown = null;
 await jest.unstable_mockModule('react-router', () => ({
   useNavigate: () => mockNavigate,
+  useLocation: () => ({ state: mockLocationState }),
 }));
 
 await jest.unstable_mockModule('../../components/wallet/v2/HardwareWalletSection.jsx', () => ({
@@ -177,6 +179,12 @@ const mockReadVault = jest.fn<() => unknown>().mockReturnValue(null);
 const actualVault = await import('../../services/walletVault.ts');
 await jest.unstable_mockModule('../../services/walletVault.ts', () => ({ ...actualVault, readVault: () => mockReadVault() }));
 
+// The public build's 12-word setup, reduced to "finish": it calls onComplete as a real unlock does.
+await jest.unstable_mockModule('../../components/wallet/WebWalletSetup', () => ({
+  default: ({ onComplete }: { onComplete: (address: string) => void }) =>
+    React.createElement('button', { onClick: () => onComplete('0x' + 'd'.repeat(40)) }, 'Finish 12-word setup'),
+}));
+
 global.fetch = jest.fn() as typeof global.fetch;
 
 const { default: OnboardingPage, FAUCET_TERMS, PASSKEY_PRIMARY_TITLE, PHRASE_ADVANCED_LABEL } = await import('../OnboardingPage');
@@ -213,6 +221,34 @@ describe('OnboardingPage', () => {
     mockRegisterPasskey.mockResolvedValue({ credentialId: new Uint8Array(1), publicKeyXY: new Uint8Array(64), rpId: 'localhost' });
     mockLoadStoredPasskey.mockReturnValue(null);
     mockReadVault.mockReturnValue(null);
+    mockLocationState = null;
+  });
+
+  describe('public build: return to the page that asked for an unlock', () => {
+    const flags = FEATURES as { publicReadonly: boolean; fullStudio: boolean };
+    let saved: { publicReadonly: boolean; fullStudio: boolean };
+    beforeEach(() => { saved = { publicReadonly: flags.publicReadonly, fullStudio: flags.fullStudio }; flags.publicReadonly = true; flags.fullStudio = false; });
+    afterEach(() => { flags.publicReadonly = saved.publicReadonly; flags.fullStudio = saved.fullStudio; });
+
+    it('sent from /connect-station: goes back there after the unlock', () => {
+      mockLocationState = { returnTo: '/connect-station' };
+      renderPage();
+      fireEvent.click(screen.getByText('Finish 12-word setup'));
+      expect(mockNavigate).toHaveBeenCalledWith('/connect-station');
+    });
+
+    it('a return path outside the allowlist is ignored', () => {
+      mockLocationState = { returnTo: 'https://evil.example/' };
+      renderPage();
+      fireEvent.click(screen.getByText('Finish 12-word setup'));
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('no return path: stays in onboarding', () => {
+      renderPage();
+      fireEvent.click(screen.getByText('Finish 12-word setup'));
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
   });
 
   it('renders stepper with 4 step labels', () => {

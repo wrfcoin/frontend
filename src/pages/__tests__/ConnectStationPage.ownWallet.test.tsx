@@ -58,6 +58,14 @@ const savePasskey = () => localStorage.setItem(PASSKEY_KEY, JSON.stringify({
   credentialId: '01'.repeat(16), publicKeyXY: '02'.repeat(64), rpId: 'wrfcoin.com',
 }));
 
+// A 12-word wallet saved in this browser but locked: only its public address is read.
+const VAULT_ADDRESS = `0x${'cd'.repeat(20)}`;
+const saveLockedVault = () => localStorage.setItem('wrfcoin_wallet_vault_v1', JSON.stringify({
+  v: 1, scheme: 'ed25519-slip10-master-v1', address: VAULT_ADDRESS,
+  kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 600_000, salt: 'AA==' },
+  cipher: { name: 'AES-GCM', iv: 'AA==' }, ct: 'AA==',
+}));
+
 describe('ConnectStationPage joins with the visitor\'s one wallet (W28)', () => {
   beforeEach(() => {
     owned = null;
@@ -117,6 +125,40 @@ describe('ConnectStationPage joins with the visitor\'s one wallet (W28)', () => 
     expect(screen.queryByText('Use this wallet')).toBeNull();
     fireEvent.click(screen.getByText('Open wallet setup'));
     expect(navigateMock).toHaveBeenCalledWith('/onboarding');
+  });
+
+  it('passkey AND a locked 12-word wallet saved: offers to unlock the 12-word one and come back, not to make another', () => {
+    savePasskey();
+    saveLockedVault();
+    render(<ConnectStationPage />);
+    expect(screen.getByText('Unlock your 12-word wallet')).toBeInTheDocument();
+    expect(screen.getByText(VAULT_ADDRESS)).toBeInTheDocument();
+    expect(screen.getByText(/not your passkey wallet/)).toBeInTheDocument();
+    expect(screen.queryByText('Stations need a 12-word wallet')).toBeNull();
+    expect(screen.queryByText('Use this wallet')).toBeNull();
+    fireEvent.click(screen.getByText('Unlock 12-word wallet'));
+    expect(navigateMock).toHaveBeenCalledWith('/onboarding', { state: { returnTo: '/connect-station' } });
+  });
+
+  it('only a locked 12-word wallet saved: offers to unlock it', () => {
+    saveLockedVault();
+    render(<ConnectStationPage />);
+    expect(screen.getByText('Unlock your 12-word wallet')).toBeInTheDocument();
+    expect(screen.queryByText(/not your passkey wallet/)).toBeNull();
+    expect(screen.queryByText('Set up or unlock your wallet first')).toBeNull();
+  });
+
+  it('signed in with a passkey saved too: says the station stays with the 12-word wallet', () => {
+    owned = OWNED;
+    savePasskey();
+    render(<ConnectStationPage />);
+    expect(screen.getByText(/stay with this one/)).toBeInTheDocument();
+  });
+
+  it('signed in, no passkey: no passkey note', () => {
+    owned = OWNED;
+    render(<ConnectStationPage />);
+    expect(screen.queryByText(/stay with this one/)).toBeNull();
   });
 
   it('public build, a malformed saved passkey record counts as no wallet', () => {

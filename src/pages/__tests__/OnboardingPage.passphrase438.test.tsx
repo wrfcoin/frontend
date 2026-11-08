@@ -41,8 +41,10 @@ await jest.unstable_mockModule('../../contexts/WalletContext.jsx', () => ({
 }));
 
 const mockNavigate = jest.fn();
+let mockLocationState: unknown = null;
 await jest.unstable_mockModule('react-router', () => ({
   useNavigate: () => mockNavigate,
+  useLocation: () => ({ state: mockLocationState }),
 }));
 
 await jest.unstable_mockModule('../../components/wallet/v2/HardwareWalletSection.jsx', () => ({

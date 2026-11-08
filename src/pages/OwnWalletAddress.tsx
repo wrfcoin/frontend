@@ -14,6 +14,7 @@ import PhoneStationStatusCard from '../components/wallet/PhoneStationStatusCard'
 import WalletEarningsPanel from '../components/wallet/WalletEarningsPanel';
 import VaultSend from '../components/wallet/VaultSend';
 import RecoveryPhraseBackup from '../components/wallet/RecoveryPhraseBackup';
+import WalletSwitcher from '../components/wallet/WalletSwitcher';
 import { loadStoredPasskey } from '../services/walletCrypto/passkeySend';
 import { readVault } from '../services/walletVault';
 import { FEATURES } from '../config/features';
@@ -90,12 +91,6 @@ export default function OwnWalletAddress() {
   const navigate = useNavigate();
   const isDark = useIsDarkTheme();
   const openSetup = useCallback(() => navigate('/onboarding'), [navigate]);
-  // A real link (href) so it can be opened in a new tab; a plain click stays in the app.
-  const openPasskey = useCallback((event: React.MouseEvent) => {
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
-    event.preventDefault();
-    navigate(PASSKEY_WALLET_PATH);
-  }, [navigate]);
   const [copied, setCopied] = useState(false);
   // Read once per mount: public material only (the passkey pointer) and whether a 12-word vault exists.
   const [hasPasskey] = useState(() => Boolean(FEATURES.passkeyWallet && loadStoredPasskey()));
@@ -119,6 +114,8 @@ export default function OwnWalletAddress() {
 
   return (
     <Box component="section" aria-label="Your wallet" sx={{ maxWidth: 1120, mx: 'auto', px: { xs: 2, md: 3 }, py: { xs: 2, md: 3 } }}>
+      {/* Passkey build: both wallets this browser holds, side by side (the passkey link moved in here). */}
+      <WalletSwitcher current="phrase" unlockedAddress={ownsAddress ? account : null} />
       <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2, mb: 3 }}>
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="h4" component="h1" fontWeight={700} sx={{ m: 0 }}>Your wallet</Typography>
@@ -152,16 +149,6 @@ export default function OwnWalletAddress() {
           </Box>
         )}
       </Box>
-
-      {/* Only in a build with the passkey flag on, where /wallet/passkey is a route. */}
-      {FEATURES.passkeyWallet && ownerAddress && (
-        <Box data-testid="wallet-passkey-link" sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 2 }}>
-          <Typography sx={{ color: palette.text.secondary }}>{PASSKEY_PROMPT}</Typography>
-          <WrfButton variant="outline" size="sm" startIcon={<FingerprintIcon fontSize="small" />} href={PASSKEY_WALLET_PATH} onClick={openPasskey}>
-            {PASSKEY_LINK_LABEL}
-          </WrfButton>
-        </Box>
-      )}
 
       {!ownerAddress && (
         <Box

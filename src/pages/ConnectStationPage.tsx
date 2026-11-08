@@ -53,6 +53,8 @@ import { coarsenCoordinate } from '../utils/geo';
 import FEATURES from '../config/features';
 import { useOwnedFirstPartyAddress } from '../hooks/useOwnedFirstPartyAddress';
 import { loadStoredPasskey } from '../services/walletCrypto/passkeySend';
+import { readVault } from '../services/walletVault';
+import { UNLOCK_RETURN_STATE } from './unlockReturn';
 
 /**
  * The public build (W28, owner ruling 2026-10-02 #14): a station joins with the visitor's ONE wallet, the one
@@ -172,6 +174,9 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
   // A passkey wallet saved in this browser (read-only check). It cannot own a station yet: station login and
   // registration use ed25519 signatures, so such a visitor is told to make a 12-word wallet instead.
   const hasPasskeyWallet = useMemo(() => loadStoredPasskey() !== null, []);
+  // A 12-word wallet saved in this browser but not unlocked (its public address only). With both kinds saved,
+  // the station always joins with this one, so the page offers to unlock it rather than to make another.
+  const savedPhraseAddress = useMemo(() => readVault()?.address.toLowerCase() ?? null, []);
 
   // --- Create state ---
   const [createWallet, setCreateWallet] = useState<SessionWallet | null>(null);
@@ -260,6 +265,26 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
             </Typography>
             <WrfButton variant="primary" onClick={() => onAuthenticated(ownedAddress)}>
               Use this wallet
+            </WrfButton>
+            {hasPasskeyWallet && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }} data-testid="connect-station-phrase-not-passkey">
+                This is your 12-word wallet. Your passkey wallet can't own a weather station yet, so the station and
+                its rewards stay with this one.
+              </Typography>
+            )}
+          </WrfCard>
+        ) : savedPhraseAddress ? (
+          <WrfCard variant="outlined" headerTitle="Unlock your 12-word wallet">
+            <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all', mb: 1 }}>
+              {savedPhraseAddress}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+              {hasPasskeyWallet
+                ? 'Stations join with your 12-word wallet, not your passkey wallet. Unlock it with the password you set in this browser, then you come back here.'
+                : 'Unlock it with the password you set in this browser, then you come back here.'}
+            </Typography>
+            <WrfButton variant="primary" onClick={() => navigate('/onboarding', { state: UNLOCK_RETURN_STATE.connectStation })}>
+              Unlock 12-word wallet
             </WrfButton>
           </WrfCard>
         ) : hasPasskeyWallet ? (

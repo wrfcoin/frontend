@@ -22,6 +22,8 @@ import { getPasskeyPublicBalance } from '../services/walletCrypto/passkeyBalance
 import { PasskeyFaucetPanel } from '../components/wallet/PasskeyFaucetPanel';
 import PasskeyUseExisting from '../components/wallet/PasskeyUseExisting';
 import NotifyMe from '../components/explorer/NotifyMe';
+import WalletSwitcher from '../components/wallet/WalletSwitcher';
+import { useOwnedFirstPartyAddress } from '../hooks/useOwnedFirstPartyAddress';
 import { UNSUPPORTED_MESSAGE, SECURITY_KEY_UNSUPPORTED_MESSAGE } from './passkeyMessages';
 
 const mono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
@@ -107,6 +109,7 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
   const [recovering, setRecovering] = useState(false);
   const locked = busy !== false || recovering;
   const address = useMemo(() => (record ? passkeyRecordAddress(record) : null), [record]);
+  const unlockedPhraseAddress = useOwnedFirstPartyAddress();
   const [balanceRead, setBalanceRead] = useState(0);
   const balance = usePasskeyBalance(address, balanceRead);
   const chain = usePublicTestnetStats();
@@ -182,6 +185,8 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
 
   return (
     <Box component="section" aria-label="Passkey wallet" sx={{ maxWidth: 640, mx: 'auto', px: { xs: 2, md: 3 }, py: { xs: 2, md: 3 } }}>
+      {/* Re-read when the passkey changes (created, opened or forgotten here). */}
+      <WalletSwitcher key={address ?? 'none'} current="passkey" unlockedAddress={unlockedPhraseAddress} />
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
         <Typography variant="h4" component="h1" fontWeight={700} sx={{ m: 0 }}>Passkey wallet</Typography>
         <WrfBadge status="info" label="Preview" />
