@@ -64,9 +64,11 @@ const Message: React.FC<{ title: string; children: React.ReactNode }> = ({ title
   </Box>
 );
 
-export default function AddressLookup() {
-  // A payout notification links to /explore?address=0x…: start with that address looked up.
+export default function AddressLookup({ initialAddress }: { initialAddress?: string } = {}) {
+  // A payout notification links to /explore?address=0x…, and /explore/address/:address passes the
+  // address in: start with that address looked up.
   const [input, setInput] = useState(() => {
+    if (initialAddress) return initialAddress;
     try { return new URLSearchParams(globalThis.location?.search ?? '').get('address') ?? ''; } catch { return ''; }
   });
   const [touched, setTouched] = useState(false);

@@ -306,7 +306,10 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
       outcome: { result: 'draw', winner: null, reason: 'equal_chain_reward', note: 'The chain paid both forecasts the same amount. Without an oracle receipt every forecast earns the 0.1 baseline, so this is a draw.' },
     })],
   };
-  return { NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, FORECAST_CHECK, FORECAST_CHECK_EMPTY, CHALLENGE_CODE, CHALLENGE: challengeFor_, TEAM_CHALLENGE, DUEL_ID, DUELS, DUEL_DECIDED, downloadsManifest: readFixture('downloads-manifest.json') };
+  // /explore/tx/:hash (backend GET /api/blockchain/transactions/:hash): an included forecast commit.
+  const EXPLORE_TX = 'f0reca57'.replace(/[^0-9a-f]/g, '0').padEnd(64, 'a');
+  const EXPLORE_TX_ANSWER = { success: true, data: { hash: `0x${EXPLORE_TX}`, status: 'included', blockHeight: 44807, txType: 'ForecastCommit', timestamp: iso(7 * 77_000), windowLimited: true } };
+  return { EXPLORE_TX, EXPLORE_TX_ANSWER, NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, FORECAST_CHECK, FORECAST_CHECK_EMPTY, CHALLENGE_CODE, CHALLENGE: challengeFor_, TEAM_CHALLENGE, DUEL_ID, DUELS, DUEL_DECIDED, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -490,6 +493,10 @@ export async function installRoutes(page, fx, options = {}) {
       if (networkNodesMode === 'off') return json(route, { error: 'Not found' }, 404);
       if (networkNodesMode === 'partial') return json(route, { ...fx.NETWORK_NODES, bonded: { status: 'unavailable', epoch: null, discovery: { settlementEpochs: [], configured: 0 }, nodes: [] }, attesters: { status: 'unavailable', quorum: null, ids: [] } });
       return json(route, fx.NETWORK_NODES);
+    }
+    if ((m = /^\/api\/blockchain\/transactions\/(?:0x)?([0-9a-fA-F]{64})$/.exec(p))) {
+      if (m[1].toLowerCase() !== fx.EXPLORE_TX) return json(route, { success: true, data: { hash: `0x${m[1].toLowerCase()}`, status: 'unknown', blockHeight: null, txType: null, timestamp: null, windowLimited: true } });
+      return json(route, fx.EXPLORE_TX_ANSWER);
     }
     if (p === '/api/faucet/bond-grants') {
       if (bondGrantsMode === 'unavailable') return json(route, { error: { code: 'BOND_GRANTS_UNAVAILABLE', message: 'Bond grant history is unavailable' } }, 503);

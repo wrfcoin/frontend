@@ -8,7 +8,7 @@ import {
 describe('Stage 1.5 public route policy', () => {
   it('admits exactly the read-only and onboarding paths when enabled', () => {
     const candidates = [
-      '/explore', '/explorer', '/map', '/search', '/weather/station/:stationId', '/leaderboard/contributors',
+      '/explore', '/explore/tx/:hash', '/explore/address/:address', '/explore/tx', '/explore/x', '/explorer', '/map', '/search', '/weather/station/:stationId', '/leaderboard/contributors',
       '/governance/public', '/governance/public/:proposalId', '/governance', '/governance/comprehensive',
       '/weather/forecast', '/contributor/:key',
       '/forecasters', '/forecasters/:profileKey', '/competitions',
@@ -84,7 +84,7 @@ describe('Stage 1.5 station detail', () => {
 
   it('is the only addition to the prior four read-only paths (plus the public leaderboard)', () => {
     expect([...PUBLIC_READONLY_PATHS]).toEqual([
-      '/explore', '/explorer', '/map', '/search', STATION, '/leaderboard/contributors',
+      '/explore', '/explore/tx/:hash', '/explore/address/:address', '/explorer', '/map', '/search', STATION, '/leaderboard/contributors',
       '/governance/public', '/governance/public/:proposalId', '/governance', '/governance/comprehensive',
       '/weather/forecast', '/contributor/:key',
       '/forecasters', '/forecasters/:profileKey', '/competitions',

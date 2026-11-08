@@ -14,6 +14,8 @@ const SearchResults = lazy(() => import('../components/Search/SearchResults'));
 const PublicReadOnlyExplorer = lazy(() => import('../components/explorer/PublicReadOnlyExplorer'));
 const PublicReadOnlySearch = lazy(() => import('../components/Search/PublicReadOnlySearch'));
 const PublicBondGrantsPage = lazy(() => import('../pages/PublicBondGrantsPage'));
+const ExploreTxPage = lazy(() => import('../pages/ExploreTxPage'));
+const ExploreAddressPage = lazy(() => import('../pages/ExploreAddressPage'));
 
 const PUBLIC_READONLY =
   isPublicReadonlyEnabled(import.meta.env?.VITE_PUBLIC_READONLY_PATHS) &&
@@ -61,6 +63,9 @@ export default function networkRoutes({ validatorOpsEnabled, networkInsightsEnab
   return <>
     {/* Explorer */}
     <Route path="/explore" element={<PageWrapper tabType="explorer">{PUBLIC_READONLY ? <PublicReadOnlyExplorer /> : <UnifiedExplorer />}</PageWrapper>} />
+    {/* One transaction / one address: where VITE_EXPLORER_URL=self points the site's hash and address links */}
+    <Route path="/explore/tx/:hash" element={<PageWrapper tabType="explorer"><ExploreTxPage /></PageWrapper>} />
+    <Route path="/explore/address/:address" element={<PageWrapper tabType="explorer"><ExploreAddressPage /></PageWrapper>} />
     <Route path="/explorer" element={<Navigate to="/explore?tab=blocks" replace />} />
     <Route path="/dag-explorer" element={<Navigate to="/explore?tab=dag" replace />} />
     <Route path="/search" element={<PageWrapper tabType="search">{PUBLIC_READONLY ? <PublicReadOnlySearch /> : <SearchResults />}</PageWrapper>} />

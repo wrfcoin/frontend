@@ -1,12 +1,12 @@
 /** @jest-environment jsdom */
 /**
- * Stage 1.5 public search: say what actually happened. The backend answers
- * transaction lookups with an honest 501 (blockchain-routes.js), and the public
- * edge never admits block-by-height detail, so neither may read as "no match".
+ * Stage 1.5 public search: a hash or an address opens its own /explore page; the
+ * public edge never admits block-by-height detail, so a height may not read as
+ * "no match".
  */
 import React from 'react';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, jest } from '@jest/globals';
 import PublicReadOnlySearch from '../PublicReadOnlySearch';
 import { retryStationQuality } from '../../../hooks/api/useWeatherQueries';
@@ -36,27 +36,36 @@ function renderSearch(query: string) {
   );
 }
 
+function Probe() {
+  const location = useLocation();
+  return <div data-testid="landed">{location.pathname}</div>;
+}
+
+function renderSearchRouted(query: string) {
+  render(
+    <MemoryRouter initialEntries={[`/search?q=${query}`]}>
+      <Routes>
+        <Route path="/search" element={<PublicReadOnlySearch />} />
+        <Route path="/explore/*" element={<Probe />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
 describe('PublicReadOnlySearch (Stage 1.5)', () => {
   afterEach(() => cleanup());
 
-  it('a 501 transaction lookup reads as unavailable, not as "no match"', async () => {
-    answer(501, { success: false, error: { code: 'NOT_IMPLEMENTED' } });
-    renderSearch(HASH);
-    expect(await screen.findByText('Transaction lookup is not available on this testnet yet.')).toBeTruthy();
-    expect(screen.queryByText(/No transaction with that hash/)).toBeNull();
-    expect(requests).toEqual([`/api/blockchain/transactions/${HASH}`]);
+  it('a transaction hash opens its /explore/tx page and sends nothing itself', async () => {
+    answer(200);
+    renderSearchRouted(HASH.toUpperCase());
+    expect((await screen.findByTestId('landed')).textContent).toBe(`/explore/tx/0x${HASH}`);
+    expect(requests).toEqual([]);
   });
 
-  it('only a 404 reads as "not found"', async () => {
-    answer(404);
-    renderSearch(HASH);
-    expect(await screen.findByText('No transaction with that hash was found on the testnet.')).toBeTruthy();
-  });
-
-  it('any other failure says the API did not answer', async () => {
-    answer(502);
-    renderSearch(HASH);
-    expect(await screen.findByText('The testnet API did not answer. Try again later.')).toBeTruthy();
+  it('an address opens its /explore/address page', async () => {
+    answer(200);
+    renderSearchRouted(`wrf${'C'.repeat(40)}`);
+    expect((await screen.findByTestId('landed')).textContent).toBe(`/explore/address/0x${'c'.repeat(40)}`);
   });
 
   it('a block height sends nothing and points at the Explorer', async () => {

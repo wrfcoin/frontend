@@ -38,6 +38,8 @@ Routes are extracted from `App.jsx`. The "Feature Flag" column shows the guard f
 | Route Pattern | Component | Feature Flag | Module | Status |
 |---|---|---|---|---|
 | `/explore` | NetworkExplorer (unified) | always | explorer | active |
+| `/explore/tx/:hash` | ExploreTxPage (one transaction: status, block, type, block time) | always | explorer | active |
+| `/explore/address/:address` | ExploreAddressPage (balance + earned total via AddressLookup) | always | explorer | active |
 | `/explorer` | `<Navigate to="/explore?tab=blocks" />` | always | explorer | redirect |
 | `/dag-explorer` | `<Navigate to="/explore?tab=dag" />` | always | explorer | redirect |
 
