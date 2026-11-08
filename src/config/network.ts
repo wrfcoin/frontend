@@ -26,15 +26,26 @@ export const WRFCOIN_CHAIN_ID: string | null = (() => {
 export const NATIVE_SYMBOL = 'WRF';
 
 /**
- * Base URL of the configured block explorer, or null when none is set.
- * Trailing slashes are trimmed so callers can safely append paths.
+ * The block-explorer setting from the build (VITE_EXPLORER_URL):
+ *   - unset or empty: no explorer; links render as plain text.
+ *   - "self": this site's own read-only pages, /explore/tx/<hash> and
+ *     /explore/address/<address> (they read the public API on this origin).
+ *   - an absolute URL: an external explorer serving <base>/tx/<hash> and
+ *     <base>/address/<address>. Trailing slashes are trimmed.
+ * "self" is explicit, not the unset default, so a build only links to the
+ * on-site pages once the backend that answers them is deployed.
  */
-export const EXPLORER_BASE_URL: string | null = (() => {
-  const raw = (import.meta as any)?.env?.VITE_EXPLORER_URL;
+export const EXPLORER_SELF = 'self';
+
+/** The explorer base for a VITE_EXPLORER_URL value: '/explore' for "self", null for none. */
+export function explorerBaseFrom(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
   const trimmed = raw.trim().replace(/\/+$/, '');
+  if (trimmed.toLowerCase() === EXPLORER_SELF) return '/explore';
   return trimmed.length > 0 ? trimmed : null;
-})();
+}
+
+export const EXPLORER_BASE_URL: string | null = explorerBaseFrom((import.meta as any)?.env?.VITE_EXPLORER_URL);
 
 /** Whether a block explorer is configured for the active network. */
 export const hasExplorer = (): boolean => EXPLORER_BASE_URL !== null;
@@ -45,7 +56,7 @@ export const hasExplorer = (): boolean => EXPLORER_BASE_URL !== null;
  */
 export const explorerTxUrl = (hash: string): string | null => {
   if (!EXPLORER_BASE_URL || !hash) return null;
-  return `${EXPLORER_BASE_URL}/tx/${hash}`;
+  return `${EXPLORER_BASE_URL}/tx/${encodeURIComponent(hash)}`;
 };
 
 /**
@@ -53,5 +64,5 @@ export const explorerTxUrl = (hash: string): string | null => {
  */
 export const explorerAddressUrl = (address: string): string | null => {
   if (!EXPLORER_BASE_URL || !address) return null;
-  return `${EXPLORER_BASE_URL}/address/${address}`;
+  return `${EXPLORER_BASE_URL}/address/${encodeURIComponent(address)}`;
 };

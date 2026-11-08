@@ -229,7 +229,10 @@ const ROUTES = [
   { path: '/explore', expect: ['/api/blockchain/blocks?limit=25'], text: 'Block Explorer' },
   { path: '/explorer', expect: ['/api/blockchain/blocks?limit=25'], text: 'Block Explorer', url: '/explore?tab=blocks' },
   { path: '/search', expect: [], text: 'Search the testnet' },
-  { path: `/search?q=${HASH}`, expect: [`/api/blockchain/transactions/${HASH}`], text: 'not available on this testnet yet' },
+  // A hash opens its own page; that page's one read is the edge-admitted tx lookup.
+  { path: `/search?q=${HASH}`, expect: [`/api/blockchain/transactions/0x${HASH}`], text: 'Transaction lookup is not switched on', url: `/explore/tx/0x${HASH}` },
+  { path: `/explore/tx/0x${HASH}`, expect: [`/api/blockchain/transactions/0x${HASH}`], text: 'Transaction lookup is not switched on' },
+  { path: `/explore/address/0x${'c'.repeat(40)}`, expect: [`/api/public/balance/0x${'c'.repeat(40)}`], text: 'Look up an address' },
   { path: '/search?q=24356', expect: [], text: 'not available on the public site' },
   { path: '/map', expect: ['/api/weather/stations'], text: 'Weather Network Map' },
   // frontend#437: the onboarding loop, with no keys on the web.

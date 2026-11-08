@@ -72,6 +72,11 @@ const PUBLIC_TESTNET_CORE_PATHS = new Set([
 // `/weather/station/../earnings` or `/weather/stationX` is not in the set.
 export const PUBLIC_READONLY_PATHS = new Set([
   '/explore',
+  // One transaction / one address (VITE_EXPLORER_URL=self). Exact entries, never prefixes:
+  //   /explore/tx/:hash            reads GET /api/blockchain/transactions/<64 hex> (status, block, type, block time)
+  //   /explore/address/:address    reads GET /api/public/balance/<0x address> (same read as the /explore box)
+  '/explore/tx/:hash',
+  '/explore/address/:address',
   '/explorer',
   '/map',
   '/search',

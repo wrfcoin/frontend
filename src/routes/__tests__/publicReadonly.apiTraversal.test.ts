@@ -65,6 +65,8 @@ await jest.unstable_mockModule('react-chartjs-2', () => ({
 const { default: PublicReadOnlyExplorer } = await import(
   '../../components/explorer/PublicReadOnlyExplorer'
 );
+const { default: ExploreTxPage } = await import('../../pages/ExploreTxPage');
+const { default: ExploreAddressPage } = await import('../../pages/ExploreAddressPage');
 const { default: PublicReadOnlySearch } = await import(
   '../../components/Search/PublicReadOnlySearch'
 );
@@ -151,6 +153,14 @@ async function renderPublicRoute(
               element: React.createElement(PublicReadOnlyExplorer),
             }),
             React.createElement(Route, {
+              path: '/explore/tx/:hash',
+              element: React.createElement(ExploreTxPage),
+            }),
+            React.createElement(Route, {
+              path: '/explore/address/:address',
+              element: React.createElement(ExploreAddressPage),
+            }),
+            React.createElement(Route, {
               path: '/search',
               element: React.createElement(PublicReadOnlySearch),
             }),
@@ -192,7 +202,8 @@ describe('Stage 1.5 API traversal', () => {
     const targets: string[] = [];
     for (const route of [
       '/explore',
-      `/search?q=${'a'.repeat(64)}`,
+      `/explore/tx/0x${'a'.repeat(64)}`,
+      `/explore/address/0x${'c'.repeat(40)}`,
       '/map',
       '/weather/station/station-1',
     ]) {
@@ -211,7 +222,8 @@ describe('Stage 1.5 API traversal', () => {
     expect(fixture.backendCommit).toMatch(/^[0-9a-f]{40}$/);
     expect(observed).toEqual(expect.arrayContaining([
       '/api/blockchain/blocks',
-      `/api/blockchain/transactions/${'a'.repeat(64)}`,
+      `/api/blockchain/transactions/0x${'a'.repeat(64)}`,
+      `/api/public/balance/0x${'c'.repeat(40)}`,
       '/api/weather/stations',
       '/api/stations/station-1/observations',
     ]));

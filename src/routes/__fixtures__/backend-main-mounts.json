@@ -1,9 +1,10 @@
 {
-  "backendCommit": "51d889b3bb033d8d9ef2345136f0729f67f92514",
+  "backendCommit": "e2ad65c36701732de0dcbcafd02c70e34cdca238",
   "sourcePath": "server/enhanced_unified_api_optimized.ts",
   "mounts": [
     "/api",
     "/api/achievement",
+    "/api/admin/usage-counts",
     "/api/appeals",
     "/api/auth/social",
     "/api/blockchain",
