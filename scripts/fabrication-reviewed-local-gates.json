@@ -150,7 +150,7 @@
     "sha256": "4987b36e08d335577b08983327041577ccc4c10426b76143e71095493228e517"
   },
   "src/pages/ConnectStationPage.tsx": {
-    "reason": "Math.random only picks which recovery-phrase word positions to quiz in the backup challenge; no data is generated. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged. Hash renewed after the a11y heading pass (Typography component= attributes only; the reviewed Math.random word-position pick is unchanged). Hash renewed after the passkey-wallet notice on the Wallet step (one read-only localStorage check plus a message; the reviewed Math.random word-position pick is unchanged).",
-    "sha256": "47225f3f5acaa55278102ecf6567e89821185377d69d65ff4d24e12b6e30c26c"
+    "reason": "Math.random only picks which recovery-phrase word positions to quiz in the backup challenge; no data is generated. Hash renewed after formatting-only #581; reviewed syntax and containment are unchanged. Hash renewed after the a11y heading pass (Typography component= attributes only; the reviewed Math.random word-position pick is unchanged). Hash renewed after the passkey-wallet notice on the Wallet step (one read-only localStorage check plus a message; the reviewed Math.random word-position pick is unchanged). Hash renewed after the multi-wallet unlock offer on the Wallet step (one read-only vault address check, a card and a router-state return path; the reviewed Math.random word-position pick is unchanged).",
+    "sha256": "0e99ef87dffbf1d15316fad9accb01bf36673b43a586707ec0f66706f46b5c7f"
   }
 }
