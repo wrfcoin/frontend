@@ -237,11 +237,15 @@ it('shows the real testnet genesis hash on the command-line wallet card, never a
 // published file. The core4 source is public (published: true) but names no release tag or commit yet,
 // so the parser still shows no verifiable source release; every other entry stays unpublished.
 const fs = await import('node:fs');
+const APK_SHIPPED_SHA = '936761f44d176d970c790baca75b434fe2fd509660c310443d8a0b81397816e7';
+const APK_SHIPPED_URL = 'https://wrfcoin.com/downloads/wrfcoin-0.1.0-1-460ce1e9472b.apk';
+const APK_SIGNER_CERT = 'dbd87b38345d8fe967e3e9db112cbfc354ae554de73e01b457799460e59f3578';
+const APK_SIGNED_BY = `WRFCoin release key (certificate SHA-256 ${APK_SIGNER_CERT})`;
 const SHIPPED = JSON.parse(fs.readFileSync(new URL('../../../public/downloads/manifest.json', import.meta.url), 'utf8'));
 const WIN_URL = 'https://github.com/wrfcoin/core4/releases/download/v888-windows-preview-5/wrfcoin-node-0.5.0-g63504a2a-windows-x86_64-setup.exe';
 const WIN_SHA = 'f89e29deff9f5a524adc2e2d5bea36f5a231e4e4dc56230d9b058a91606dac2b';
 
-it('ships a manifest whose only verifiable published artifact is the Windows node installer', () => {
+it('ships a manifest whose verifiable published files are the Windows node installer and the signed Android APK', () => {
   expect(Number.isNaN(Date.parse(SHIPPED.generated))).toBe(false);
   const win = SHIPPED.artifacts.find(a => a.id === WINDOWS_NODE_ID);
   expect(win).toEqual({
@@ -251,13 +255,22 @@ it('ships a manifest whose only verifiable published artifact is the Windows nod
   // The tag and commit in the URL agree with the entry.
   expect(win.url).toContain(`/download/${win.tag}/`);
   expect(win.url).toContain(`-g${win.commit.slice(0, 8)}-`);
-  expect(SHIPPED.artifacts.filter(a => a.published === true).map(a => a.id)).toEqual(['node-source', 'cli-source', WINDOWS_NODE_ID]);
+  expect(SHIPPED.artifacts.filter(a => a.published === true).map(a => a.id)).toEqual(['node-source', 'android-apk', 'cli-source', WINDOWS_NODE_ID]);
+  // The release APK: served by this site, named by its version and source commit, signed by the release key.
+  const apk = SHIPPED.artifacts.find(a => a.id === 'android-apk');
+  expect(apk).toEqual({
+    id: 'android-apk', kind: 'file', repo: 'wrfcoin/mobile', url: APK_SHIPPED_URL, size: 80002305, sha256: APK_SHIPPED_SHA,
+    commit: '460ce1e9472b9df8f7e9c0a2ca8b58b99902959d', signedBy: APK_SIGNED_BY, published: true,
+  });
+  expect(apk.url).toContain(`-${apk.commit.slice(0, 12)}.apk`);
+  // A plain file name: no '+' (some clients send it as a space or %2B), so every link spelling reaches the file.
+  expect(apk.url.split('/').pop()).toMatch(/^[A-Za-z0-9._-]+$/);
   for (const id of ['node-source', 'cli-source']) {
     expect(SHIPPED.artifacts.find(a => a.id === id)).toMatchObject({ kind: 'git', repo: 'wrfcoin/core4', url: 'https://github.com/wrfcoin/core4', tag: 'v888-h3000', commit: 'de9d0d268e1a914109444c1d49b2dcfffe896d80' });
   }
   const parsed = parseManifest(SHIPPED);
   // Source rows are published as a tag + commit (frontend#37); only the installer is a file with a hash.
-  expect(parsed.artifacts.filter(a => a.published).map(a => [a.id, a.sha256])).toEqual([['node-source', null], ['cli-source', null], [WINDOWS_NODE_ID, WIN_SHA]]);
+  expect(parsed.artifacts.filter(a => a.published).map(a => [a.id, a.sha256])).toEqual([['node-source', null], ['android-apk', APK_SHIPPED_SHA], ['cli-source', null], [WINDOWS_NODE_ID, WIN_SHA]]);
 });
 
 it('renders the Windows download from the manifest: link, size, SHA-256 next to it, check, run, use, unsigned note', async () => {
@@ -304,8 +317,10 @@ it('renders the Windows download from the manifest: link, size, SHA-256 next to 
   expect(within(win).getByRole('link', { name: /Windows node guide/ })).toHaveAttribute('href', LINKS.windowsGuide);
   expect(win.textContent).not.toMatch(/WSL2|Docker Desktop/);
 
-  // The APK stays unpublished.
-  expect(screen.getByRole('button', { name: 'Download APK' })).toBeDisabled();
+  // The signed APK is published: a real download link next to its hash and signer.
+  expect(screen.getByRole('link', { name: 'Download APK' })).toHaveAttribute('href', APK_SHIPPED_URL);
+  expect(screen.getByTestId('release-android-apk')).toHaveTextContent(APK_SHIPPED_SHA);
+  expect(screen.getByTestId('release-android-apk')).toHaveTextContent(APK_SIGNED_BY);
   // The source rows name the v888-h3000 commit (frontend#37).
   expect(screen.getByTestId('release-node-source')).toHaveTextContent('Source commitde9d0d268e…');
   expect(screen.getByTestId('release-cli-source')).toHaveTextContent('Source commitde9d0d268e…');
@@ -322,7 +337,8 @@ it('never shows a Windows hash or download from a published flag without a well-
   expect(screen.getByTestId('windows-node-note')).toHaveTextContent('It is not available yet.');
   expect(screen.queryByRole('link', { name: /Download for Windows/ })).toBeNull();
   expect(within(screen.getByTestId('download-sync-node')).getByText('Linux and macOS')).toBeInTheDocument();
-  expect(releaseText()).not.toMatch(HEX64);
+  expect(releaseText().replaceAll(APK_SHIPPED_SHA, '').replaceAll(APK_SIGNER_CERT, '')).not.toMatch(HEX64);
+  expect(releaseText()).not.toContain(WIN_SHA);
   cleanup();
 
   mockManifest(new Error('offline'));

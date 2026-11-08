@@ -106,7 +106,7 @@ export default function ReleaseFacts({ state, release, artifact, label, verifyHi
           <CopyButton value={artifact.sha256} label="Copy the SHA-256" />
         </Row>
       ) : null}
-      {artifact.signedBy ? <Row term="Signed by">{artifact.signedBy}</Row> : null}
+      {artifact.signedBy ? <Row term="Signed by"><span className="dl-signer">{artifact.signedBy}</span></Row> : null}
       {verifyHint ? (
         <Row term="Verify">
           <span className="dl-mono dl-cmdline">{verifyHint.command}</span>
