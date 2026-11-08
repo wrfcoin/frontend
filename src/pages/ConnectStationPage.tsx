@@ -52,6 +52,7 @@ import { STATION_NAME_PUBLIC_NOTICE } from '../config/stationNamePublicNotice';
 import { coarsenCoordinate } from '../utils/geo';
 import FEATURES from '../config/features';
 import { useOwnedFirstPartyAddress } from '../hooks/useOwnedFirstPartyAddress';
+import { loadStoredPasskey } from '../services/walletCrypto/passkeySend';
 
 /**
  * The public build (W28, owner ruling 2026-10-02 #14): a station joins with the visitor's ONE wallet, the one
@@ -168,6 +169,9 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
   // registration and reward-progress calls use, so it needs no second login here.
   const ownedAddress = useOwnedFirstPartyAddress();
   const publicBuild = isPublicBuild();
+  // A passkey wallet saved in this browser (read-only check). It cannot own a station yet: station login and
+  // registration use ed25519 signatures, so such a visitor is told to make a 12-word wallet instead.
+  const hasPasskeyWallet = useMemo(() => loadStoredPasskey() !== null, []);
 
   // --- Create state ---
   const [createWallet, setCreateWallet] = useState<SessionWallet | null>(null);
@@ -258,6 +262,17 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
               Use this wallet
             </WrfButton>
           </WrfCard>
+        ) : hasPasskeyWallet ? (
+          <WrfAlert severity="info" title="Stations need a 12-word wallet">
+            <Typography variant="body2" sx={{ mb: 1.5 }}>
+              Your passkey wallet can't own a weather station yet. Create a 12-word wallet in wallet setup (write
+              the words down), then come back here. Station rewards go to that wallet, and you can send them to
+              your passkey wallet any time.
+            </Typography>
+            <WrfButton variant="primary" onClick={() => navigate('/onboarding')}>
+              Open wallet setup
+            </WrfButton>
+          </WrfAlert>
         ) : (
           <WrfAlert severity="info" title="Set up or unlock your wallet first">
             <Typography variant="body2" sx={{ mb: 1.5 }}>

@@ -52,6 +52,12 @@ await jest.unstable_mockModule('../../services/apiClient', () => ({
 
 const { default: ConnectStationPage } = await import('../ConnectStationPage');
 
+// A passkey wallet saved in this browser, in the format saveStoredPasskey writes.
+const PASSKEY_KEY = 'wrfcoin.passkey.credential.v1';
+const savePasskey = () => localStorage.setItem(PASSKEY_KEY, JSON.stringify({
+  credentialId: '01'.repeat(16), publicKeyXY: '02'.repeat(64), rpId: 'wrfcoin.com',
+}));
+
 describe('ConnectStationPage joins with the visitor\'s one wallet (W28)', () => {
   beforeEach(() => {
     owned = null;
@@ -59,6 +65,7 @@ describe('ConnectStationPage joins with the visitor\'s one wallet (W28)', () => 
     features.fullStudio = false;
     navigateMock.mockReset();
     loginWithEd25519.mockReset();
+    localStorage.clear();
   });
   afterEach(() => cleanup());
 
@@ -86,10 +93,37 @@ describe('ConnectStationPage joins with the visitor\'s one wallet (W28)', () => 
   it('public build, not signed in: sends the visitor to wallet setup; never creates a wallet here', () => {
     render(<ConnectStationPage />);
     expect(screen.getByText('Set up or unlock your wallet first')).toBeInTheDocument();
+    expect(screen.queryByText('Stations need a 12-word wallet')).toBeNull();
     expect(screen.queryByText('Create a new wallet')).toBeNull();
     expect(screen.queryByText(/recovery phrase/)).toBeNull();
     fireEvent.click(screen.getByText('Open wallet setup'));
     expect(navigateMock).toHaveBeenCalledWith('/onboarding');
+  });
+
+  it('signed in with a passkey wallet saved too: the signed-in 12-word wallet is still offered', () => {
+    owned = OWNED;
+    savePasskey();
+    render(<ConnectStationPage />);
+    expect(screen.getByText('Use this wallet')).toBeInTheDocument();
+    expect(screen.queryByText('Stations need a 12-word wallet')).toBeNull();
+  });
+
+  it('public build, passkey wallet only: says stations need a 12-word wallet and links to wallet setup', () => {
+    savePasskey();
+    render(<ConnectStationPage />);
+    expect(screen.getByText('Stations need a 12-word wallet')).toBeInTheDocument();
+    expect(screen.getByText(/Your passkey wallet can't own a weather station yet/)).toBeInTheDocument();
+    expect(screen.queryByText('Set up or unlock your wallet first')).toBeNull();
+    expect(screen.queryByText('Use this wallet')).toBeNull();
+    fireEvent.click(screen.getByText('Open wallet setup'));
+    expect(navigateMock).toHaveBeenCalledWith('/onboarding');
+  });
+
+  it('public build, a malformed saved passkey record counts as no wallet', () => {
+    localStorage.setItem(PASSKEY_KEY, '{"publicKeyXY":"zz"}');
+    render(<ConnectStationPage />);
+    expect(screen.getByText('Set up or unlock your wallet first')).toBeInTheDocument();
+    expect(screen.queryByText('Stations need a 12-word wallet')).toBeNull();
   });
 
   it('internal build, not signed in: keeps the in-page create flow', () => {

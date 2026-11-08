@@ -472,6 +472,18 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log('FAIL duels-off', suffix, String(e).slice(0, 160)); report.push({ name: 'duels-off', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    if (want('connect-station-passkey')) {
+      try {
+        // A passkey wallet record (fixture key bytes, never a real credential) the way saveStoredPasskey holds it.
+        const rec = JSON.stringify({ credentialId: '01'.repeat(16), publicKeyXY: '02'.repeat(64), rpId: 'wrfcoin.com' });
+        await loadRoute(page, '/connect-station', errors);
+        await page.evaluate((r) => { try { window.localStorage.setItem('wrfcoin.passkey.credential.v1', r); } catch { /* storage blocked */ } }, rec);
+        await loadRoute(page, '/connect-station', errors);
+        await page.getByText('Stations need a 12-word wallet').waitFor({ timeout: 15_000 });
+        await capture(page, errors, 'connect-station-passkey', '/connect-station (passkey wallet only)', suffix);
+        await page.evaluate(() => { try { window.localStorage.removeItem('wrfcoin.passkey.credential.v1'); } catch { /* storage blocked */ } });
+      } catch (e) { console.log('FAIL connect-station-passkey', suffix, String(e).slice(0, 160)); report.push({ name: 'connect-station-passkey', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review') || want('wallet-address-book') || want('wallet-send-allowlist-refused') || want('challenges-signed-in')) {
       try {
         await createWallet(page, errors);
