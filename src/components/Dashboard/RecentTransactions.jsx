@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from 'react';
+import { explorerTxUrl } from '../../config/network';
 import Alert from '@mui/material/Alert';
 import {
   ArrowUpRight,
@@ -64,8 +65,6 @@ const transactionTypes = {
   },
 };
 
-const explorerBaseUrl = (import.meta.env?.VITE_EXPLORER_URL || '').replace(/\/$/, '');
-
 const formatRelativeTime = (value) => {
   const date = value instanceof Date ? value : new Date(value);
   const now = new Date();
@@ -83,18 +82,20 @@ const formatRelativeTime = (value) => {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-const TransactionHash = ({ hash }) => {
+// One place decides the explorer link (config/network.ts): "self" -> /explore/tx/<hash>, unset -> no link.
+export const TransactionHash = ({ hash }) => {
   if (!hash) {
     return <span className="detail-value">Unavailable</span>;
   }
 
-  if (!explorerBaseUrl) {
+  const url = explorerTxUrl(hash);
+  if (!url) {
     return <span className="detail-value hash">{hash}</span>;
   }
 
   return (
     <a
-      href={`${explorerBaseUrl}/tx/${hash}`}
+      href={url}
       className="detail-value hash"
       target="_blank"
       rel="noopener noreferrer"
