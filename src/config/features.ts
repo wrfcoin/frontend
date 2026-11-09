@@ -35,6 +35,10 @@ const PASSKEY_WALLET = import.meta.env?.VITE_ENABLE_PASSKEY_WALLET === 'true';
 // Link from the passkey wallet to /wallet/passkey/bond-payout (approve this wallet as a node bond's
 // payout account). Exact string "true" only; default OFF until core4's passkey_bond_payout is active.
 const PASSKEY_BOND_PAYOUT = import.meta.env?.VITE_ENABLE_PASSKEY_BOND_PAYOUT === 'true';
+// "Use your passkey wallet" on /connect-station (owner decision 2026-11-09, Phase 1): a passkey wallet signs
+// in (backend PASSKEY_LOGIN_ENABLED) and owns the station on the website; it earns once core4's
+// passkey_station_owner is live. Exact string "true" only; default OFF.
+const PASSKEY_STATION_OWNER = import.meta.env?.VITE_ENABLE_PASSKEY_STATION_OWNER === 'true';
 
 // Chain-enforced account protections on the 12-word wallet ("require my YubiKey to spend", send allowlist):
 // exact string "true" only; default OFF. Even when on, each control shows only once the node reports its
@@ -83,6 +87,8 @@ export const FEATURES = {
   chainProtections: CHAIN_PROTECTIONS,
   /** Passkey wallet link to the node bond payout approval page. Default FALSE. */
   passkeyBondPayout: PASSKEY_BOND_PAYOUT,
+  /** Passkey wallet can own a station on /connect-station. Default FALSE; needs backend passkey login. */
+  passkeyStationOwner: PASSKEY_STATION_OWNER,
   explorer: true,
   pop: true,
   mining: true,

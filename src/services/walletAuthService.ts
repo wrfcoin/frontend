@@ -9,6 +9,10 @@ import {
   resolveEd25519LoginExpectations,
   type Ed25519LoginExpectations,
 } from './walletCrypto/loginChallenge';
+import {
+  assertPasskey, bytesToHex, concat, framed, passkeyRecordAddress,
+  type PasskeyAuthJson, type PasskeyCredentialRecord,
+} from './walletCrypto/passkey';
 
 export const WALLET_LOGIN_MESSAGE_PREFIX = 'WRFCoin wallet login nonce: ';
 const REFRESH_SKEW_SECONDS = 60;
@@ -23,7 +27,33 @@ export interface WalletLoginResponse {
 
 export type WalletSignMessage = (message: string) => Promise<string> | string;
 
-export type WalletLoginScheme = 'evm' | 'ed25519' | 'session_key';
+export type WalletLoginScheme = 'evm' | 'ed25519' | 'session_key' | 'passkey';
+
+/** Domain tag of the passkey login message (backend wallet-auth-service PASSKEY_WALLET_LOGIN_DOMAIN). */
+export const PASSKEY_WALLET_LOGIN_DOMAIN = 'wrfcoin_wallet_login_passkey_v1';
+/** Longest challenge lifetime this client signs for (the backend issues 5 minutes). */
+const PASSKEY_LOGIN_MAX_TTL_MS = 10 * 60_000;
+
+export interface PasskeyLoginFields {
+  origin: string;
+  chainId: string;
+  network: string;
+  address: string;
+  nonce: string;
+  issuedAt: string;
+  expirationTime: string;
+}
+
+/** tag ‖ u32le-framed origin, chain id, network, address, nonce, issued-at, expiry (the backend's framing). */
+export function passkeyLoginMessage(f: PasskeyLoginFields): Uint8Array {
+  return concat(
+    new TextEncoder().encode(PASSKEY_WALLET_LOGIN_DOMAIN),
+    framed(f.origin), framed(f.chainId), framed(f.network), framed(f.address.toLowerCase()),
+    framed(f.nonce), framed(f.issuedAt), framed(f.expirationTime),
+  );
+}
+
+export type PasskeyAssert = (record: PasskeyCredentialRecord, challenge: Uint8Array) => Promise<PasskeyAuthJson>;
 
 export { ED25519_WALLET_LOGIN_DOMAIN };
 
@@ -33,6 +63,9 @@ interface NonceResponse {
   issuedAt?: unknown;
   expirationTime?: unknown;
   scheme?: unknown;
+  network?: unknown;
+  chainId?: unknown;
+  origin?: unknown;
 }
 
 interface WalletLoginChallenge {
@@ -316,6 +349,61 @@ export class WalletAuthService {
       signature: Array.from(signature, b => b.toString(16).padStart(2, '0')).join(''),
       nonce: challenge.nonce,
     });
+  }
+
+  /**
+   * Passkey wallet login (backend scheme `passkey`). The passkey signs SHA3-256 of a login message this
+   * client builds itself from the server's fields, and only after checking those fields name this
+   * passkey's address and the expected origin, chain and network, with a short unexpired window. If the
+   * server also sent the message bytes, they must match. The assertion's domain tag keeps it from ever
+   * authorizing a transfer or anything else.
+   */
+  async loginWithPasskey(
+    record: PasskeyCredentialRecord,
+    expectations?: Omit<Ed25519LoginExpectations, 'address'>,
+    assert: PasskeyAssert = assertPasskey,
+  ): Promise<WalletLoginResponse> {
+    const address = passkeyRecordAddress(record).toLowerCase();
+    const expected = expectations
+      ? { ...expectations, address }
+      : resolveEd25519LoginExpectations(address);
+    const response = await this.client.get<NonceResponse>(
+      `/auth/nonce/${encodeURIComponent(address)}?scheme=passkey`,
+    );
+    const nonce = readRequiredString(response?.nonce, 'nonce');
+    const issuedAt = readRequiredString(response?.issuedAt, 'issuedAt');
+    const expirationTime = readRequiredString(response?.expirationTime, 'expirationTime');
+    const issuedMs = Date.parse(issuedAt);
+    const expiresMs = Date.parse(expirationTime);
+    if (
+      response?.scheme !== 'passkey' ||
+      response?.network !== expected.network ||
+      String(response?.chainId) !== expected.chainId ||
+      (response?.origin !== undefined && response.origin !== expected.origin) ||
+      !/^[0-9a-f]{64}$/.test(nonce) ||
+      !Number.isFinite(issuedMs) || !Number.isFinite(expiresMs) ||
+      expiresMs <= issuedMs || expiresMs - issuedMs > PASSKEY_LOGIN_MAX_TTL_MS ||
+      expiresMs <= Date.now()
+    ) {
+      throw new Error('Wallet login challenge is not a valid passkey challenge.');
+    }
+    const message = passkeyLoginMessage({
+      origin: expected.origin, chainId: expected.chainId, network: expected.network,
+      address, nonce, issuedAt, expirationTime,
+    });
+    if (response?.message !== undefined && response.message !== bytesToHex(message)) {
+      throw new Error('Wallet login challenge is not a valid passkey challenge.');
+    }
+    const passkeyAuth = await assert(record, sha3_256(message));
+    const login = await this.client.post<LoginResponse>('/auth/wallet-login', {
+      scheme: 'passkey',
+      address,
+      nonce,
+      passkey_auth: passkeyAuth,
+    });
+    const session = this.storeTokenResponse(address, login);
+    void applyPendingReferralForWallet(session.address).catch(() => {});
+    return session;
   }
 
   async loginWithSigner(

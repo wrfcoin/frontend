@@ -219,8 +219,10 @@ describe('ConnectStationPage first-party ed25519 wallet', () => {
       .split('\n')
       .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))
       .join('\n');
-    // The callback carries a string address, and WalletStep passes exactly that.
-    expect(code).toMatch(/onAuthenticated: \(address: string\) => void;/);
+    // The callback carries a string address (plus which kind of wallet owns it, a plain label), and
+    // WalletStep passes exactly that.
+    expect(code).toMatch(/onAuthenticated: \(address: string, kind\?: OwnerKind\) => void;/);
+    expect(code).toMatch(/export type OwnerKind = 'phrase' \| 'passkey';/);
     expect(code).toMatch(/onAuthenticated\(createWallet\.address\)/);
     // Page root keeps only the address: no SessionWallet / account in its body.
     const root = code.slice(code.indexOf('export default function ConnectStationPage'));

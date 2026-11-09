@@ -167,7 +167,10 @@ await jest.unstable_mockModule('../../components/auth/SocialLoginButton', () => 
 const mockRegisterPasskey = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 const mockSaveStoredPasskey = jest.fn();
 const mockLoadStoredPasskey = jest.fn<() => unknown>().mockReturnValue(null);
+// The real helpers stay (the wallet login service imports them); only registration and the RP ID are faked.
+const actualPasskey = await import('../../services/walletCrypto/passkey.ts');
 await jest.unstable_mockModule('../../services/walletCrypto/passkey', () => ({
+  ...actualPasskey,
   registerPasskey: (...args: unknown[]) => mockRegisterPasskey(...args),
   passkeyRpId: (host: string) => host,
 }));
