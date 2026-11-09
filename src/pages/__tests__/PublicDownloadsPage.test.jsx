@@ -242,15 +242,15 @@ const APK_SHIPPED_URL = 'https://wrfcoin.com/downloads/wrfcoin-0.1.0-1-460ce1e94
 const APK_SIGNER_CERT = 'dbd87b38345d8fe967e3e9db112cbfc354ae554de73e01b457799460e59f3578';
 const APK_SIGNED_BY = `WRFCoin release key (certificate SHA-256 ${APK_SIGNER_CERT})`;
 const SHIPPED = JSON.parse(fs.readFileSync(new URL('../../../public/downloads/manifest.json', import.meta.url), 'utf8'));
-const WIN_URL = 'https://github.com/wrfcoin/core4/releases/download/v888-windows-preview-5/wrfcoin-node-0.5.0-g63504a2a-windows-x86_64-setup.exe';
-const WIN_SHA = 'f89e29deff9f5a524adc2e2d5bea36f5a231e4e4dc56230d9b058a91606dac2b';
+const WIN_URL = 'https://github.com/wrfcoin/core4/releases/download/v888-windows-preview-6/wrfcoin-node-0.6.0-g629dd520-windows-x86_64-setup.exe';
+const WIN_SHA = 'ef64aeed32529658e891a4a24aeaa5e38e606478e2a5dc0d9086136bb3001d96';
 
 it('ships a manifest whose verifiable published files are the Windows node installer and the signed Android APK', () => {
   expect(Number.isNaN(Date.parse(SHIPPED.generated))).toBe(false);
   const win = SHIPPED.artifacts.find(a => a.id === WINDOWS_NODE_ID);
   expect(win).toEqual({
-    id: 'node-windows-x86_64', kind: 'file', repo: 'wrfcoin/core4', url: WIN_URL, size: 11914039, sha256: WIN_SHA,
-    tag: 'v888-windows-preview-5', commit: '63504a2a1baa68f632ee070de851d4afef424372', signedBy: null, published: true,
+    id: 'node-windows-x86_64', kind: 'file', repo: 'wrfcoin/core4', url: WIN_URL, size: 12021953, sha256: WIN_SHA,
+    tag: 'v888-windows-preview-6', commit: '629dd5205a70ce18775d4e7c78cd89a24ce8a9d9', signedBy: null, published: true,
   });
   // The tag and commit in the URL agree with the entry.
   expect(win.url).toContain(`/download/${win.tag}/`);
@@ -286,14 +286,14 @@ it('renders the Windows download from the manifest: link, size, SHA-256 next to 
   expect(within(node).queryByText('Not available yet')).toBeNull();
   expect(screen.queryByTestId('windows-node-note')).toBeNull();
 
-  const download = within(win).getByRole('link', { name: 'Download for Windows (11.4 MB)' });
+  const download = within(win).getByRole('link', { name: 'Download for Windows (11.5 MB)' });
   expect(download).toHaveAttribute('href', WIN_URL);
   expect(download).toHaveAttribute('rel', 'noopener noreferrer');
   const facts = within(win).getByTestId(`release-${WINDOWS_NODE_ID}`);
-  expect(facts).toHaveTextContent('wrfcoin-node-0.5.0-g63504a2a-windows-x86_64-setup.exe · 11.4 MB');
+  expect(facts).toHaveTextContent('wrfcoin-node-0.6.0-g629dd520-windows-x86_64-setup.exe · 11.5 MB');
   expect(facts).toHaveTextContent(WIN_SHA);
-  expect(facts).toHaveTextContent('v888-windows-preview-5');
-  expect(facts).toHaveTextContent('63504a2a1b…');
+  expect(facts).toHaveTextContent('v888-windows-preview-6');
+  expect(facts).toHaveTextContent('629dd5205a…');
   // The hash sits in the same step as the download button.
   expect(download.closest('li')).toContainElement(facts);
 
@@ -301,7 +301,7 @@ it('renders the Windows download from the manifest: link, size, SHA-256 next to 
   expect(steps.map(li => li.querySelector('.dl-step-title').textContent)).toEqual([
     'Download the installer', 'Check the file before you run it', 'Run the setup',
   ]);
-  const check = 'certutil -hashfile wrfcoin-node-0.5.0-g63504a2a-windows-x86_64-setup.exe SHA256';
+  const check = 'certutil -hashfile wrfcoin-node-0.6.0-g629dd520-windows-x86_64-setup.exe SHA256';
   expect(steps[1].querySelector('code').textContent).toBe(check);
   fireEvent.click(within(steps[1]).getByRole('button', { name: 'Copy the Windows check command' }));
   await waitFor(() => expect(writeText).toHaveBeenCalledWith(check));
