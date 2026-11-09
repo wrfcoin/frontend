@@ -17,7 +17,7 @@ export interface ForecastScore { status: 'pending' | 'scored' | 'unavailable'; f
  */
 export interface PracticeScore {
   status: 'pending' | 'scored' | 'unscored';
-  reason: 'waiting_for_reading' | 'no_reading' | 'no_baseline' | null;
+  reason: 'waiting_for_reading' | 'node_unavailable' | 'no_reading' | 'no_baseline' | 'out_of_range' | null;
   text: string;
   paid: false;
   note: string;
@@ -29,6 +29,9 @@ export interface PracticeScore {
   forecast?: number | null;
   truth?: number | null;
   truthObservedAt?: string | null;
+  /** The truth reading's chain commit id and block height, so the score can be checked. */
+  truthCommitId?: string | null;
+  truthHeight?: number | null;
   error?: number | null;
   baseline?: { error: number | null; kind: 'climatology_spread' | 'persistence_spread' | null };
   skill?: number | null;

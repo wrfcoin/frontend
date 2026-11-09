@@ -258,7 +258,7 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     commitTxHash: `c${i}`.padEnd(64, 'd'), revealTxHash: status === 'revealed' ? `e${i}`.padEnd(64, 'f') : null,
     committedAtHeight: 44000 + i * 40, revealedAtHeight: status === 'revealed' ? 44001 + i * 40 : null, score: null, practiceScore,
   });
-  const psBase = unit => ({ paid: false, note: 'Practice score. Nothing is paid yet: pay starts when skill pay is switched on.', unit, skillMax: 1_000_000 });
+  const psBase = unit => ({ paid: false, note: 'Practice score. Nothing is paid for it.', unit, skillMax: 1_000_000 });
   const psScored = (unit, hoursAgo, f, t, ref, kind, extra = {}) => {
     const error = Math.abs(f - t);
     const skill = ref === 0 || extra.copied ? 0 : Math.max(0, 1_000_000 - Math.floor(1_000_000 * error / ref));

@@ -10,7 +10,7 @@ import {
 } from '../services/walletCrypto/forecastCommit';
 import { readForecastStatus, readMyForecasts, requestForecastDraft, submitForecast } from '../services/websiteForecastApi';
 import { useForecasterThemeVars, When } from './publicForecastersShared';
-import ForecastPracticeScore from './ForecastPracticeScore';
+import ForecastPracticeScore, { hasPracticePanel } from './ForecastPracticeScore';
 import { useSignedInWallet } from './friendChallengesShared';
 import './PublicForecastersPage.css';
 import './FriendChallengesPage.css';
@@ -30,7 +30,7 @@ export const VARIABLES = {
   pressure_hpa: { label: 'Pressure', unit: 'hPa', field: 'pressureHpa', min: 850, max: 1100 },
 };
 const NETWORK_ID = 'testnet';
-export const PRACTICE_NOTE = 'Practice score. Nothing is paid yet: pay starts when skill pay is switched on.';
+export const PRACTICE_NOTE = 'Practice score. Nothing is paid for it.';
 const STATUS_LABEL = { committing: 'Sending to chain', committed: 'Committed, reveal next', revealing: 'Revealing', revealed: 'Revealed on chain', failed: 'Failed' };
 const REFUSALS = {
   ALREADY_FORECAST: 'You already made a forecast for this station and lead time today (UTC). One per station, lead and day.',
@@ -83,16 +83,16 @@ export function MyForecasts({ rows, loading, error, onRefresh }) {
           <div className="ch-board-head">
             <div>
               <h3>{VARIABLES[f.variable]?.label ?? f.variable} {fmtValue(f.value, f.variable)} · {f.leadHours} h</h3>
-              <p className="ch-desc">Station <span className="fn-mono">{f.stationAlias}</span> · target <When value={f.validAt} withTime /></p>
+              <p className="ch-desc">Station <span className="fn-mono">{f.stationAlias}</span> · target <When value={f.practiceScore?.validAt ?? f.validAt} withTime /></p>
             </div>
             <span className={`ch-status fn-status--${f.status}`}>{STATUS_LABEL[f.status] ?? f.status}</span>
           </div>
           <dl className="fn-facts">
             <div><dt>Commit</dt><dd><TxLink hash={f.commitTxHash} />{Number.isSafeInteger(f.committedAtHeight) ? ` · block ${f.committedAtHeight.toLocaleString('en-US')}` : ''}</dd></div>
             <div><dt>Reveal</dt><dd><TxLink hash={f.revealTxHash} />{Number.isSafeInteger(f.revealedAtHeight) ? ` · block ${f.revealedAtHeight.toLocaleString('en-US')}` : ''}</dd></div>
-            {f.practiceScore === undefined ? <div><dt>Practice score</dt><dd><ScoreCell score={f.score} variable={f.variable} /></dd></div> : null}
+            {hasPracticePanel(f.practiceScore) ? null : <div><dt>Practice score</dt><dd><ScoreCell score={f.score} variable={f.variable} /></dd></div>}
           </dl>
-          {f.practiceScore ? <ForecastPracticeScore score={f.practiceScore} leadHours={f.leadHours} /> : null}
+          {hasPracticePanel(f.practiceScore) ? <ForecastPracticeScore score={f.practiceScore} leadHours={f.leadHours} /> : null}
           {f.status === 'failed' ? <p className="fn-fail">{failureLine(f.failure)}</p> : null}
         </article>
       ))}
