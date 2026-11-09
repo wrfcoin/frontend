@@ -59,9 +59,11 @@ import { readJwtSubject } from '../walletJwtSubject';
 export { readJwtSubject } from '../walletJwtSubject';
 import {
   WalletAuthService,
+  type PasskeyAssert,
   type WalletSignMessage,
 } from '../walletAuthService';
 import type { Ed25519LoginExpectations } from '../walletCrypto/loginChallenge';
+import { passkeyRecordAddress, type PasskeyCredentialRecord } from '../walletCrypto/passkey';
 
 /**
  * Supported station providers.
@@ -650,6 +652,26 @@ export class StationRegistrationService {
       address: expected,
       expiresIn: result.expiresIn,
     };
+  }
+
+  /**
+   * Passkey wallet login (owner decision 2026-11-09, Phase 1). The JWT sub is the passkey address, which
+   * `POST /weather/stations` then records as the station owner. A token naming any other subject clears
+   * the session and fails closed, as for ed25519.
+   */
+  async loginWithPasskey(
+    record: PasskeyCredentialRecord,
+    expectations?: Omit<Ed25519LoginExpectations, 'address'>,
+    assert?: PasskeyAssert,
+  ): Promise<WalletLoginResult> {
+    const expected = passkeyRecordAddress(record).toLowerCase();
+    const result = await this.walletAuth.loginWithPasskey(record, expectations, assert);
+    const sub = readJwtSubject(result.jwt);
+    if (sub === null || sub !== expected) {
+      this.walletAuth.clearSession();
+      throw new Error('Wallet login returned a token for a different account.');
+    }
+    return { token: result.jwt, address: expected, expiresIn: result.expiresIn };
   }
 
   /** Request a faucet captcha challenge (required before every claim). */

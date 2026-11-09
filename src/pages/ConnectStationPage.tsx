@@ -53,6 +53,7 @@ import { coarsenCoordinate } from '../utils/geo';
 import FEATURES from '../config/features';
 import { useOwnedFirstPartyAddress } from '../hooks/useOwnedFirstPartyAddress';
 import { loadStoredPasskey } from '../services/walletCrypto/passkeySend';
+import { passkeyRecordAddress } from '../services/walletCrypto/passkey';
 import { readVault } from '../services/walletVault';
 import { UNLOCK_RETURN_STATE } from './unlockReturn';
 
@@ -128,7 +129,22 @@ interface WalletStepProps {
    * own state and are dropped when it unmounts; they are never handed to the
    * page root, later wizard steps, or any shared context/provider.
    */
-  onAuthenticated: (address: string) => void;
+  onAuthenticated: (address: string, kind?: OwnerKind) => void;
+}
+
+/** Which wallet owns the station: the 12-word (ed25519) wallet, or a passkey wallet (Phase 1, not earning yet). */
+export type OwnerKind = 'phrase' | 'passkey';
+
+/** Shown wherever a passkey wallet owns the station: it is connected now and earns once the chain accepts it. */
+export function PasskeyNotEarningYet() {
+  return (
+    <WrfAlert severity="info" title="Not earning yet" data-testid="connect-station-passkey-not-earning">
+      <Typography variant="body2">
+        Your passkey wallet owns this station, and its weather data is collected. It doesn't earn rewards yet:
+        rewards start once the chain accepts passkey owners. You don't need to do anything when that happens.
+      </Typography>
+    </WrfAlert>
+  );
 }
 
 function MnemonicGrid({ mnemonic }: { mnemonic: string }) {
@@ -171,9 +187,18 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
   // registration and reward-progress calls use, so it needs no second login here.
   const ownedAddress = useOwnedFirstPartyAddress();
   const publicBuild = isPublicBuild();
-  // A passkey wallet saved in this browser (read-only check). It cannot own a station yet: station login and
-  // registration use ed25519 signatures, so such a visitor is told to make a 12-word wallet instead.
-  const hasPasskeyWallet = useMemo(() => loadStoredPasskey() !== null, []);
+  // A passkey wallet saved in this browser (public material only). With FEATURES.passkeyStationOwner it can
+  // sign in and own the station (owner decision 2026-11-09, Phase 1; it earns once core4 accepts passkey
+  // owners). Without the flag, such a visitor is told to make a 12-word wallet instead.
+  const storedPasskey = useMemo(() => loadStoredPasskey(), []);
+  const hasPasskeyWallet = storedPasskey !== null;
+  const passkeyOwner = FEATURES.passkeyStationOwner ? storedPasskey : null;
+  const passkeyOwnerAddress = useMemo(
+    () => (passkeyOwner ? passkeyRecordAddress(passkeyOwner).toLowerCase() : null),
+    [passkeyOwner],
+  );
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [passkeyError, setPasskeyError] = useState('');
   // A 12-word wallet saved in this browser but not unlocked (its public address only). With both kinds saved,
   // the station always joins with this one, so the page offers to unlock it rather than to make another.
   const savedPhraseAddress = useMemo(() => readVault()?.address.toLowerCase() ?? null, []);
@@ -251,6 +276,40 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
     }
   }, [createWallet, backupConfirmed, verificationPassed, onAuthenticated]);
 
+  const signInWithPasskey = useCallback(async () => {
+    if (!passkeyOwner) return;
+    setPasskeyError('');
+    setPasskeyBusy(true);
+    try {
+      // One passkey prompt: the backend binds the JWT sub to the passkey address, which becomes the
+      // station owner on POST /weather/stations.
+      const result = await stationRegistrationService.loginWithPasskey(passkeyOwner);
+      onAuthenticated(result.address, 'passkey');
+    } catch {
+      setPasskeyError('Passkey sign-in did not finish. Please try again.');
+    } finally {
+      setPasskeyBusy(false);
+    }
+  }, [passkeyOwner, onAuthenticated]);
+
+  const passkeyCard = passkeyOwner && passkeyOwnerAddress ? (
+    <WrfCard variant="outlined" headerTitle="Use your passkey wallet" data-testid="connect-station-passkey-owner">
+      <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all', mb: 1 }}>
+        {passkeyOwnerAddress}
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+        The station stays with this wallet for good. It is connected right away but is not earning yet: rewards
+        start once the chain accepts passkey owners.
+      </Typography>
+      {passkeyError && <WrfAlert severity="error" sx={{ mb: 1.5 }}>{passkeyError}</WrfAlert>}
+      <WrfButton variant="primary" onClick={signInWithPasskey} loading={passkeyBusy} disabled={passkeyBusy}>
+        Use passkey wallet
+      </WrfButton>
+    </WrfCard>
+  ) : null;
+  // A passkey that can own a station makes the "12-word wallet only" notices below wrong, so they hide.
+  const showPhraseOnlyNotice = hasPasskeyWallet && !passkeyCard;
+
   if (mode === 'choose' && (ownedAddress || publicBuild)) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }} data-testid="connect-station-own-wallet">
@@ -258,6 +317,7 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
         <Typography variant="body2" color="text.secondary">
           Your wallet is the station owner and receives any rewards that are later recorded.
         </Typography>
+        {passkeyCard}
         {ownedAddress ? (
           <WrfCard variant="outlined" headerTitle="Use your signed-in wallet">
             <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all', mb: 1.5 }}>
@@ -266,7 +326,7 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
             <WrfButton variant="primary" onClick={() => onAuthenticated(ownedAddress)}>
               Use this wallet
             </WrfButton>
-            {hasPasskeyWallet && (
+            {showPhraseOnlyNotice && (
               <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }} data-testid="connect-station-phrase-not-passkey">
                 This is your 12-word wallet. Your passkey wallet can't own a weather station yet, so the station and
                 its rewards stay with this one.
@@ -279,7 +339,7 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
               {savedPhraseAddress}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-              {hasPasskeyWallet
+              {showPhraseOnlyNotice
                 ? 'Stations join with your 12-word wallet, not your passkey wallet. Unlock it with the password you set in this browser, then you come back here.'
                 : 'Unlock it with the password you set in this browser, then you come back here.'}
             </Typography>
@@ -287,7 +347,7 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
               Unlock 12-word wallet
             </WrfButton>
           </WrfCard>
-        ) : hasPasskeyWallet ? (
+        ) : passkeyCard ? null : hasPasskeyWallet ? (
           <WrfAlert severity="info" title="Stations need a 12-word wallet">
             <Typography variant="body2" sx={{ mb: 1.5 }}>
               Your passkey wallet can't own a weather station yet. Create a 12-word wallet in wallet setup (write
@@ -317,6 +377,7 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
     return (
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Typography variant="h6" component="h2">Set up your wallet</Typography>
+        {passkeyCard}
         <Typography variant="body2" color="text.secondary">
           Your wallet identifies the station owner and receives any on-chain
           credits that are later recorded. It is non-custodial — only you hold
@@ -837,6 +898,7 @@ export function StationStep({ form, setForm, verified, setVerified, onContinue }
 interface ConfirmStepProps {
   address: string;
   form: StationFormData;
+  ownerKind?: OwnerKind;
 }
 
 interface RewardProgressPresentation {
@@ -993,7 +1055,7 @@ export function StationRewardProgressPanel({
   );
 }
 
-export function ConfirmStep({ address, form }: ConfirmStepProps) {
+export function ConfirmStep({ address, form, ownerKind = 'phrase' }: ConfirmStepProps) {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -1028,7 +1090,7 @@ export function ConfirmStep({ address, form }: ConfirmStepProps) {
         <Typography variant="h4" component="h2" sx={{ fontWeight: 700 }}>
           Station registered
         </Typography>
-        <StationRewardProgressPanel stationId={stationId} />
+        {ownerKind === 'passkey' ? <PasskeyNotEarningYet /> : <StationRewardProgressPanel stationId={stationId} />}
         <WrfCard variant="filled">
           <Typography variant="subtitle2" gutterBottom>
             Station ID
@@ -1054,7 +1116,9 @@ export function ConfirmStep({ address, form }: ConfirmStepProps) {
       <WrfCard variant="outlined">
         <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: 2, rowGap: 1 }}>
           <Typography variant="body2" color="text.secondary">Owner</Typography>
-          <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>{address}</Typography>
+          <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+            {address}{ownerKind === 'passkey' ? ' (passkey wallet)' : ''}
+          </Typography>
           <Typography variant="body2" color="text.secondary">Name</Typography>
           <Typography variant="body2">{form.name}</Typography>
           <Typography variant="body2" color="text.secondary">Coordinates</Typography>
@@ -1077,6 +1141,7 @@ export function ConfirmStep({ address, form }: ConfirmStepProps) {
           <Typography variant="body2">Ambient Weather</Typography>
         </Box>
       </WrfCard>
+      {ownerKind === 'passkey' && <PasskeyNotEarningYet />}
       <WrfButton variant="primary" onClick={submit} loading={submitting} disabled={submitting}>
         Register Station
       </WrfButton>
@@ -1093,6 +1158,7 @@ export default function ConnectStationPage() {
   // Only the public chain address crosses into page state (see
   // WalletStepProps.onAuthenticated); the signing account never does.
   const [walletAddress, setWalletAddress] = useState<string>('');
+  const [ownerKind, setOwnerKind] = useState<OwnerKind>('phrase');
   const [verified, setVerified] = useState(false);
   const [form, setForm] = useState<StationFormData>({
     name: '',
@@ -1110,9 +1176,12 @@ export default function ConnectStationPage() {
     case 0:
       return (
         <WalletStep
-          onAuthenticated={(address) => {
+          onAuthenticated={(address, kind = 'phrase') => {
             setWalletAddress(address);
-            setActiveStep(1);
+            setOwnerKind(kind);
+            // The faucet step claims for the 12-word wallet; a passkey wallet has its own faucet button on
+            // /wallet/passkey and needs no WRF to register, so it goes straight to the station.
+            setActiveStep(kind === 'passkey' ? 2 : 1);
           }}
         />
       );
@@ -1134,7 +1203,7 @@ export default function ConnectStationPage() {
         />
       );
     case 3:
-      return <ConfirmStep address={walletAddress} form={form} />;
+      return <ConfirmStep address={walletAddress} form={form} ownerKind={ownerKind} />;
     default:
       return null;
     }
