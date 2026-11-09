@@ -110,7 +110,7 @@ export default function PublicForecastersPage() {
             against later observations; anyone with a wallet can take part.
           </p>
           <p className="fc-note" data-testid="practice-score-note">
-            Skill scores today are practice scores. Nothing is paid for them. <Link to="/forecast/new">Make a forecast</Link>.
+            Skill scores are practice scores. Nothing is paid for them. <Link to="/forecast/new">Make a forecast</Link>.
           </p>
         </div>
         <div className="fc-head-side">
