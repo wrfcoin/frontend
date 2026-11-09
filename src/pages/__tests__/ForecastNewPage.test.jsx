@@ -97,7 +97,7 @@ it('suggests the last reading, signs the verified draft and shows the commit', a
   const submit = calls.find(c => c.path === '/forecasts/submit');
   expect(submit.body.commitId).toBe(draft().commitId);
   expect(submit.body.authSignature).toMatch(/^[0-9a-f]{128}$/);
-  expect(screen.getByText(/Practice score, not paid yet/)).toBeInTheDocument();
+  expect(screen.getByText('Practice score. Nothing is paid yet: pay starts when skill pay is switched on.')).toBeInTheDocument();
 });
 
 it('never signs a draft whose value differs from what was typed', async () => {
@@ -137,4 +137,78 @@ it('shows a failed row in plain words, never the raw code', async () => {
   renderPage();
   expect(await screen.findByText('Didn\'t reach the chain; you can try again.')).toBeInTheDocument();
   expect(screen.queryByText(/FORECAST_QUOTA_EXCEEDED/)).toBeNull();
+});
+
+// Practice scores (backend switch WEBSITE_FORECAST_SCORE_ENABLED): whole numbers in hundredths, skill in millionths.
+const mineRow = (id, practiceScore, over = {}) => ({
+  commitId: id.repeat(64), stationAlias: ALIAS, variable: 'temperature_c', value: 18.1, leadHours: 6,
+  issuedAt: '2026-11-07T12:00:00.000Z', validAt: '2026-11-07T18:00:00.000Z', status: 'revealed', failure: null,
+  commitTxHash: 'b'.repeat(64), revealTxHash: 'c'.repeat(64), committedAtHeight: 4100, revealedAtHeight: 4101, score: null, practiceScore, ...over,
+});
+const base = { paid: false, note: 'Practice score. Nothing is paid yet: pay starts when skill pay is switched on.', unit: 'temp_c_centi', skillMax: 1_000_000 };
+const scoredScore = over => ({
+  ...base, status: 'scored', reason: null, text: 'scored', validAt: '2026-11-07T18:00:40.000Z', forecast: 1810, truth: 1900, truthObservedAt: '2026-11-07T18:02:00.000Z',
+  error: 90, baseline: { error: 180, kind: 'persistence_spread' }, skill: 500_000, copied: false, beatBaseline: true, nws: null, ...over,
+});
+
+it('shows a scored forecast in plain words: measured, off by, baseline, beat it, and that nothing is paid', async () => {
+  api({ mine: [mineRow('a', scoredScore({ nws: { source: 'NOAA National Weather Service forecast', forecast: 1840, error: 60, skill: 666_667, leadHours: 6, result: 'nws_beat_you' } }))] });
+  setAuthToken(tokenFor(A));
+  renderPage();
+  const panel = await screen.findByTestId('practice-score');
+  expect(panel).toHaveTextContent('Practice score 50 / 100');
+  expect(panel).toHaveTextContent('Beat the baseline: yes');
+  expect(panel).toHaveTextContent(/You said 18\.1 °C\. The station measured 19\.0 °C/);
+  expect(panel).toHaveTextContent('You were off by 0.9 °C.');
+  expect(panel).toHaveTextContent('Baseline to beat: 1.8 °C (how much this station usually changes in 6 hours). Your miss was smaller.');
+  expect(screen.getByTestId('practice-nws')).toHaveTextContent('NOAA’s forecast beat you for that hour (off by 0.6 °C).');
+  expect(panel).toHaveTextContent('Scored. Pay starts when skill pay is switched on.');
+  expect(panel).not.toHaveTextContent(/WRF|earn|reward/i);
+  // The older "measured … off by" cell is replaced, not shown twice.
+  expect(screen.queryByText(/After the target time/)).toBeNull();
+});
+
+it('says no when the baseline was not beaten, explains a copy, and reads pressure in hPa', async () => {
+  api({ mine: [
+    mineRow('a', scoredScore({ error: 250, truth: 2060, skill: 0, beatBaseline: false, baseline: { error: 207, kind: 'climatology_spread' }, nws: { source: 'n', forecast: 2000, error: 300, skill: 0, leadHours: 6, result: 'you_beat_nws' } })),
+    mineRow('b', scoredScore({ copied: true, skill: 0, beatBaseline: false })),
+    mineRow('c', scoredScore({ unit: 'pressure_pa', forecast: 101330, truth: 101325, error: 5, baseline: { error: 0, kind: 'climatology_spread' }, skill: 0, beatBaseline: false }), { variable: 'pressure_hpa', value: 1013.3 }),
+  ] });
+  setAuthToken(tokenFor(A));
+  renderPage();
+  const [missed, copied, flat] = await screen.findAllByTestId('practice-score');
+  expect(missed).toHaveTextContent('Practice score 0 / 100');
+  expect(missed).toHaveTextContent('Beat the baseline: no');
+  expect(missed).toHaveTextContent('Baseline to beat: 2.07 °C (how much this station varied over the day before). Your miss was not smaller.');
+  expect(missed).toHaveTextContent('You beat NOAA’s forecast for that hour (off by 3.0 °C).');
+  expect(copied).toHaveTextContent(/Scored 0: your forecast was the same as the station’s last reading or its 24-hour average/);
+  expect(flat).toHaveTextContent('You said 1013.3 hPa. The station measured 1013.25 hPa');
+  expect(flat).toHaveTextContent('You were off by 0.05 hPa.');
+  expect(flat).toHaveTextContent('The station did not change at all, so there was nothing to beat.');
+});
+
+it('pending and unscored are said plainly; a forecast not yet revealed shows no score panel', async () => {
+  api({ mine: [
+    mineRow('a', { ...base, status: 'pending', reason: null, text: 'pending until 2026-11-07T18:20:00.000Z', pendingUntil: '2026-11-07T18:20:00.000Z', giveUpAt: '2026-11-08T18:00:00.000Z' }),
+    mineRow('b', { ...base, status: 'pending', reason: 'waiting_for_reading', text: 'pending: waiting for a station reading', pendingUntil: '2026-11-07T18:20:00.000Z', giveUpAt: '2026-11-08T18:00:00.000Z' }),
+    mineRow('c', { ...base, status: 'unscored', reason: 'no_reading', text: 'unscored: no reading', forecast: 1810, truth: null }),
+    mineRow('d', { ...base, status: 'unscored', reason: 'no_baseline', text: 'unscored: not enough earlier readings for a baseline', forecast: 1810, truth: 1900 }),
+    mineRow('e', null, { status: 'committed' }),
+  ] });
+  setAuthToken(tokenFor(A));
+  renderPage();
+  const panels = await screen.findAllByTestId('practice-score');
+  expect(panels.length).toBe(4);
+  expect(panels[0]).toHaveTextContent(/Practice score: not yet.*Scored after .*once the station has reported\./);
+  expect(panels[1]).toHaveTextContent(/Waiting for a station reading close to the target time\. We keep looking until/);
+  expect(panels[2]).toHaveTextContent('Not scored');
+  expect(panels[2]).toHaveTextContent('The station had no reading within 15 minutes of the target time, so there is nothing to score against.');
+  expect(panels[3]).toHaveTextContent('The station had too few readings in the day before your forecast to set a baseline.');
+});
+
+it('formats hundredths without floating-point surprises and rounds skill down', async () => {
+  const { fmtHundredths, skillOutOf100 } = await import('../ForecastPracticeScore');
+  expect([fmtHundredths(1810, '°C'), fmtHundredths(-5, '°C'), fmtHundredths(-1234, ''), fmtHundredths(0, 'hPa'), fmtHundredths(101325, 'hPa'), fmtHundredths(1.5, '°C')])
+    .toEqual(['18.1 °C', '−0.05 °C', '−12.34', '0.0 hPa', '1013.25 hPa', '—']);
+  expect([skillOutOf100(999_999), skillOutOf100(1_000_000), skillOutOf100(9_999), skillOutOf100(0), skillOutOf100(null)]).toEqual([99, 100, 0, 0, null]);
 });

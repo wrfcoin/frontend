@@ -93,6 +93,7 @@ export const SCENARIOS = [
   { name: 'forecast-check-empty', route: '/forecast-check', note: 'nothing scored yet: every figure says Unavailable with its reason' },
   { name: 'forecast-check-off', route: '/forecast-check', note: 'the 404 while FORECAST_VERIFICATION_ENABLED is not true' },
   { name: 'challenges-signed-in', route: '/challenges', note: 'after the real web-wallet setup: your challenges with chain counts' },
+  { name: 'forecast-new-scored', route: '/forecast/new', note: 'signed in, practice scores on: my forecasts scored, pending and not scored' },
   { name: 'challenge-board-off', route: '/challenges/RAIN-7K2Q', note: 'the 404 while FRIEND_CHALLENGES_ENABLED is not true' },
   { name: 'duels-off', route: '/duels', note: 'the 404 while FORECAST_DUELS_ENABLED is not true' },
   { name: 'connect-station-passkey', route: '/connect-station', note: 'a passkey wallet saved in this browser (fixture record), no 12-word wallet signed in' },
