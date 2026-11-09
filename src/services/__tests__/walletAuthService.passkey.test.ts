@@ -6,6 +6,7 @@ import {
   WalletAuthService,
   clearWalletAuthSession,
   passkeyLoginMessage,
+  type PasskeyAssert,
 } from '../walletAuthService';
 import { bytesToHex, passkeyRecordAddress, type PasskeyCredentialRecord } from '../walletCrypto/passkey';
 
@@ -71,11 +72,11 @@ describe('passkey wallet login (client)', () => {
     (global.fetch as jest.Mock<typeof fetch>)
       .mockResolvedValueOnce(ok(data))
       .mockResolvedValueOnce(ok({ jwt: jwtFor(ADDRESS), refreshToken: 'r', expiresIn: 900 }));
-    const assert = jest.fn(async () => FAKE_AUTH);
+    const assert = jest.fn<PasskeyAssert>(async () => FAKE_AUTH);
     const result = await new WalletAuthService('/api').loginWithPasskey(RECORD, EXPECT, assert);
 
     expect(global.fetch).toHaveBeenNthCalledWith(1, `/api/auth/nonce/${ADDRESS}?scheme=passkey`, expect.objectContaining({ method: 'GET' }));
-    const challenge = assert.mock.calls[0][1] as Uint8Array;
+    const challenge = assert.mock.calls[0][1];
     expect(bytesToHex(challenge)).toBe(bytesToHex(sha3_256(new Uint8Array(Buffer.from(String(data.message), 'hex')))));
     const [, init] = (global.fetch as jest.Mock<typeof fetch>).mock.calls[1];
     expect(JSON.parse(String((init as { body?: unknown }).body))).toEqual({ scheme: 'passkey', address: ADDRESS, nonce: NONCE, passkey_auth: FAKE_AUTH });
@@ -93,7 +94,7 @@ describe('passkey wallet login (client)', () => {
     ['window longer than 10 minutes', { expirationTime: new Date(Date.now() + 60 * 60_000).toISOString() }],
   ])('refuses a challenge with %s and never prompts for the passkey', async (_label, over) => {
     (global.fetch as jest.Mock<typeof fetch>).mockResolvedValueOnce(ok(nonceData(over)));
-    const assert = jest.fn(async () => FAKE_AUTH);
+    const assert = jest.fn<PasskeyAssert>(async () => FAKE_AUTH);
     await expect(new WalletAuthService('/api').loginWithPasskey(RECORD, EXPECT, assert)).rejects.toThrow('not a valid passkey challenge');
     expect(assert).not.toHaveBeenCalled();
     expect(global.fetch).toHaveBeenCalledTimes(1);
