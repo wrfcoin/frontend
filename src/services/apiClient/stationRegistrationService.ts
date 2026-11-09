@@ -131,6 +131,12 @@ export interface RegisterStationRequest {
   appKey?: string;
   hardware?: string;
   mac?: string;
+  /**
+   * A station id chosen by the browser, for a brand-new wallet that has to sign for its station before
+   * the wallet is dropped (see walletCrypto/stationOwnership). Letters, digits, `_` and `-` only. Omit it
+   * and the backend picks the id.
+   */
+  stationId?: string;
 }
 
 export interface RegisterStationResult {
@@ -156,11 +162,44 @@ export type StationRewardProgressState =
   | 'REWARDED'
   | 'UNKNOWN';
 
+/**
+ * Where a website station is on its way to earning. A station earns only once it is registered on
+ * chain; that is done in batches, after the owner's wallet has signed for the station.
+ */
+export type StationChainRegistrationState = 'needs_owner_signature' | 'waiting' | 'earning';
+
+export interface StationChainRegistration {
+  state: StationChainRegistrationState;
+  /** The station's chain id: what the owner's wallet signs for. */
+  stationId: string;
+}
+
+const CHAIN_REGISTRATION_STATES: ReadonlySet<unknown> = new Set(['needs_owner_signature', 'waiting', 'earning']);
+
+/** Untrusted input: anything but a known state with a plain station id is "not reported". */
+export function normalizeStationChainRegistration(raw: unknown): StationChainRegistration | null {
+  if (
+    !raw || typeof raw !== 'object' ||
+    !CHAIN_REGISTRATION_STATES.has((raw as { state?: unknown }).state) ||
+    typeof (raw as { stationId?: unknown }).stationId !== 'string' ||
+    !/^[a-zA-Z0-9_-]{1,64}$/.test((raw as { stationId: string }).stationId)
+  ) {
+    return null;
+  }
+  const value = raw as StationChainRegistration;
+  return { state: value.state, stationId: value.stationId };
+}
+
 export interface StationRewardProgress {
   schemaVersion: 1;
   stationId: string;
   ownerAddress: string;
   state: StationRewardProgressState;
+  /**
+   * On-chain registration progress. Absent or null when the backend does not report it (the page then
+   * shows what it showed before).
+   */
+  chainRegistration?: StationChainRegistration | null;
   asOf: string;
   evidenceFresh: boolean;
   registration: {
@@ -386,7 +425,10 @@ export function normalizeStationRewardProgress(
     throw new Error('Reward progress response failed validation.');
   }
 
-  return raw as StationRewardProgress;
+  return {
+    ...(raw as unknown as StationRewardProgress),
+    chainRegistration: normalizeStationChainRegistration(raw.chainRegistration),
+  };
 }
 
 function normalizeIngestionStatus(raw: unknown): IngestionStatus {
@@ -541,6 +583,9 @@ export class StationRegistrationService {
         ...(isAmbient && request.appKey ? { ambientAppKey: request.appKey } : {}),
         ...(request.hardware ? { hardware: request.hardware } : {}),
         ...(request.mac ? { mac: request.mac } : {}),
+        ...(request.stationId && /^(?!mob-)[A-Za-z0-9_-]{1,64}$/.test(request.stationId)
+          ? { stationId: request.stationId }
+          : {}),
       },
     );
 
@@ -595,6 +640,26 @@ export class StationRegistrationService {
       `/weather/stations/${encodeURIComponent(normalizedStationId)}/reward-progress`,
     );
     return normalizeStationRewardProgress(response, normalizedStationId);
+  }
+
+  /**
+   * Hand in the owner wallet's ownership proof for one of its stations (a public key and a signature;
+   * see walletCrypto/stationOwnership). The backend keeps it for the next on-chain registration batch.
+   * Returns the station's registration state, or null when the backend does not report one.
+   */
+  async submitStationOwnershipProof(
+    stationId: string,
+    proof: { owner_pubkey: string; owner_signature: string },
+  ): Promise<StationChainRegistration | null> {
+    const normalizedStationId = stationId.trim();
+    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(normalizedStationId)) {
+      throw new Error('Invalid station ID.');
+    }
+    const response = await this.weatherClient.post<{ chainRegistration?: unknown }>(
+      `/weather/stations/${encodeURIComponent(normalizedStationId)}/ownership-proof`,
+      { owner_pubkey: proof.owner_pubkey, owner_signature: proof.owner_signature },
+    );
+    return normalizeStationChainRegistration(response?.chainRegistration);
   }
 
   /**

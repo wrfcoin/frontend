@@ -213,25 +213,33 @@ describe('ConnectStationPage first-party ed25519 wallet', () => {
     ).toBeInTheDocument();
   });
 
-  it('only the chain address leaves WalletStep; the signing account never reaches page state or context', () => {
+  it('only public material leaves WalletStep; the signing account never reaches page state or context', () => {
     const src = readFileSync(resolve(process.cwd(), 'src/pages/ConnectStationPage.tsx'), 'utf8');
     const code = src
       .split('\n')
       .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))
       .join('\n');
-    // The callback carries a string address (plus which kind of wallet owns it, a plain label), and
-    // WalletStep passes exactly that.
-    expect(code).toMatch(/onAuthenticated: \(address: string, kind\?: OwnerKind\) => void;/);
+    // The callback carries a string address, which kind of wallet owns it (a plain label) and, for a
+    // brand-new wallet, a station ownership proof signed in advance: a station id, a public key and a
+    // signature. WalletStep passes exactly that.
+    expect(code).toMatch(
+      /onAuthenticated: \(address: string, kind\?: OwnerKind, presigned\?: PresignedStationOwnership\) => void;/,
+    );
     expect(code).toMatch(/export type OwnerKind = 'phrase' \| 'passkey';/);
-    expect(code).toMatch(/onAuthenticated\(createWallet\.address\)/);
+    expect(code).toMatch(/onAuthenticated\(createWallet\.address, 'phrase', presigned\)/);
+    expect(code).toMatch(
+      /export interface PresignedStationOwnership \{\s*stationId: string;\s*proof: StationOwnershipProof;\s*\}/,
+    );
     // Page root keeps only the address: no SessionWallet / account in its body.
     const root = code.slice(code.indexOf('export default function ConnectStationPage'));
     expect(root.length).toBeGreaterThan(100);
     expect(root).toMatch(/useState<string>\(''\)/);
     expect(root).not.toMatch(/SessionWallet|\baccount\b|mnemonic/);
-    // The account is used in exactly one place: handed to the validating login signer.
-    expect(code.match(/\.account\b/g)).toEqual(['.account']);
+    // The account is used in exactly two places, both purpose-bound signers that build or check the
+    // message themselves: the validating login signer, and the station ownership signer.
+    expect(code.match(/\.account\b/g)).toEqual(['.account', '.account']);
     expect(code).toMatch(/ed25519LoginSigner\(createWallet\.account\)/);
+    expect(code).toMatch(/signStationOwnership\(createWallet\.account, stationId, \{/);
     // No React context/provider through which it could escape.
     expect(code).not.toMatch(/createContext|useContext|\.Provider\b|<\w+Provider\b/);
   });

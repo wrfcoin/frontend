@@ -236,6 +236,77 @@ describe('StationRegistrationService', () => {
     expect(result.reward).toBeNull();
   });
 
+  const awaitingProjection = (extra = {}) => ({
+    schemaVersion: 1,
+    stationId: 'station-2456',
+    ownerAddress: '0xowner',
+    state: 'AWAITING_OBSERVATION',
+    asOf: '2026-07-28T12:00:00.000Z',
+    evidenceFresh: true,
+    registration: { state: 'REGISTERED', registeredAt: null },
+    chain: null,
+    observation: null,
+    contribution: null,
+    reward: null,
+    diagnostic: null,
+    ...extra,
+  });
+
+  it('getStationRewardProgress passes on a known on-chain registration state and nothing else', async () => {
+    const service = new StationRegistrationService(serviceUrls);
+    for (const state of ['needs_owner_signature', 'waiting', 'earning']) {
+      global.fetch.mockResolvedValueOnce(
+        jsonResponse(awaitingProjection({ chainRegistration: { state, stationId: 'station-2456', owner: '0xleak' } })),
+      );
+      const result = await service.getStationRewardProgress('station-2456');
+      expect(result.chainRegistration).toEqual({ state, stationId: 'station-2456' });
+    }
+    // Absent, null, an unknown state or a malformed id all read as "not reported": never as earning.
+    for (const chainRegistration of [
+      undefined,
+      null,
+      'earning',
+      { state: 'paid', stationId: 'station-2456' },
+      { state: 'earning' },
+      { state: 'earning', stationId: 'bad id' },
+    ]) {
+      global.fetch.mockResolvedValueOnce(jsonResponse(awaitingProjection({ chainRegistration })));
+      const result = await service.getStationRewardProgress('station-2456');
+      expect(result.chainRegistration).toBeNull();
+    }
+  });
+
+  it('submitStationOwnershipProof posts only the public key and signature for that station', async () => {
+    const service = new StationRegistrationService(serviceUrls);
+    global.fetch.mockResolvedValueOnce(
+      jsonResponse({ success: true, chainRegistration: { state: 'waiting', stationId: 'station-2456' } }),
+    );
+    const proof = { owner_pubkey: 'ab'.repeat(32), owner_signature: 'cd'.repeat(64), mnemonic: 'never sent' };
+    const result = await service.submitStationOwnershipProof('station-2456', proof);
+    expect(result).toEqual({ state: 'waiting', stationId: 'station-2456' });
+    const [url, init] = global.fetch.mock.calls.at(-1);
+    expect(url).toBe('https://api.example.com/api/weather/stations/station-2456/ownership-proof');
+    expect(init.method).toBe('POST');
+    expect(JSON.parse(init.body)).toEqual({ owner_pubkey: 'ab'.repeat(32), owner_signature: 'cd'.repeat(64) });
+    await expect(service.submitStationOwnershipProof('bad id', proof)).rejects.toThrow(/Invalid station ID/);
+  });
+
+  it('registerStation sends a browser-chosen station id only when it is a plain website id', async () => {
+    const service = new StationRegistrationService(serviceUrls);
+    const base = { name: 'Back yard', latitude: 10, longitude: 20, provider: 'ambient', apiKey: 'k', appKey: 'a' };
+    for (const [stationId, sent] of [
+      ['pws-0123456789abcdef', true],
+      ['mob-' + '0'.repeat(32), false],
+      ['has space', false],
+      [undefined, false],
+    ]) {
+      global.fetch.mockResolvedValueOnce(jsonResponse({ success: true, stationId: 'pws-0123456789abcdef' }));
+      await service.registerStation({ ...base, stationId });
+      const body = JSON.parse(global.fetch.mock.calls.at(-1)[1].body);
+      expect('stationId' in body).toBe(sent);
+    }
+  });
+
   it('getStationRewardProgress rejects a rewarded claim without exact reward evidence', async () => {
     const service = new StationRegistrationService(serviceUrls);
     global.fetch.mockResolvedValueOnce(
