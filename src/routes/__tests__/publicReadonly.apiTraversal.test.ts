@@ -286,6 +286,8 @@ describe('Stage 1.5 API traversal', () => {
       '^/api/wallet/send$',
       '^/api/wallet/security-key/actions$',
       '^/api/wallet/send-allowlist/actions$',
+      // Advisory governance relay (owner decision 2026-11-09): no bearer, the signed action is the authorization.
+      '^/api/governance/advisory/actions$',
       '^/api/integrations/wolfram/reading-check$',
       '^/api/notifications/subscriptions$',
       '^/api/notifications/subscriptions/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/test$',

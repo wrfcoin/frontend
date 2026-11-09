@@ -10,6 +10,8 @@ import {
 import { governanceService } from '../services/governanceService';
 import { GOVERNANCE_PAGE_SIZE } from '../services/publicReadonlyApi';
 import './PublicGovernancePage.css';
+import { AdvisoryActionsProvider, AdvisoryProposeForm, AdvisoryVoteButtons } from '../components/governance/AdvisoryActions';
+import { advisoryVotingBuildEnabled } from '../services/walletCrypto/advisoryGovernance';
 
 /**
  * Public read-only governance (S4, rebuilt for launch in #558): proposals list and one proposal.
@@ -125,7 +127,7 @@ const ADVISORY_STATUS = {
 const count = value => (Number.isSafeInteger(value) && value >= 0 ? value : null);
 
 /** One advisory proposal. Plain text only: React escapes it and the chain refuses control/bidi characters. */
-function AdvisoryRow({ p }) {
+function AdvisoryRow({ p, canAct }) {
   const status = ADVISORY_STATUS[String(p.status ?? '')] ?? { label: text(p.status), badge: 'neutral' };
   const yes = count(p.yes_votes);
   const no = count(p.no_votes);
@@ -144,6 +146,7 @@ function AdvisoryRow({ p }) {
         {finalized !== null ? <span>· decided at block {finalized}</span>
           : deadline !== null ? <span>· voting ends at block {deadline}</span> : null}
       </div>
+      {canAct && p.status === 'active' && typeof p.id === 'string' ? <AdvisoryVoteButtons proposalId={p.id} /> : null}
       {p.summary ? (
         <details className="pg-adv-summary">
           <summary>Read the proposal</summary>
@@ -159,8 +162,9 @@ function AdvisoryRow({ p }) {
  * Advisory proposals (core4 `advisory_governance`). Shown only once the node reports the feature active or
  * has proposals, so the page says nothing about it before then. A result counts wallets, not people.
  */
-function AdvisorySection({ onActive }) {
+function AdvisorySection({ onActive, credentials }) {
   const [result, setResult] = useState(null);
+  const [reload, setReload] = useState(0);
   useEffect(() => {
     const controller = new globalThis.AbortController();
     governanceService
@@ -171,10 +175,23 @@ function AdvisorySection({ onActive }) {
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [onActive]);
+  }, [onActive, reload]);
   if (result?.kind !== 'ok') return null;
   const { featureActive, proposals, total } = result.data;
   if (!featureActive && proposals.length === 0) return null;
+  // Propose/vote: build flag on AND the node reports the feature active at the next block.
+  const canAct = featureActive && advisoryVotingBuildEnabled();
+  const list = proposals.length === 0 ? (
+    <WrfEmptyState
+      title="No advisory proposals yet"
+      description={canAct ? 'Be the first: propose something above.' : 'Proposals are made with the WRFCoin CLI for now.'}
+      sx={{ background: 'transparent' }}
+    />
+  ) : (
+    <ul className="pg-adv-list">
+      {proposals.map((p, index) => <AdvisoryRow key={String(p.id ?? index)} p={p} canAct={canAct} />)}
+    </ul>
+  );
   return (
     <WrfCard
       component="section"
@@ -188,18 +205,18 @@ function AdvisorySection({ onActive }) {
         out. Each wallet that held at least 1 WRF when it was proposed gets one vote, so results count wallets,
         not people.
       </p>
-      {proposals.length === 0 ? (
-        <WrfEmptyState title="No advisory proposals yet" description="Proposals are made with the WRFCoin CLI for now." sx={{ background: 'transparent' }} />
-      ) : (
-        <ul className="pg-adv-list">
-          {proposals.map((p, index) => <AdvisoryRow key={String(p.id ?? index)} p={p} />)}
-        </ul>
-      )}
+      {canAct ? (
+        <AdvisoryActionsProvider credentials={credentials}>
+          <AdvisoryProposeForm onSubmitted={() => setReload(n => n + 1)} />
+          {list}
+        </AdvisoryActionsProvider>
+      ) : list}
     </WrfCard>
   );
 }
 
-export function PublicGovernanceListPage() {
+/** `credentials` is a test seam for the passkey prompt (navigator.credentials when omitted). */
+export function PublicGovernanceListPage({ credentials } = {}) {
   // Light theme: surface/text/border variables come from the light token set; everything else stays.
   const isDark = useIsDarkTheme();
   const themeVars = { ...TOKEN_VARS, ...publicPageSurfaceVars('pg', isDark) };
@@ -230,14 +247,16 @@ export function PublicGovernanceListPage() {
         <div>
           <h1>Governance</h1>
           <p className="pg-lede">
-            {advisoryActive
+            {advisoryActive && advisoryVotingBuildEnabled()
+              ? 'Testnet proposals. Your wallet can propose an advisory text and vote on one here; parameter proposals stay off.'
+              : advisoryActive
               ? 'Read-only view of testnet proposals. Wallets can sign advisory text proposals and vote on them; parameter proposals stay off.'
               : 'Read-only view of testnet proposals. Submitting proposals and voting aren\'t available on testnet yet.'}
           </p>
         </div>
       </header>
 
-      <AdvisorySection onActive={setAdvisoryActive} />
+      <AdvisorySection onActive={setAdvisoryActive} credentials={credentials} />
 
       <WrfCard
         component="section"
