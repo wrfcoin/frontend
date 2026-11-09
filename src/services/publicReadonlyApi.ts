@@ -56,6 +56,16 @@ export function governanceProposalPath(id: string): string | null {
 export const GOVERNANCE_TREASURY_PATH = '/governance/treasury';
 
 /**
+ * Advisory proposals (core4 `advisory_governance`): signed, text-only, never executed.
+ * `limit=<1..100>&offset=<0..999999>` in that order, like the proposal list.
+ */
+export function governanceAdvisoryProposalsPath(limit = GOVERNANCE_PAGE_SIZE, offset = 0): string {
+  const l = Math.min(100, Math.max(1, Math.trunc(limit)));
+  const o = Math.min(999999, Math.max(0, Math.trunc(offset)));
+  return `/governance/advisory/proposals?limit=${l}&offset=${o}`;
+}
+
+/**
  * Faucet bond-grant audit list (self-serve bond grant spec section 4): the backend forwards the faucet's
  * `GET /faucet/bond-grants` unchanged, `{ grants: [{ ownerAddress, peerId, serverKey, txHash, time, bonded }] }`,
  * newest first, at most 100. No query parameters.

@@ -5,6 +5,7 @@ import {
   GOVERNANCE_TREASURY_PATH,
   governanceProposalPath,
   governanceProposalsPath,
+  governanceAdvisoryProposalsPath,
   publicGet,
   type PublicReadResult,
 } from './publicReadonlyApi';
@@ -192,6 +193,26 @@ class GovernanceService {
     const total = Number.isSafeInteger(result.data?.total) && (result.data!.total as number) >= 0 ? (result.data!.total as number) : null;
     const hasMore = typeof result.data?.hasMore === 'boolean' ? result.data.hasMore : null;
     return { kind: 'ok', data: { proposals, total, hasMore } };
+  }
+
+  /**
+   * Advisory proposals: signed, text-only, never executed (core4 `advisory_governance`).
+   * `featureActive` is the node's own answer; an older node 404s, which reads as not available.
+   */
+  async getAdvisoryProposalsPage(
+    offset = 0,
+    limit: number = GOVERNANCE_PAGE_SIZE,
+    signal?: globalThis.AbortSignal,
+  ): Promise<PublicReadResult<{ featureActive: boolean; proposals: Record<string, unknown>[]; total: number | null; hasMore: boolean | null }>> {
+    const result = await publicGet<{ featureActive?: unknown; proposals?: Record<string, unknown>[]; total?: unknown; hasMore?: unknown }>(
+      governanceAdvisoryProposalsPath(limit, offset),
+      signal,
+    );
+    if (result.kind !== 'ok') return result;
+    const proposals = Array.isArray(result.data?.proposals) ? result.data.proposals : [];
+    const total = Number.isSafeInteger(result.data?.total) && (result.data!.total as number) >= 0 ? (result.data!.total as number) : null;
+    const hasMore = typeof result.data?.hasMore === 'boolean' ? result.data.hasMore : null;
+    return { kind: 'ok', data: { featureActive: result.data?.featureActive === true, proposals, total, hasMore } };
   }
 
   async getPublicProposal(
