@@ -10,7 +10,10 @@ import {
 } from '../services/walletCrypto/forecastCommit';
 import { readForecastStatus, readMyForecasts, requestForecastDraft, submitForecast } from '../services/websiteForecastApi';
 import { useForecasterThemeVars, When } from './publicForecastersShared';
+import ForecastPracticeScore, { hasPracticePanel } from './ForecastPracticeScore';
 import { useSignedInWallet } from './friendChallengesShared';
+import { FEATURES } from '../config/features';
+import ForecastWalletNotice, { forecastWalletNoticeReplaces, useForecastWallets } from './ForecastWalletNotice';
 import './PublicForecastersPage.css';
 import './FriendChallengesPage.css';
 import './ForecastNewPage.css';
@@ -29,7 +32,7 @@ export const VARIABLES = {
   pressure_hpa: { label: 'Pressure', unit: 'hPa', field: 'pressureHpa', min: 850, max: 1100 },
 };
 const NETWORK_ID = 'testnet';
-export const PRACTICE_NOTE = 'Practice score, not paid yet: a forecast earns the baseline credit for its reveal, and skill pay comes later.';
+export const PRACTICE_NOTE = 'Practice score. Nothing is paid for it.';
 const STATUS_LABEL = { committing: 'Sending to chain', committed: 'Committed, reveal next', revealing: 'Revealing', revealed: 'Revealed on chain', failed: 'Failed' };
 const REFUSALS = {
   ALREADY_FORECAST: 'You already made a forecast for this station and lead time today (UTC). One per station, lead and day.',
@@ -82,15 +85,16 @@ export function MyForecasts({ rows, loading, error, onRefresh }) {
           <div className="ch-board-head">
             <div>
               <h3>{VARIABLES[f.variable]?.label ?? f.variable} {fmtValue(f.value, f.variable)} · {f.leadHours} h</h3>
-              <p className="ch-desc">Station <span className="fn-mono">{f.stationAlias}</span> · target <When value={f.validAt} withTime /></p>
+              <p className="ch-desc">Station <span className="fn-mono">{f.stationAlias}</span> · target <When value={f.practiceScore?.validAt ?? f.validAt} withTime /></p>
             </div>
             <span className={`ch-status fn-status--${f.status}`}>{STATUS_LABEL[f.status] ?? f.status}</span>
           </div>
           <dl className="fn-facts">
             <div><dt>Commit</dt><dd><TxLink hash={f.commitTxHash} />{Number.isSafeInteger(f.committedAtHeight) ? ` · block ${f.committedAtHeight.toLocaleString('en-US')}` : ''}</dd></div>
             <div><dt>Reveal</dt><dd><TxLink hash={f.revealTxHash} />{Number.isSafeInteger(f.revealedAtHeight) ? ` · block ${f.revealedAtHeight.toLocaleString('en-US')}` : ''}</dd></div>
-            <div><dt>Practice score</dt><dd><ScoreCell score={f.score} variable={f.variable} /></dd></div>
+            {hasPracticePanel(f.practiceScore) ? null : <div><dt>Practice score</dt><dd><ScoreCell score={f.score} variable={f.variable} /></dd></div>}
           </dl>
+          {hasPracticePanel(f.practiceScore) ? <ForecastPracticeScore score={f.practiceScore} leadHours={f.leadHours} /> : null}
           {f.status === 'failed' ? <p className="fn-fail">{failureLine(f.failure)}</p> : null}
         </article>
       ))}
@@ -174,6 +178,10 @@ export default function ForecastNewPage() {
   const range = VARIABLES[variable];
   const valueOk = value.trim() !== '' && Number.isFinite(numeric) && numeric >= range.min && numeric <= range.max;
   const canSign = Boolean(you) && vaultAddress === you;
+  // Multi-wallet builds name the wallet that signs, and offer to unlock or switch to it.
+  const savedWallets = useForecastWallets(Boolean(FEATURES.multiWallet));
+  const walletNotice = FEATURES.multiWallet && open === 'open';
+  const noticeReplaces = walletNotice && forecastWalletNoticeReplaces(you, canSign, savedWallets);
 
   const submit = async e => {
     e.preventDefault();
@@ -218,7 +226,9 @@ export default function ForecastNewPage() {
       {open === 'closed' ? <WrfAlert severity="info" role="status" className="ch-notice">Website forecasts are not open yet. They switch on when the network is ready; see <Link to="/forecast-check">how forecasts score</Link> in the meantime.</WrfAlert> : null}
       {open === 'error' ? <WrfAlert severity="info" role="status" className="ch-notice">Forecasts are unavailable right now. Try again in a minute.</WrfAlert> : null}
 
-      {open === 'open' && !you ? (
+      {walletNotice ? <ForecastWalletNotice you={you} canSign={canSign} saved={savedWallets} /> : null}
+
+      {open === 'open' && !you && !noticeReplaces ? (
         <WrfCard component="section" aria-label="Sign in" className="fc-section" noPadding>
           <div className="ch-signin">
             <p><strong>Sign in with a 12-word wallet</strong> to make a forecast. Your wallet is your account: no email or name is asked for.</p>
@@ -233,7 +243,7 @@ export default function ForecastNewPage() {
 
       {open === 'open' && you ? (
         <>
-          {!canSign ? (
+          {!canSign && !noticeReplaces ? (
             <WrfAlert severity="info" role="status" className="ch-notice">
               Forecasts are signed with your 12-word wallet on this device. This browser has no 12-word wallet for the signed-in address. <Link to="/onboarding">Set one up</Link> or sign in with it on the <Link to="/wallet">Wallet page</Link>. Passkeys can't sign a forecast yet.
             </WrfAlert>

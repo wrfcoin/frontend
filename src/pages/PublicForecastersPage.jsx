@@ -106,11 +106,11 @@ export default function PublicForecastersPage() {
         <div>
           <h1>Forecasters</h1>
           <p className="fc-lede">
-            Who is forecasting on the testnet and how their track record is building. Forecasts are paid for skill
+            Who is forecasting on the testnet and how their track record is building. Forecasts are scored for skill
             against later observations; anyone with a wallet can take part.
           </p>
           <p className="fc-note" data-testid="practice-score-note">
-            Skill scores today are practice scores, not paid yet: each revealed forecast earns the baseline credit only. <Link to="/forecast/new">Make a forecast</Link>.
+            Skill scores are practice scores. Nothing is paid for them. <Link to="/forecast/new">Make a forecast</Link>.
           </p>
         </div>
         <div className="fc-head-side">

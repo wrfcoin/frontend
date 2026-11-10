@@ -1,5 +1,6 @@
 import { ApiClient } from './apiClient/client';
 import { clearAuthToken, setAuthToken } from './authTokenStore';
+import { beforeWalletLogin, multiWalletSessionRule } from './walletSessionSwitch';
 import { applyPendingReferralForWallet } from './referralAttribution';
 import { sha3_256 } from '@noble/hashes/sha3.js';
 import {
@@ -125,6 +126,14 @@ export function buildWalletLoginMessage(nonce: string): string {
   return `${WALLET_LOGIN_MESSAGE_PREFIX}${nonce}`;
 }
 
+/** A login or refresh answered after the session it belonged to had ended; its token is not stored. */
+export class StaleWalletSessionError extends Error {
+  constructor() {
+    super('The wallet session changed while signing in. Nothing was stored.');
+    this.name = 'StaleWalletSessionError';
+  }
+}
+
 export class WalletAuthService {
   private readonly client: ApiClient;
 
@@ -133,6 +142,13 @@ export class WalletAuthService {
   private currentAddress = '';
 
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Counts session ends (sign-out, a switch to another wallet, a failed refresh). In a multi-wallet build a
+   * login or refresh that started before the last one must not store its token afterwards: a late answer
+   * for the old wallet would otherwise undo the switch.
+   */
+  private epoch = 0;
 
   constructor(apiBaseUrl: string = '/api') {
     this.client = new ApiClient({ baseUrl: apiBaseUrl });
@@ -159,7 +175,9 @@ export class WalletAuthService {
 
     const delayMs = this.getRefreshDelayMs(expiresIn);
     this.refreshTimer = setTimeout(() => {
-      void this.refreshAccessToken().catch(() => {
+      void this.refreshAccessToken().catch(error => {
+        // A refresh overtaken by a sign-out or a switch has nothing of its own left to clear.
+        if (error instanceof StaleWalletSessionError) return;
         this.clearSession();
       });
     }, delayMs);
@@ -169,7 +187,9 @@ export class WalletAuthService {
   private storeTokenResponse(
     address: string,
     response: LoginResponse,
+    startedAt: number = this.epoch,
   ): WalletLoginResponse {
+    if (startedAt !== this.epoch && multiWalletSessionRule()) throw new StaleWalletSessionError();
     const jwt = readRequiredString(response?.jwt, 'jwt');
     const refreshToken = readRequiredString(response?.refreshToken, 'refreshToken');
     const expiresIn = Number(response?.expiresIn);
@@ -178,7 +198,11 @@ export class WalletAuthService {
       throw new Error('Wallet login response did not include a valid expiresIn.');
     }
 
-    this.currentAddress = normalizeEvmAddress(address);
+    const next = normalizeEvmAddress(address);
+    // A login that replaces another wallet's session ends that session too: anything still in flight for
+    // the old wallet (its refresh, a silent sign-in) is now stale, exactly as after a sign-out.
+    if (this.currentAddress && this.currentAddress.toLowerCase() !== next.toLowerCase()) this.epoch += 1;
+    this.currentAddress = next;
     this.refreshToken = refreshToken;
     setAuthToken(jwt);
     this.scheduleRefresh(expiresIn);
@@ -235,7 +259,7 @@ export class WalletAuthService {
     nonce: string;
     scheme?: WalletLoginScheme;
     pubkey?: string;
-  }): Promise<WalletLoginResponse> {
+  }, startedAt: number = this.epoch): Promise<WalletLoginResponse> {
     const isEd25519 = params.scheme === 'ed25519' || params.scheme === 'session_key';
     const address = isEd25519
       ? normalizeEvmAddress(params.address).toLowerCase()
@@ -256,7 +280,7 @@ export class WalletAuthService {
 
     const response = await this.client.post<LoginResponse>('/auth/wallet-login', body);
 
-    const session = this.storeTokenResponse(address, response);
+    const session = this.storeTokenResponse(address, response, startedAt);
     // All callers, including station onboarding, share this login transition.
     // Optional attribution never holds up the newly authenticated session.
     void applyPendingReferralForWallet(session.address).catch(() => {});
@@ -282,6 +306,7 @@ export class WalletAuthService {
     sign: WalletSignMessage,
     expectations?: Ed25519LoginExpectations,
   ): Promise<WalletLoginResponse> {
+    const startedAt = this.epoch;
     const normalizedAddress = normalizeEvmAddress(address).toLowerCase();
     const pubkey = stripHexPrefix(readRequiredString(publicKeyHex, 'pubkey')).toLowerCase();
     if (ed25519PublicKeyToChainAddress(pubkey) !== normalizedAddress) {
@@ -311,7 +336,7 @@ export class WalletAuthService {
       pubkey,
       signature,
       nonce: challenge.nonce,
-    });
+    }, startedAt);
   }
 
   /**
@@ -327,6 +352,7 @@ export class WalletAuthService {
     sign: (message: Uint8Array) => Promise<Uint8Array> | Uint8Array,
     expectations?: Omit<Ed25519LoginExpectations, 'address'>,
   ): Promise<WalletLoginResponse> {
+    const startedAt = this.epoch;
     const owner = normalizeEvmAddress(ownerAddress).toLowerCase();
     const sessionPublicKey = stripHexPrefix(readRequiredString(sessionPublicKeyHex, 'pubkey')).toLowerCase();
     const expected = expectations
@@ -348,7 +374,7 @@ export class WalletAuthService {
       pubkey: sessionPublicKey,
       signature: Array.from(signature, b => b.toString(16).padStart(2, '0')).join(''),
       nonce: challenge.nonce,
-    });
+    }, startedAt);
   }
 
   /**
@@ -395,13 +421,19 @@ export class WalletAuthService {
       throw new Error('Wallet login challenge is not a valid passkey challenge.');
     }
     const passkeyAuth = await assert(record, sha3_256(message));
+    // One session, one wallet (multi-wallet builds): a wallet unlocked in this tab is locked and the old
+    // session dropped before the passkey's session exists. After the prompt, so a cancelled prompt changes
+    // nothing; if the post below then fails, nobody is signed in (fail-safe), never the old wallet.
+    if (await beforeWalletLogin(address)) this.clearSession();
+    // From here on: a sign-out while the post is in flight must win, so its answer is then not stored.
+    const startedAt = this.epoch;
     const login = await this.client.post<LoginResponse>('/auth/wallet-login', {
       scheme: 'passkey',
       address,
       nonce,
       passkey_auth: passkeyAuth,
     });
-    const session = this.storeTokenResponse(address, login);
+    const session = this.storeTokenResponse(address, login, startedAt);
     void applyPendingReferralForWallet(session.address).catch(() => {});
     return session;
   }
@@ -410,6 +442,7 @@ export class WalletAuthService {
     address: string,
     signMessage: WalletSignMessage,
   ): Promise<WalletLoginResponse> {
+    const startedAt = this.epoch;
     const normalizedAddress = normalizeEvmAddress(address);
     const challenge = await this.requestNonce(normalizedAddress);
     // During the serialized rollout the new frontend can still authenticate
@@ -423,20 +456,22 @@ export class WalletAuthService {
       address: normalizedAddress,
       signature,
       nonce: challenge.nonce,
-    });
+    }, startedAt);
   }
 
   async refreshAccessToken(): Promise<WalletLoginResponse> {
+    const startedAt = this.epoch;
     const refreshToken = readRequiredString(this.refreshToken, 'refreshToken');
     const address = normalizeEvmAddress(this.currentAddress);
     const response = await this.client.post<LoginResponse>('/auth/refresh', {
       refreshToken,
     });
 
-    return this.storeTokenResponse(address, response);
+    return this.storeTokenResponse(address, response, startedAt);
   }
 
   clearSession(): void {
+    this.epoch += 1;
     this.clearRefreshTimer();
     this.refreshToken = '';
     this.currentAddress = '';

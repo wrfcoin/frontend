@@ -35,16 +35,28 @@ const PASSKEY_WALLET = import.meta.env?.VITE_ENABLE_PASSKEY_WALLET === 'true';
 // Link from the passkey wallet to /wallet/passkey/bond-payout (approve this wallet as a node bond's
 // payout account). Exact string "true" only; default OFF until core4's passkey_bond_payout is active.
 const PASSKEY_BOND_PAYOUT = import.meta.env?.VITE_ENABLE_PASSKEY_BOND_PAYOUT === 'true';
+// "Bond your node" on /nodes: the steps to a bonded node and a check of one node's progress (reads the
+// backend's GET /api/bond-admission/recent). Exact string "true" only; default OFF.
+const BOND_GUIDE = import.meta.env?.VITE_ENABLE_BOND_GUIDE === 'true';
 // "Use your passkey wallet" on /connect-station (owner decision 2026-11-09, Phase 1): a passkey wallet signs
 // in (backend PASSKEY_LOGIN_ENABLED) and owns the station on the website; it earns once core4's
 // passkey_station_owner is live. Exact string "true" only; default OFF.
 const PASSKEY_STATION_OWNER = import.meta.env?.VITE_ENABLE_PASSKEY_STATION_OWNER === 'true';
+// Multi-wallet part 2: the header wallet button, one session per wallet, "which wallet" lines on Make a
+// forecast and Send, and removing the 12-word wallet from this browser. Exact string "true" only; default
+// OFF. Only meaningful where the passkey wallet is served, so it also needs VITE_ENABLE_PASSKEY_WALLET.
+const MULTI_WALLET = PASSKEY_WALLET && import.meta.env?.VITE_ENABLE_MULTI_WALLET === 'true';
 
 // Chain-enforced account protections on the 12-word wallet ("require my YubiKey to spend", send allowlist):
 // exact string "true" only; default OFF. Even when on, each control shows only once the node reports its
 // consensus feature (security_key_spend / send_allowlist) active at the next block, and needs the backend
 // relays under /api/wallet/:address/{security-key,send-allowlist}.
 const CHAIN_PROTECTIONS = import.meta.env?.VITE_ENABLE_CHAIN_PROTECTIONS === 'true';
+
+// Advisory governance from the website (owner decision 2026-11-09): propose and vote with the 12-word or the
+// passkey wallet. Exact string "true" only; default OFF. Even when on, the controls show only once the node
+// reports advisory_governance active, and they need the backend relay (ADVISORY_GOVERNANCE_RELAY_ENABLED).
+const ADVISORY_VOTING = import.meta.env?.VITE_ENABLE_ADVISORY_VOTING === 'true';
 
 /**
  * Opt-IN gate for surfaces that render fabricated data. (frontend#214)
@@ -85,10 +97,16 @@ export const FEATURES = {
   passkeyWallet: PASSKEY_WALLET,
   /** Chain-enforced protections on the 12-word wallet. Default FALSE; also gated on the node. */
   chainProtections: CHAIN_PROTECTIONS,
+  /** Website advisory propose/vote (12-word and passkey wallets). Default FALSE; also gated on the node. */
+  advisoryVoting: ADVISORY_VOTING,
   /** Passkey wallet link to the node bond payout approval page. Default FALSE. */
   passkeyBondPayout: PASSKEY_BOND_PAYOUT,
+  /** "Bond your node" steps and progress check on /nodes. Default FALSE. */
+  bondGuide: BOND_GUIDE,
   /** Passkey wallet can own a station on /connect-station. Default FALSE; needs backend passkey login. */
   passkeyStationOwner: PASSKEY_STATION_OWNER,
+  /** Header wallet button, single-wallet session, wallet removal. Default FALSE; needs passkeyWallet. */
+  multiWallet: MULTI_WALLET,
   explorer: true,
   pop: true,
   mining: true,

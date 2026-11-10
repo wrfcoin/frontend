@@ -171,6 +171,20 @@ export function clearVault(): void {
 }
 
 /**
+ * Remove the stored wallet, but only if it is still the wallet for `address`. The check and the removal run
+ * under the same cross-tab lock as every save, so a wallet another tab stored in the meantime is never
+ * deleted by mistake. Answers whether a record was removed.
+ */
+export function removeVaultIfAddress(address: string): Promise<boolean> {
+  return withVaultLock(async () => {
+    const stored = readVault();
+    if (!stored || stored.address.toLowerCase() !== address.toLowerCase()) return false;
+    localStorage.removeItem(VAULT_KEY);
+    return true;
+  });
+}
+
+/**
  * A wallet record left by the old onboarding flow, which used the password as the BIP-39 passphrase:
  * `localStorage['wrfcoin_wallet']` (or its session copy) with `type: 'created'` and no words. Its address
  * cannot be restored from the 12 words alone, and this site never re-derives it.

@@ -377,6 +377,25 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    // "Bond your node" is a build switch (default off): these run only when the harness was started with it.
+    for (const [name, query, verdict, mode] of [['nodes-bond-admitted', 'node-1a2b3c4d', /Admitted, waiting/, 'populated'], ['nodes-bond-earning', 'ws-node', /Bonded, earning/, 'populated'], ['nodes-bond-closed', 'node-1a2b3c4d', /Admission is not open\./, 'off']]) {
+      if (!want(name)) continue;
+      if (process.env.VITE_ENABLE_BOND_GUIDE !== 'true') { if (only.includes(name)) console.log(`SKIP ${name}: start with VITE_ENABLE_BOND_GUIDE=true`); continue; }
+      try {
+        await page.unroute(() => true);
+        // The house fixture bonds use hand-picked aliases; the earning capture gives one a generated alias.
+        const nodes = { ...fx.NETWORK_NODES, bonded: { ...fx.NETWORK_NODES.bonded, nodes: fx.NETWORK_NODES.bonded.nodes.map((n, i) => (i === 0 ? { ...n, alias: 'node-5e6f7a8b' } : n)) } };
+        await installRoutes(page, name === 'nodes-bond-earning' ? { ...fx, NETWORK_NODES: nodes } : fx, { bondAdmissions: mode });
+        await loadRoute(page, '/nodes', errors);
+        await page.getByLabel('Check your node').fill(name === 'nodes-bond-earning' ? 'node-5e6f7a8b' : query);
+        await page.getByRole('button', { name: 'Check' }).click();
+        await page.getByTestId('bond-verdict').filter({ hasText: verdict }).waitFor({ timeout: 10_000 });
+        await page.getByTestId('bond-your-node').scrollIntoViewIfNeeded();
+        await capture(page, errors, name, `/nodes (${name.replace('nodes-', '')})`, suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     if (want('proof-card-wolfram')) {
       const name = 'proof-card-wolfram';
       try {
@@ -498,9 +517,22 @@ async function runViewport(browser, vp, tall, theme) {
         await page.evaluate(() => { try { window.localStorage.removeItem('wrfcoin.passkey.credential.v1'); } catch { /* storage blocked */ } });
       } catch (e) { console.log('FAIL connect-station-passkey', suffix, String(e).slice(0, 160)); report.push({ name: 'connect-station-passkey', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
-    if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review') || want('wallet-address-book') || want('wallet-send-allowlist-refused') || want('challenges-signed-in')) {
+    if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review') || want('wallet-address-book') || want('wallet-send-allowlist-refused') || want('challenges-signed-in') || want('forecast-new-scored')) {
       try {
         await createWallet(page, errors);
+        if (want('forecast-new-scored')) {
+          await page.unroute(() => true);
+          await installRoutes(page, fx, { websiteForecast: 'scored' });
+          await goClientSide(page, '/forecast/new');
+          await page.getByTestId('practice-score').first().waitFor({ timeout: 20_000 }).catch(() => undefined);
+          await capture(page, errors, 'forecast-new-scored', '/forecast/new (signed in, practice scores)', suffix);
+          // The scores are below the form: a second capture with the first scored forecast in view.
+          await page.evaluate(() => { const el = document.querySelector('.page-content'); const h = document.querySelector('.ps--scored')?.closest('article'); if (el && h) el.scrollTop += h.getBoundingClientRect().top - el.getBoundingClientRect().top - 12; });
+          await page.waitForTimeout(400);
+          await capture(page, errors, 'forecast-new-scored-list', '/forecast/new (my forecasts, practice scores)', suffix);
+          await page.unroute(() => true);
+          await installRoutes(page, fx);
+        }
         if (want('wallet-unlocked')) { await goClientSide(page, '/wallet'); await page.getByText('Recent activity').first().waitFor({ timeout: 20_000 }).catch(() => undefined); await capture(page, errors, 'wallet-unlocked', '/wallet', suffix); }
         if (want('challenges-signed-in')) {
           await goClientSide(page, '/challenges');

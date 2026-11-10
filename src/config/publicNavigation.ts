@@ -59,6 +59,14 @@ export function isPasskeyWalletEnabled(value: unknown): boolean {
 }
 
 /**
+ * The multi-wallet flag as features.ts reads it: VITE_ENABLE_MULTI_WALLET, exact "true" only, and only where
+ * the passkey wallet is served. Here for the same reason as isPasskeyWalletEnabled.
+ */
+export function isMultiWalletEnabled(passkeyWallet: unknown, multiWallet: unknown): boolean {
+  return isPasskeyWalletEnabled(passkeyWallet) && multiWallet === 'true';
+}
+
+/**
  * The passkey wallet entry. It is a menu entry only in a build with the passkey flag on
  * (VITE_ENABLE_PASSKEY_WALLET); with the flag off the route does not exist and the path is
  * listed in PUBLIC_NON_MENU_PATHS instead. It sits right after 'Wallet'.
