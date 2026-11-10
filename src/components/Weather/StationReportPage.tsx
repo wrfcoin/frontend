@@ -66,6 +66,7 @@ import FirstEarnCelebration from './FirstEarnCelebration';
 import StationOwnershipCard from '../station/StationOwnershipCard';
 import StationCalibrationCard, { CalibrationBadge } from '../station/StationCalibrationCard';
 import StationCompareCard from '../station/StationCompareCard';
+import StationDerivedCard from '../station/StationDerivedCard';
 import ApiError from '../../utils/apiError';
 import { useStationOwner } from '../../hooks/api/useStationOwnerQueries';
 import { formatBaseUnitsToWrf } from '../../services/apiClient/number';
@@ -474,6 +475,8 @@ const StationReportPage: React.FC = () => {
         <MetricCard icon={<WindIcon />} label="Wind" value={formatValue(stationView.windSpeedMph, 1, ' mph')} />
         <MetricCard icon={<UVIcon />} label="UV Index" value={formatValue(stationView.uvIndex, 1)} />
       </Box>
+
+      <StationDerivedCard reading={latestObservation} />
 
       <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, mb: 3 }}>
         <CardContent sx={{ p: 3 }}>
