@@ -213,25 +213,41 @@ describe('ConnectStationPage first-party ed25519 wallet', () => {
     ).toBeInTheDocument();
   });
 
-  it('only the chain address leaves WalletStep; the signing account never reaches page state or context', () => {
+  it('the signing account never reaches page state or context; only a one-purpose ownership signer does', () => {
     const src = readFileSync(resolve(process.cwd(), 'src/pages/ConnectStationPage.tsx'), 'utf8');
     const code = src
       .split('\n')
       .filter((line) => !/^\s*(\/\/|\*|\/\*)/.test(line))
       .join('\n');
-    // The callback carries a string address (plus which kind of wallet owns it, a plain label), and
-    // WalletStep passes exactly that.
-    expect(code).toMatch(/onAuthenticated: \(address: string, kind\?: OwnerKind\) => void;/);
+    // The callback carries a string address, which kind of wallet owns it (a plain label) and, for a
+    // brand-new wallet, a station ownership signer: a closure that can only produce a station ownership
+    // proof for that wallet's own address, plus a release that drops the key.
+    expect(code).toMatch(
+      /onAuthenticated: \(address: string, kind\?: OwnerKind, ownershipSigner\?: StationOwnershipSigner\) => void;/,
+    );
     expect(code).toMatch(/export type OwnerKind = 'phrase' \| 'passkey';/);
-    expect(code).toMatch(/onAuthenticated\(createWallet\.address\)/);
-    // Page root keeps only the address: no SessionWallet / account in its body.
+    expect(code).toMatch(/onAuthenticated\(createWallet\.address, 'phrase', ownershipSigner\)/);
+    // Page root keeps the address and that signer: no SessionWallet / account / mnemonic in its body.
     const root = code.slice(code.indexOf('export default function ConnectStationPage'));
     expect(root.length).toBeGreaterThan(100);
     expect(root).toMatch(/useState<string>\(''\)/);
     expect(root).not.toMatch(/SessionWallet|\baccount\b|mnemonic/);
-    // The account is used in exactly one place: handed to the validating login signer.
-    expect(code.match(/\.account\b/g)).toEqual(['.account']);
+    // The page keeps the signer only through the holder, which drops the key when the page unmounts
+    // and after ten minutes (ConnectStationPage.chainRegistration.test.tsx runs both).
+    expect(root).toMatch(/const \[ownershipSigner, holdOwnershipSigner\] = useHeldOwnershipSigner\(\);/);
+    expect(root).toMatch(/holdOwnershipSigner\(signer\);/);
+    expect(code).toMatch(/useEffect\(\(\) => \(\) => heldRef\.current\?\.release\(\), \[\]\)/);
+    expect(code).toMatch(/export const OWNERSHIP_SIGNER_MAX_MS = 10 \* 60 \* 1000;/);
+    // The account is read in exactly two places: handed to the validating login signer, and captured
+    // for the ownership signer, whose only uses of it are signStationOwnership and destroy.
+    expect(code.match(/\.account\b/g)).toEqual(['.account', '.account']);
     expect(code).toMatch(/ed25519LoginSigner\(createWallet\.account\)/);
+    expect(code).toMatch(/const account = createWallet\.account;/);
+    expect(code.match(/\baccount\b(?!\?)/g)!.length).toBeGreaterThan(0);
+    expect(code).toMatch(/sign: \(stationId, chain\) => signStationOwnership\(account, stationId, chain\),/);
+    expect(code).toMatch(/release: \(\) => account\.destroy\?\.\(\),/);
+    // No raw signing through the closure: `account.sign(` never appears in the page.
+    expect(code).not.toMatch(/account\.sign\(/);
     // No React context/provider through which it could escape.
     expect(code).not.toMatch(/createContext|useContext|\.Provider\b|<\w+Provider\b/);
   });

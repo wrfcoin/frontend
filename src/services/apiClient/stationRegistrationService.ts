@@ -156,11 +156,80 @@ export type StationRewardProgressState =
   | 'REWARDED'
   | 'UNKNOWN';
 
+/**
+ * Where a website station is on its way to earning. A station earns only once it is registered on
+ * chain; that is done in batches, after the owner's wallet has signed for the station.
+ */
+export type StationChainRegistrationState = 'needs_owner_signature' | 'waiting' | 'earning' | 'blocked';
+/** Why a waiting station is not in a batch yet. `batch` = nothing is missing. */
+export type StationWaitingFor = 'batch' | 'station_report' | 'operator_review';
+export type StationBlockedReason = 'station_id_taken_on_chain' | 'chain_record_not_active';
+
+export interface StationChainRegistration {
+  state: StationChainRegistrationState;
+  /** The station's chain id: what the owner's wallet signs for. */
+  stationId: string;
+  /** The chain the backend checks ownership signatures against. The page refuses to sign for another. */
+  chainId: string;
+  networkId: string;
+  waitingFor?: StationWaitingFor;
+  blockedReason?: StationBlockedReason;
+}
+
+const CHAIN_REGISTRATION_STATES: ReadonlySet<unknown> = new Set(['needs_owner_signature', 'waiting', 'earning', 'blocked']);
+const WAITING_FOR: ReadonlySet<unknown> = new Set(['batch', 'station_report', 'operator_review']);
+const BLOCKED_REASONS: ReadonlySet<unknown> = new Set(['station_id_taken_on_chain', 'chain_record_not_active']);
+
+/** How long a reward-progress answer may be reused by a caller that asks for a recent one. */
+export const REWARD_PROGRESS_REUSE_MS = 5_000;
+
+/**
+ * Untrusted input: anything but a known state with a plain station id and a named chain is "not
+ * reported". Unknown detail fields fall back to the plainest reading of the state.
+ */
+export function normalizeStationChainRegistration(raw: unknown): StationChainRegistration | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const value = raw as Record<string, unknown>;
+  if (
+    !CHAIN_REGISTRATION_STATES.has(value.state) ||
+    typeof value.stationId !== 'string' ||
+    !/^[a-zA-Z0-9_-]{1,64}$/.test(value.stationId) ||
+    typeof value.chainId !== 'string' ||
+    !/^[1-9][0-9]{0,18}$/.test(value.chainId) ||
+    typeof value.networkId !== 'string' ||
+    !/^[A-Za-z0-9._-]{1,64}$/.test(value.networkId)
+  ) {
+    return null;
+  }
+  const state = value.state as StationChainRegistrationState;
+  return {
+    state,
+    stationId: value.stationId,
+    chainId: value.chainId,
+    networkId: value.networkId,
+    ...(state === 'waiting'
+      ? { waitingFor: (WAITING_FOR.has(value.waitingFor) ? value.waitingFor : 'batch') as StationWaitingFor }
+      : {}),
+    ...(state === 'blocked'
+      ? {
+        blockedReason: (BLOCKED_REASONS.has(value.blockedReason)
+          ? value.blockedReason
+          : 'station_id_taken_on_chain') as StationBlockedReason,
+      }
+      : {}),
+  };
+}
+
 export interface StationRewardProgress {
   schemaVersion: 1;
   stationId: string;
   ownerAddress: string;
   state: StationRewardProgressState;
+  /**
+   * On-chain registration progress. Absent or null when the backend does not report it (the page then
+   * shows what it showed before).
+   */
+  chainRegistration?: StationChainRegistration | null;
   asOf: string;
   evidenceFresh: boolean;
   registration: {
@@ -386,7 +455,10 @@ export function normalizeStationRewardProgress(
     throw new Error('Reward progress response failed validation.');
   }
 
-  return raw as StationRewardProgress;
+  return {
+    ...(raw as unknown as StationRewardProgress),
+    chainRegistration: normalizeStationChainRegistration(raw.chainRegistration),
+  };
 }
 
 function normalizeIngestionStatus(raw: unknown): IngestionStatus {
@@ -591,10 +663,88 @@ export class StationRegistrationService {
     if (!/^[a-zA-Z0-9_-]{1,64}$/.test(normalizedStationId)) {
       throw new Error('Invalid station ID.');
     }
-    const response = await this.weatherClient.get<unknown>(
-      `/weather/stations/${encodeURIComponent(normalizedStationId)}/reward-progress`,
-    );
+    const response = await this.readRewardProgress(normalizedStationId);
     return normalizeStationRewardProgress(response, normalizedStationId);
+  }
+
+  /**
+   * One GET of a station's reward-progress, shared by callers that ask for the same station as the same
+   * signed-in wallet. The station page asks twice (who owns it, then the registration state): callers
+   * in flight together always share one request, and a caller that says `reuseRecent` also takes an
+   * answer (or refusal) that arrived in the last few seconds instead of asking again. Every other
+   * caller asks the server, and an answer is dropped after REWARD_PROGRESS_REUSE_MS.
+   */
+  private rewardProgressReads = new Map<string, { request: Promise<unknown>; settledAt: number | null }>();
+
+  private readRewardProgress(id: string, reuseRecent = false): Promise<unknown> {
+    const key = `${getAuthToken() ?? ''}|${id}`;
+    const existing = this.rewardProgressReads.get(key);
+    if (existing && (existing.settledAt === null
+      || (reuseRecent && Date.now() - existing.settledAt < REWARD_PROGRESS_REUSE_MS))) {
+      return existing.request;
+    }
+    const entry: { request: Promise<unknown>; settledAt: number | null } = {
+      settledAt: null,
+      request: this.weatherClient.get<unknown>(`/weather/stations/${encodeURIComponent(id)}/reward-progress`),
+    };
+    const forget = () => {
+      if (this.rewardProgressReads.get(key) === entry) this.rewardProgressReads.delete(key);
+    };
+    const settled = () => {
+      entry.settledAt = Date.now();
+      const timer = setTimeout(forget, REWARD_PROGRESS_REUSE_MS) as unknown as { unref?: () => void };
+      timer.unref?.();
+    };
+    entry.request.then(settled, settled);
+    this.rewardProgressReads.set(key, entry);
+    return entry.request;
+  }
+
+  /**
+   * The owner's read of one station's on-chain registration state, by station id or public alias. It is
+   * the same authenticated read as reward progress, but takes only the two fields it needs, so it works
+   * on the station page, where the route id is the alias. `chainRegistration` is null when the backend
+   * does not report it. Throws when the caller is signed out or does not own the station.
+   * `reuseRecent` takes an answer the page read a moment ago instead of asking again (first paint
+   * only; a read after the owner has signed must not pass it).
+   */
+  async getStationChainRegistration(
+    stationIdOrAlias: string,
+    options: { reuseRecent?: boolean } = {},
+  ): Promise<{ ownerAddress: string; chainRegistration: StationChainRegistration | null }> {
+    const id = stationIdOrAlias.trim();
+    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(id)) {
+      throw new Error('Invalid station ID.');
+    }
+    const response = await this.readRewardProgress(id, options.reuseRecent === true) as
+      { ownerAddress?: unknown; chainRegistration?: unknown } | null;
+    if (!response || typeof response.ownerAddress !== 'string' || !/^0x[0-9a-fA-F]{40}$/.test(response.ownerAddress)) {
+      throw new Error('Station registration state failed validation.');
+    }
+    return {
+      ownerAddress: response.ownerAddress,
+      chainRegistration: normalizeStationChainRegistration(response.chainRegistration),
+    };
+  }
+
+  /**
+   * Hand in the owner wallet's ownership proof for one of its stations (a public key and a signature;
+   * see walletCrypto/stationOwnership). The backend keeps it for the next on-chain registration batch.
+   * Returns the station's registration state, or null when the backend does not report one.
+   */
+  async submitStationOwnershipProof(
+    stationId: string,
+    proof: { owner_pubkey: string; owner_signature: string },
+  ): Promise<StationChainRegistration | null> {
+    const normalizedStationId = stationId.trim();
+    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(normalizedStationId)) {
+      throw new Error('Invalid station ID.');
+    }
+    const response = await this.weatherClient.post<{ chainRegistration?: unknown }>(
+      `/weather/stations/${encodeURIComponent(normalizedStationId)}/ownership-proof`,
+      { owner_pubkey: proof.owner_pubkey, owner_signature: proof.owner_signature },
+    );
+    return normalizeStationChainRegistration(response?.chainRegistration);
   }
 
   /**

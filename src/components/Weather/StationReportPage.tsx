@@ -69,6 +69,7 @@ import StationCompareCard from '../station/StationCompareCard';
 import StationDerivedCard from '../station/StationDerivedCard';
 import ApiError from '../../utils/apiError';
 import { useStationOwner } from '../../hooks/api/useStationOwnerQueries';
+import { StationChainRegistrationCard } from './StationChainRegistration';
 import { formatBaseUnitsToWrf } from '../../services/apiClient/number';
 import { buildStationReportEarningsChartData } from './stationReportPrecision';
 import { FEATURES } from '../../config/features';
@@ -391,6 +392,9 @@ const StationReportPage: React.FC = () => {
           walletAddress={celebrationWallet}
         />
       )}
+      {/* The owner's own view: is this station registered on chain yet, and the sign step if not.
+          Shown only to the signed-in wallet that owns the station (the component checks). */}
+      {knownStationId && <StationChainRegistrationCard stationId={knownStationId} />}
       <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, mb: 3 }}>
         <CardContent sx={{ p: 3 }}>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>

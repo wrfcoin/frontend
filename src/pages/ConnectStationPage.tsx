@@ -32,6 +32,11 @@ import {
   type FirstPartyAccount,
 } from '../services/walletCrypto/firstPartyKeys';
 import { ed25519LoginSigner } from '../services/walletCrypto/firstPartyLoginSigner';
+import { signStationOwnership } from '../services/walletCrypto/stationOwnership';
+import {
+  StationChainRegistrationNotice,
+  type StationOwnershipSigner,
+} from '../components/Weather/StationChainRegistration';
 import {
   Box,
   Stepper,
@@ -124,12 +129,16 @@ type WalletMode = 'choose' | 'create';
 
 interface WalletStepProps {
   /**
-   * Called with the authenticated wallet's lowercase chain address ONLY.
-   * The FirstPartyAccount (raw `sign`) and the mnemonic stay in WalletStep's
-   * own state and are dropped when it unmounts; they are never handed to the
-   * page root, later wizard steps, or any shared context/provider.
+   * Called with the authenticated wallet's lowercase chain address and, for a brand-new wallet, a
+   * station ownership signer. A brand-new wallet is not saved in this browser, and its station id is
+   * only known after registration, so the wallet must still be able to sign once then. The signer is a
+   * closure that can produce ONE kind of signature (a station ownership proof for this wallet's own
+   * address, see walletCrypto/stationOwnership) and a `release` that drops the key; it is released as
+   * soon as the proof is accepted, and when the page unmounts. The FirstPartyAccount itself (raw `sign`)
+   * and the mnemonic are never handed to the page root, later wizard steps, or any shared
+   * context/provider.
    */
-  onAuthenticated: (address: string, kind?: OwnerKind) => void;
+  onAuthenticated: (address: string, kind?: OwnerKind, ownershipSigner?: StationOwnershipSigner) => void;
 }
 
 /** Which wallet owns the station: the 12-word (ed25519) wallet, or a passkey wallet (Phase 1, not earning yet). */
@@ -268,7 +277,12 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
         createWallet.publicKeyHex,
         ed25519LoginSigner(createWallet.account),
       );
-      onAuthenticated(createWallet.address);
+      const account = createWallet.account;
+      const ownershipSigner: StationOwnershipSigner = {
+        sign: (stationId, chain) => signStationOwnership(account, stationId, chain),
+        release: () => account.destroy?.(),
+      };
+      onAuthenticated(createWallet.address, 'phrase', ownershipSigner);
     } catch {
       setCreateError('Wallet login failed. Please try again.');
     } finally {
@@ -899,6 +913,8 @@ interface ConfirmStepProps {
   address: string;
   form: StationFormData;
   ownerKind?: OwnerKind;
+  /** A brand-new wallet still in memory, able to sign for its station once. */
+  ownershipSigner?: StationOwnershipSigner;
 }
 
 interface RewardProgressPresentation {
@@ -990,8 +1006,11 @@ function presentRewardProgress(
 
 export function StationRewardProgressPanel({
   stationId,
+  ownershipSigner,
 }: {
   stationId: string;
+  /** A brand-new wallet still in memory, able to sign for its station once. */
+  ownershipSigner?: StationOwnershipSigner;
 }) {
   const [progress, setProgress] = useState<StationRewardProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1040,11 +1059,53 @@ export function StationRewardProgressPanel({
   }
 
   const presentation = presentRewardProgress(progress);
+  const registration = progress.chainRegistration ?? null;
+  return (
+    <LoadedRewardProgress
+      progress={progress}
+      presentation={presentation}
+      registration={registration}
+      ownershipSigner={ownershipSigner}
+      refresh={refresh}
+      loading={loading}
+    />
+  );
+}
+
+function LoadedRewardProgress({
+  progress, presentation, registration, ownershipSigner, refresh, loading,
+}: {
+  progress: StationRewardProgress;
+  presentation: ReturnType<typeof presentRewardProgress>;
+  registration: StationRewardProgress['chainRegistration'] | null;
+  ownershipSigner?: StationOwnershipSigner;
+  refresh: () => void;
+  loading: boolean;
+}) {
+  // The server has answered. Unless the station is waiting for exactly this signature (the server
+  // reports no registration state, or another one), the in-memory key has no use and is dropped.
+  const waitingForSignature = registration?.state === 'needs_owner_signature';
+  useEffect(() => {
+    if (ownershipSigner && !waitingForSignature) ownershipSigner.release();
+  }, [ownershipSigner, waitingForSignature]);
+  // Until the station is registered on chain nothing it sends can earn, so "awaiting first observation"
+  // would mislead; the registration notice is the whole story then.
+  const showRewardProgress = !registration || registration.state === 'earning';
   return (
     <>
-      <WrfAlert severity={presentation.severity} title={presentation.title}>
-        {presentation.detail}
-      </WrfAlert>
+      {registration && (
+        <StationChainRegistrationNotice
+          registration={registration}
+          ownerAddress={progress.ownerAddress}
+          signer={ownershipSigner}
+          onChanged={refresh}
+        />
+      )}
+      {showRewardProgress && (
+        <WrfAlert severity={presentation.severity} title={presentation.title}>
+          {presentation.detail}
+        </WrfAlert>
+      )}
       <Typography variant="caption" color="text.secondary">
         Evidence checked {progress.asOf}
       </Typography>
@@ -1055,7 +1116,7 @@ export function StationRewardProgressPanel({
   );
 }
 
-export function ConfirmStep({ address, form, ownerKind = 'phrase' }: ConfirmStepProps) {
+export function ConfirmStep({ address, form, ownerKind = 'phrase', ownershipSigner }: ConfirmStepProps) {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -1090,7 +1151,9 @@ export function ConfirmStep({ address, form, ownerKind = 'phrase' }: ConfirmStep
         <Typography variant="h4" component="h2" sx={{ fontWeight: 700 }}>
           Station registered
         </Typography>
-        {ownerKind === 'passkey' ? <PasskeyNotEarningYet /> : <StationRewardProgressPanel stationId={stationId} />}
+        {ownerKind === 'passkey'
+          ? <PasskeyNotEarningYet />
+          : <StationRewardProgressPanel stationId={stationId} ownershipSigner={ownershipSigner} />}
         <WrfCard variant="filled">
           <Typography variant="subtitle2" gutterBottom>
             Station ID
@@ -1153,12 +1216,60 @@ export function ConfirmStep({ address, form, ownerKind = 'phrase' }: ConfirmStep
 // Page shell
 // ---------------------------------------------------------------------------
 
+/** The longest a brand-new wallet's key is held in memory for the station ownership signature. */
+export const OWNERSHIP_SIGNER_MAX_MS = 10 * 60 * 1000;
+
+/**
+ * Holds a brand-new wallet's ownership signer for the page, and lets go of it as early as possible.
+ * `release` on the held signer drops the key AND takes the signer out of page state, so nothing can
+ * keep offering a dead key. The key is also dropped when the page unmounts and after `maxMs`.
+ */
+export function useHeldOwnershipSigner(maxMs: number = OWNERSHIP_SIGNER_MAX_MS) {
+  const [held, setHeld] = useState<StationOwnershipSigner | undefined>(undefined);
+  const heldRef = useRef<StationOwnershipSigner | undefined>(undefined);
+  heldRef.current = held;
+  // Leaving the page drops the key, whether or not the proof was handed in.
+  useEffect(() => () => heldRef.current?.release(), []);
+  // So does time.
+  useEffect(() => {
+    if (!held) return undefined;
+    const timer = setTimeout(() => held.release(), maxMs);
+    return () => clearTimeout(timer);
+  }, [held, maxMs]);
+  const hold = useCallback((signer?: StationOwnershipSigner) => {
+    heldRef.current?.release();
+    if (!signer) {
+      setHeld(undefined);
+      return;
+    }
+    let released = false;
+    const wrapped: StationOwnershipSigner = {
+      sign: (stationId, chain) => {
+        if (released) throw new Error('This wallet is no longer held on this page.');
+        return signer.sign(stationId, chain);
+      },
+      release: () => {
+        if (released) return;
+        released = true;
+        signer.release();
+        setHeld((current) => (current === wrapped ? undefined : current));
+      },
+    };
+    // An object in state; wrapped so React does not call it.
+    setHeld(() => wrapped);
+  }, []);
+  return [held, hold] as const;
+}
+
 export default function ConnectStationPage() {
   const [activeStep, setActiveStep] = useState(0);
   // Only the public chain address crosses into page state (see
   // WalletStepProps.onAuthenticated); the signing account never does.
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [ownerKind, setOwnerKind] = useState<OwnerKind>('phrase');
+  // A brand-new wallet's ownership signer (see WalletStepProps): one kind of signature, then released.
+  // It is dropped on unmount, after ten minutes, and as soon as it is no longer needed.
+  const [ownershipSigner, holdOwnershipSigner] = useHeldOwnershipSigner();
   const [verified, setVerified] = useState(false);
   const [form, setForm] = useState<StationFormData>({
     name: '',
@@ -1176,9 +1287,10 @@ export default function ConnectStationPage() {
     case 0:
       return (
         <WalletStep
-          onAuthenticated={(address, kind = 'phrase') => {
+          onAuthenticated={(address, kind = 'phrase', signer) => {
             setWalletAddress(address);
             setOwnerKind(kind);
+            holdOwnershipSigner(signer);
             // The faucet step claims for the 12-word wallet; a passkey wallet has its own faucet button on
             // /wallet/passkey and needs no WRF to register, so it goes straight to the station.
             setActiveStep(kind === 'passkey' ? 2 : 1);
@@ -1203,7 +1315,7 @@ export default function ConnectStationPage() {
         />
       );
     case 3:
-      return <ConfirmStep address={walletAddress} form={form} ownerKind={ownerKind} />;
+      return <ConfirmStep address={walletAddress} form={form} ownerKind={ownerKind} ownershipSigner={ownershipSigner} />;
     default:
       return null;
     }
