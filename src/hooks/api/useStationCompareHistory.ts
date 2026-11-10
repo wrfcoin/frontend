@@ -4,6 +4,7 @@ import { stationCompareService } from '../../services/apiClient';
 import { readJwtSubject } from '../../services/apiClient/stationRegistrationService';
 import { getAuthToken, subscribeAuthToken } from '../../services/authTokenStore';
 import type { StationCompareHistoryView } from '../../utils/stationCompareHistory';
+import type { StationSiteCheckView } from '../../utils/stationSiteCheck';
 
 /**
  * The 30-day comparison for the station's owner (Epic 8), or null when there is nothing to show.
@@ -28,6 +29,34 @@ export function useStationCompareHistory(stationId: string | undefined, isOwner:
       if (!stationId || !subject) return null;
       try {
         return await stationCompareService.getStationCompareHistory(stationId);
+      } catch {
+        return null;
+      }
+    },
+    enabled: isOwner && Boolean(stationId) && Boolean(subject),
+    retry: false,
+    staleTime: 10 * 60_000,
+    gcTime: 0,
+  });
+  if (!isOwner || !stationId || !subject) return null;
+  return query.data ?? null;
+}
+
+/**
+ * The owner's "has this station moved?" hint (Epic 8), or null when there is nothing to show.
+ * Same rules as useStationCompareHistory: the request is sent only when `isOwner` is true and a wallet
+ * session exists; 401, 403, 404 or any failure means null; the answer is keyed on the session's wallet
+ * and not kept once unobserved.
+ */
+export function useStationSiteCheck(stationId: string | undefined, isOwner: boolean): StationSiteCheckView | null {
+  const token = useSyncExternalStore(subscribeAuthToken, getAuthToken, getAuthToken);
+  const subject = token ? readJwtSubject(token) : null;
+  const query = useQuery({
+    queryKey: ['weather', 'site-check', stationId ?? '', subject ?? ''] as const,
+    queryFn: async (): Promise<StationSiteCheckView | null> => {
+      if (!stationId || !subject) return null;
+      try {
+        return await stationCompareService.getStationSiteCheck(stationId);
       } catch {
         return null;
       }

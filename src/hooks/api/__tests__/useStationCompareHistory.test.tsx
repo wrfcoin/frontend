@@ -8,7 +8,7 @@ import { cleanup, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-const { useStationCompareHistory } = await import('../useStationCompareHistory');
+const { useStationCompareHistory, useStationSiteCheck } = await import('../useStationCompareHistory');
 const { setAuthToken, clearAuthToken } = await import('../../../services/authTokenStore');
 
 const STATION = 'st_0123456789ab';
@@ -100,5 +100,45 @@ describe('useStationCompareHistory', () => {
     await waitFor(() => expect(result.current).not.toBeNull());
     clearAuthToken();
     await waitFor(() => expect(result.current).toBeNull());
+  });
+});
+
+describe('useStationSiteCheck', () => {
+  const FLAGGED = {
+    status: 'ok', checkedFrom: 1_788_739_200, checkedTo: 1_790_208_000, recentFrom: 1_789_948_800,
+    reference: { kind: 'nws', stationIdentifier: 'KAAA' },
+    flags: [{ kind: 'temperature_pattern_changed', shiftC: 5 }], note: 'A hint for you only.', source: 'core4+nws',
+  };
+
+  it('no wallet session, or not the owner: no request', async () => {
+    answer(200, FLAGGED);
+    const anonymous = renderHook(() => useStationSiteCheck(STATION, true), { wrapper });
+    await settle();
+    expect(anonymous.result.current).toBeNull();
+    anonymous.unmount();
+    setAuthToken(jwtFor(OWNER));
+    const stranger = renderHook(() => useStationSiteCheck(STATION, false), { wrapper });
+    await settle();
+    expect(stranger.result.current).toBeNull();
+    expect(requests).toHaveLength(0);
+  });
+
+  it('the owner: one request with the session token, and the flags', async () => {
+    setAuthToken(jwtFor(OWNER));
+    answer(200, FLAGGED);
+    const { result } = renderHook(() => useStationSiteCheck(STATION, true), { wrapper });
+    await waitFor(() => expect(result.current).not.toBeNull());
+    expect(requests).toEqual([{ path: `/api/stations/${STATION}/site-check`, auth: expect.stringMatching(/^Bearer /) }]);
+    expect(result.current).toMatchObject({ status: 'ok', flags: [{ kind: 'temperature_pattern_changed', shiftC: 5 }] });
+  });
+
+  it.each([401, 403, 404])('a %i answer shows nothing and is not retried', async (status) => {
+    setAuthToken(jwtFor(OWNER));
+    answer(status, { error: { code: 'X', message: 'x' } });
+    const { result } = renderHook(() => useStationSiteCheck(STATION, true), { wrapper });
+    await waitFor(() => expect(requests).toHaveLength(1));
+    await new Promise(resolve => { setTimeout(resolve, 1500); });
+    expect(requests).toHaveLength(1);
+    expect(result.current).toBeNull();
   });
 });

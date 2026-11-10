@@ -371,6 +371,8 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * `options.compareHistory`: 'off' (default: the 404 while STATION_COMPARE_HISTORY_ENABLED is not true), 'ok' or
  * 'waiting' (not enough history yet). Answered only to a request that carries the wallet session token.
  * `options.observations`: 'mild' (default: dew point only), 'hot' (heat index range) or 'cold' (wind chill range).
+ * `options.siteCheck`: 'off' (default: the 404 while STATION_SITE_CHECK_ENABLED is not true) or 'flagged' (the owner's
+ * "has this station moved?" hint). Answered only to a request that carries the wallet session token.
  * `options.forecastCheck`: 'populated' (default), 'empty' (nothing scored yet) or 'off' (the 404 while
  * FORECAST_VERIFICATION_ENABLED is not true).
  * `options.challenges`: 'populated' (default) or 'off' (the 404 while FRIEND_CHALLENGES_ENABLED is not true).
@@ -411,6 +413,7 @@ export async function installRoutes(page, fx, options = {}) {
   const duelsMode = options.duels || 'populated';
   const compareHistoryMode = options.compareHistory || 'off';
   const observationsMode = options.observations || 'mild';
+  const siteCheckMode = options.siteCheck || 'off';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -478,6 +481,17 @@ export async function installRoutes(page, fx, options = {}) {
     // Owner-only read: with an owner scenario on, the signed-in fixture wallet owns every fixture station.
     if ((m = /^\/api\/weather\/stations\/([^/]+)\/reward-progress$/.exec(p)) && options.stationOwner === 'me' && fx.lastLoginAddress) {
       return json(route, { schemaVersion: 1, stationId: decodeURIComponent(m[1]), ownerAddress: fx.lastLoginAddress, state: 'AWAITING_OBSERVATION', asOf: new Date().toISOString(), evidenceFresh: true, registration: { state: 'REGISTERED', registeredAt: new Date(Date.now() - 20 * 86_400_000).toISOString() }, chain: null, observation: null, contribution: null, reward: null, diagnostic: null });
+    }
+    if (/^\/api\/stations\/[^/]+\/site-check$/.test(p)) {
+      // Owner only on the real backend: 404 while off, 401 without the wallet session token.
+      if (siteCheckMode === 'off') return json(route, { error: { code: 'NOT_FOUND', message: 'not found' } }, 404);
+      if (!/^Bearer \S+/.test(req.headers().authorization || '')) return json(route, { error: { code: 'LOGIN_REQUIRED' } }, 401);
+      const dayS = Math.floor(Date.now() / 86_400_000) * 86_400;
+      return json(route, { status: 'ok', checkedFrom: dayS - 17 * 86400, checkedTo: dayS, recentFrom: dayS - 3 * 86400, reference: { kind: 'nws', stationIdentifier: 'KQAX' },
+        flags: [
+          { kind: 'pressure_offset_changed', shiftPercent: -0.61, approxShiftHpa: -6.2, approxHeightChangeM: 50, heightDirection: 'higher' },
+          { kind: 'temperature_pattern_changed', shiftC: 4.6 },
+        ], note: 'A hint for you only.', source: 'core4+nws' });
     }
     if (/^\/api\/stations\/[^/]+\/compare\/history$/.test(p)) {
       // Owner only on the real backend: 404 while off, 401 without the wallet session token.

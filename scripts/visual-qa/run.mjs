@@ -514,6 +514,21 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    if (want('station-detail-owner-site-check')) {
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { siteCheck: 'flagged', stationOwner: 'me' });
+        if (!ownerSignedIn) { await createWallet(page, errors); ownerSignedIn = true; } else { await goClientSide(page, '/'); }
+        if (!fx.lastLoginAddress) throw new Error('wallet login did not happen');
+        await goClientSide(page, '/weather/station/st-1');
+        await page.getByTestId('station-site-check').waitFor({ timeout: 15_000 });
+        await page.getByTestId('station-site-check').scrollIntoViewIfNeeded();
+        await page.evaluate(() => window.scrollBy(0, 80));
+        await capture(page, errors, 'station-detail-owner-site-check', '/weather/station/st-1 (owner signed in, "has this station moved?")', suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log('FAIL station-detail-owner-site-check', suffix, String(e).slice(0, 160)); report.push({ name: 'station-detail-owner-site-check', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     if (want('duels-off')) {
       try {
         await page.unroute(() => true);

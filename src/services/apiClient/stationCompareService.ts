@@ -3,6 +3,7 @@ import { ApiClient } from './client';
 import { toStationAlias } from '../../utils/stationAlias';
 import { normalizeStationCompare, type StationCompareView } from '../../utils/stationCompare';
 import { normalizeStationCompareHistory, type StationCompareHistoryView } from '../../utils/stationCompareHistory';
+import { normalizeStationSiteCheck, type StationSiteCheckView } from '../../utils/stationSiteCheck';
 
 /**
  * "How does my station compare?" (backend station-detail-routes.ts GET /api/stations/<alias>/compare, Epic 8).
@@ -36,5 +37,15 @@ export class StationCompareService {
     const alias = toStationAlias(stationId);
     const response = await this.ownerClient.get<unknown>(`/stations/${encodeURIComponent(alias)}/compare/history`);
     return normalizeStationCompareHistory(response);
+  }
+
+  /**
+   * The owner's "has this station moved?" hint (GET /api/stations/<alias>/site-check). Sent with the wallet
+   * session token. 404 = not live here, 401/403 = not this station's owner: all as ApiError.
+   */
+  async getStationSiteCheck(stationId: string): Promise<StationSiteCheckView> {
+    const alias = toStationAlias(stationId);
+    const response = await this.ownerClient.get<unknown>(`/stations/${encodeURIComponent(alias)}/site-check`);
+    return normalizeStationSiteCheck(response);
   }
 }
