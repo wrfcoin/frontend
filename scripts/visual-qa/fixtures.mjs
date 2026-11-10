@@ -343,6 +343,7 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * PUBLIC_BALANCE_READ_ENABLED is not true).
  * `options.calibration`: 'calibrated' (default), 'revoked', 'none' or 'off' (the 404 while
  * CALIBRATION_CERTIFICATES_ENABLED is not true).
+ * `options.observations`: 'mild' (default: dew point only), 'hot' (heat index range) or 'cold' (wind chill range).
  * `options.forecastCheck`: 'populated' (default), 'empty' (nothing scored yet) or 'off' (the 404 while
  * FORECAST_VERIFICATION_ENABLED is not true).
  * `options.challenges`: 'populated' (default) or 'off' (the 404 while FRIEND_CHALLENGES_ENABLED is not true).
@@ -377,6 +378,7 @@ export async function installRoutes(page, fx, options = {}) {
   const forecastCheckMode = options.forecastCheck || 'populated';
   const challengesMode = options.challenges || 'populated';
   const duelsMode = options.duels || 'populated';
+  const observationsMode = options.observations || 'mild';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
     const url = new URL(req.url());
@@ -436,7 +438,7 @@ export async function installRoutes(page, fx, options = {}) {
     if (/\/send$/.test(p) && req.method() === 'POST') return json(route, fx.wallet('0x0').send);
     if (p === '/api/weather/stations/mobile') return json(route, fx.wallet('0x0').mobileStation);
     if ((m = /^\/api\/stations\/([^/]+)\/ownership$/.exec(p))) return json(route, fx.wallet('0x7d29a4c1e0b8f36d5a92c4e7b1f08d3a6c5e0cb2').ownership);
-    if ((m = /^\/api\/stations\/([^/]+)\/(observations|quality|submissions)$/.exec(p))) return json(route, m[2] === 'observations' ? { observations: fx.OBSERVATIONS, source: 'backend-db', unavailable: [] } : m[2] === 'quality' ? { overall: 0.93, dimensions: [{ name: 'completeness', score: 0.97 }, { name: 'timeliness', score: 0.91 }, { name: 'plausibility', score: 0.9 }], advisory: false, unavailable: [] } : { submissions: fx.SUBMISSIONS, source: 'backend-db', limit: 25, offset: 0 });
+    if ((m = /^\/api\/stations\/([^/]+)\/(observations|quality|submissions)$/.exec(p))) return json(route, m[2] === 'observations' ? { observations: observationsMode === 'hot' ? fx.OBSERVATIONS.map((o, i) => ({ ...o, temperatureC: 33.4 - i * 0.2, humidityPct: 64 + i })) : observationsMode === 'cold' ? fx.OBSERVATIONS.map((o, i) => ({ ...o, temperatureC: -8.5 - i * 0.2, humidityPct: 78, windSpeedMs: 6.2 })) : fx.OBSERVATIONS, source: 'backend-db', unavailable: [] } : m[2] === 'quality' ? { overall: 0.93, dimensions: [{ name: 'completeness', score: 0.97 }, { name: 'timeliness', score: 0.91 }, { name: 'plausibility', score: 0.9 }], advisory: false, unavailable: [] } : { submissions: fx.SUBMISSIONS, source: 'backend-db', limit: 25, offset: 0 });
     if ((m = /^\/api\/weather\/stations\/([^/]+)$/.exec(p))) { const st = fx.STATIONS.find(x => x.stationId === decodeURIComponent(m[1])); return st ? json(route, { station: st, ...st }) : json(route, { error: 'not found' }, 404); }
     if ((m = /^\/api\/operators\/(c_[0-9a-f]{24})\/profile$/.exec(p))) return json(route, { profile: fx.PROFILE });
     if (p === '/api/forecasters' || p.startsWith('/api/forecasters/')) {

@@ -402,6 +402,20 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    for (const [name, mode] of [['station-detail-derived', 'mild'], ['station-detail-derived-hot', 'hot'], ['station-detail-derived-cold', 'cold']]) {
+      if (!want(name)) continue;
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { observations: mode });
+        // st-1: a fixture station with no alias, so its page id is the fixture id.
+        await loadRoute(page, '/weather/station/st-1', errors);
+        await page.getByTestId('station-derived').scrollIntoViewIfNeeded();
+        await page.evaluate(() => window.scrollBy(0, 120));
+        await capture(page, errors, name, `/weather/station/st-1 (calculated values, ${mode} reading)`, suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     for (const [name, mode] of [['explore-address', 'populated'], ['explore-address-off', 'off']]) {
       if (!want(name)) continue;
       try {

@@ -100,6 +100,9 @@ export const SCENARIOS = [
   { name: 'explore-notify-visitor', route: '/explore', note: 'notifications on, not signed in: how to turn them on (backend#389)' },
   { name: 'explore-notify-owner', route: '/explore', note: 'signed in with the looked-up address: browser push and ntfy topics' },
   { name: 'station-detail-calibration-revoked', route: '/weather/station/st-0', note: 'the newest calibration certificate was revoked by its signer' },
+  { name: 'station-detail-derived', route: '/weather/station/st-1', note: 'calculated values on a mild reading: dew point only' },
+  { name: 'station-detail-derived-hot', route: '/weather/station/st-1', note: 'calculated values on a hot, humid reading: dew point and heat index' },
+  { name: 'station-detail-derived-cold', route: '/weather/station/st-1', note: 'calculated values on a cold, windy reading: dew point and wind chill' },
   { name: 'station-detail-calibration-off', route: '/weather/station/st-0', note: 'the 404 while CALIBRATION_CERTIFICATES_ENABLED is not true: no badge, no section' },
 ];
 
