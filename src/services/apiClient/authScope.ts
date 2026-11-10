@@ -34,6 +34,8 @@ const AUTHENTICATED_ROUTES: readonly AuthenticatedRoute[] = [
   { method: 'GET', path: new RegExp(`^(?:/api)?/(?:weather/)?stations/${STATION_ID}/earnings$`) },
   // Owner only (backend station-owner-insights-routes.ts): how the station has compared over 30 days.
   { method: 'GET', path: new RegExp(`^(?:/api)?/stations/${STATION_ID}/compare/history$`) },
+  // Owner only: a private hint that the station looks moved (backend station-site-check.ts).
+  { method: 'GET', path: new RegExp(`^(?:/api)?/stations/${STATION_ID}/site-check$`) },
   // Governance writes (backend requireAuth; the voter is the JWT subject).
   { method: 'POST', path: /^(?:\/api)?\/governance\/proposals$/ },
   { method: 'POST', path: new RegExp(`^(?:/api)?/governance/proposals/${PROPOSAL_ID}/vote$`) },

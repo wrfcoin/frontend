@@ -70,7 +70,8 @@ import StationDerivedCard from '../station/StationDerivedCard';
 import ApiError from '../../utils/apiError';
 import { useStationOwner } from '../../hooks/api/useStationOwnerQueries';
 import { StationChainRegistrationCard } from './StationChainRegistration';
-import { useStationCompareHistory } from '../../hooks/api/useStationCompareHistory';
+import { useStationCompareHistory, useStationSiteCheck } from '../../hooks/api/useStationCompareHistory';
+import StationSiteCheckCard from '../station/StationSiteCheckCard';
 import StationCompareHistoryCard from '../station/StationCompareHistoryCard';
 import { formatBaseUnitsToWrf } from '../../services/apiClient/number';
 import { buildStationReportEarningsChartData } from './stationReportPrecision';
@@ -235,6 +236,9 @@ const StationReportPage: React.FC = () => {
   const compareOwner = useStationOwner(knownStationId, true);
   // The owner's 30-day comparison (Epic 8). Asked for, and shown, only when the wallet owns the station.
   const compareHistory = useStationCompareHistory(knownStationId, compareOwner !== null);
+  // The owner's "has this station moved?" hint. Asked for only when the wallet owns the station, and shown
+  // only when the backend raised a flag.
+  const siteCheck = useStationSiteCheck(knownStationId, compareOwner !== null);
 
   const stationView = useMemo(() => {
     if (!station) return null;
@@ -661,6 +665,12 @@ const StationReportPage: React.FC = () => {
             <StationCompareCard view={compareQuery.data} unavailable={compareQuery.isError} />
           </CardContent>
         </Card>
+      )}
+
+      {knownStationId && siteCheck?.status === 'ok' && siteCheck.flags.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <StationSiteCheckCard view={siteCheck} />
+        </Box>
       )}
 
       {knownStationId && compareHistory && (
