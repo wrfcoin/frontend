@@ -31,11 +31,11 @@ const STEPS = [
   },
   {
     key: 'admission', title: 'Request admission',
-    body: <>Build the bond request with <C>wrfcoin node bond deposit --admission-cosign --dry-run</C>, sign it with <C>wrfcoin node bond sign</C> twice (<C>--role server</C>, then <C>--role consumer</C>), then run <C>wrfcoin node bond admission-request</C> and POST the file it writes to <C>/api/bond-admission</C> on this site. The network checks that the node is reachable, in sync and has been connected for 24 hours; the answer is your approved request, good for one epoch. Full commands: the <Out href={ADMISSION_GUIDE}>admission guide</Out> in the infra repository.</>,
+    body: <>Build the bond request with <C>wrfcoin node bond deposit --admission-cosign --dry-run</C>, sign it with <C>wrfcoin node bond sign</C> twice (<C>--role server</C>, then <C>--role consumer</C>), then run <C>wrfcoin node bond admission-request</C> with <C>--out</C> and POST the file it writes to <C>/api/bond-admission</C> on this site. The network checks that the node is reachable, in sync and has been connected for 24 hours; the answer is your approved request, good for one epoch. Full commands: the <Out href={ADMISSION_GUIDE}>admission guide</Out> in the infra repository.</>,
   },
   {
     key: 'bond', title: 'Bond',
-    body: <>Add the approval of the wallet that will be paid: <C>wrfcoin node bond payout-challenge</C> prints a challenge, a passkey wallet signs it, and <C>wrfcoin node bond attach-payout-passkey</C> adds the signature. Then submit with <C>wrfcoin node bond deposit --approvals-file</C> and your owner key (<C>--key-file</C>) before the current epoch closes. The bond is active from the next epoch.</>,
+    body: <>Add the approval of the wallet that will be paid: with a passkey wallet (once the network supports passkey payout wallets), <C>wrfcoin node bond payout-challenge</C> prints a challenge, the wallet signs it, and <C>wrfcoin node bond attach-payout-passkey</C> adds the signature; with a dedicated payout key, use <C>wrfcoin node bond sign --role payout</C>. Then submit with <C>wrfcoin node bond deposit --approvals-file</C> and your owner key (<C>--key-file</C>) before the current epoch closes. The bond is active from the next epoch.</>,
   },
   { key: 'earn', title: 'Earn', body: 'A bonded node is paid for an epoch when another bonded node fetched a snapshot from it and the receipt was submitted in time. Payouts appear in the Bonded nodes table on this page.' },
 ];
@@ -62,9 +62,9 @@ function describe(progress, admissionsState) {
   case BOND_STAGE.earning:
     return { tone: 'ok', step: 'earn', title: 'Bonded, earning', body: <>{name} is bonded. Its latest payout, for epoch {epoch}, is paid: <Wrf units={progress.lastPayout.amount} />. <WalletTotal units={progress.walletTotal} /></> };
   case BOND_STAGE.provisional:
-    return { tone: 'wait', step: 'earn', title: 'Bonded, payout not paid yet', body: <>{name} is bonded. For epoch {epoch}, <Wrf units={progress.lastPayout.amount} /> is worked out and not paid yet.</> };
+    return { tone: 'wait', step: 'earn', title: 'Bonded, payout worked out, not paid', body: <>{name} is bonded. For epoch {epoch}, <Wrf units={progress.lastPayout.amount} /> is worked out, not paid.</> };
   case BOND_STAGE.open:
-    return { tone: 'wait', step: 'earn', title: 'Bonded, epoch still running', body: <>{name} is bonded. Epoch {epoch} is still running; nothing is settled for it yet.</> };
+    return { tone: 'wait', step: 'earn', title: 'Bonded, epoch still running', body: <>{name} is bonded. Epoch {epoch} is still running; nothing is settled for it.</> };
   case BOND_STAGE.unissued:
     return { tone: 'wait', step: 'earn', title: 'Bonded, nothing issued', body: <>{name} is bonded. Nothing was issued for epoch {epoch}. {PAID_WHEN}</> };
   case BOND_STAGE.bonded:

@@ -81,7 +81,7 @@ test('a wallet that earned elsewhere does not make an unpaid bond "earning"', as
 });
 
 test.each([
-  ['PROVISIONAL', 'Bonded, payout not paid yet', 'worked out and not paid yet'],
+  ['PROVISIONAL', 'Bonded, payout worked out, not paid', 'is worked out, not paid.'],
   ['OPEN', 'Bonded, epoch still running', 'Epoch 11 is still running'],
   ['UNISSUED', 'Bonded, nothing issued', 'Nothing was issued for epoch 11'],
 ])('%s is said as it is, with no promise of a payout', async (status, title, text) => {
@@ -90,7 +90,7 @@ test.each([
   const verdict = await check(KEY);
   expect(verdict).toHaveTextContent(title);
   expect(verdict).toHaveTextContent(text);
-  expect(verdict).not.toHaveTextContent(/will be paid|shortly|soon|has been paid|earning/i);
+  expect(verdict).not.toHaveTextContent(/will be paid|shortly|soon|yet|has been paid|earning/i);
 });
 
 test('a key sharing only the alias\'s 8 characters is not shown someone else\'s bond', async () => {
@@ -117,8 +117,8 @@ test('the steps name only real commands and say what the operator does', () => {
   for (const command of [
     'wrfcoin node bond grant-request', '--submit',
     'wrfcoin node bond deposit --admission-cosign --dry-run', 'wrfcoin node bond sign', '--role server', '--role consumer',
-    'wrfcoin node bond admission-request', '/api/bond-admission',
-    'wrfcoin node bond payout-challenge', 'wrfcoin node bond attach-payout-passkey', 'wrfcoin node bond deposit --approvals-file', '--key-file',
+    'wrfcoin node bond admission-request', '--out', '/api/bond-admission',
+    'wrfcoin node bond payout-challenge', 'wrfcoin node bond attach-payout-passkey', 'wrfcoin node bond sign --role payout', 'wrfcoin node bond deposit --approvals-file', '--key-file',
   ]) expect(card).toHaveTextContent(command);
   expect(card).toHaveTextContent('another bonded node fetched a snapshot from it and the receipt was submitted in time');
   const links = [...card.querySelectorAll('a')].map(a => a.getAttribute('href'));
