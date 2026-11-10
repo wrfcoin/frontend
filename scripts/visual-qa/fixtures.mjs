@@ -366,6 +366,8 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * PUBLIC_BALANCE_READ_ENABLED is not true).
  * `options.calibration`: 'calibrated' (default), 'revoked', 'none' or 'off' (the 404 while
  * CALIBRATION_CERTIFICATES_ENABLED is not true).
+ * `options.stationOwner`: 'me' makes the signed-in fixture wallet the owner of every fixture station
+ * (reward-progress answers 200).
  * `options.compareHistory`: 'off' (default: the 404 while STATION_COMPARE_HISTORY_ENABLED is not true), 'ok' or
  * 'waiting' (not enough history yet). Answered only to a request that carries the wallet session token.
  * `options.observations`: 'mild' (default: dew point only), 'hot' (heat index range) or 'cold' (wind chill range).
@@ -468,6 +470,10 @@ export async function installRoutes(page, fx, options = {}) {
     if (/\/send$/.test(p) && req.method() === 'POST') return json(route, fx.wallet('0x0').send);
     if (p === '/api/weather/stations/mobile') return json(route, fx.wallet('0x0').mobileStation);
     if ((m = /^\/api\/stations\/([^/]+)\/ownership$/.exec(p))) return json(route, fx.wallet('0x7d29a4c1e0b8f36d5a92c4e7b1f08d3a6c5e0cb2').ownership);
+    // Owner-only read: with an owner scenario on, the signed-in fixture wallet owns every fixture station.
+    if ((m = /^\/api\/weather\/stations\/([^/]+)\/reward-progress$/.exec(p)) && options.stationOwner === 'me' && fx.lastLoginAddress) {
+      return json(route, { schemaVersion: 1, stationId: decodeURIComponent(m[1]), ownerAddress: fx.lastLoginAddress, state: 'AWAITING_OBSERVATION', asOf: new Date().toISOString(), evidenceFresh: true, registration: { state: 'REGISTERED', registeredAt: new Date(Date.now() - 20 * 86_400_000).toISOString() }, chain: null, observation: null, contribution: null, reward: null, diagnostic: null });
+    }
     if (/^\/api\/stations\/[^/]+\/compare\/history$/.test(p)) {
       // Owner only on the real backend: 404 while off, 401 without the wallet session token.
       if (compareHistoryMode === 'off') return json(route, { error: { code: 'NOT_FOUND', message: 'not found' } }, 404);

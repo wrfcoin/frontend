@@ -500,7 +500,7 @@ async function runViewport(browser, vp, tall, theme) {
       if (!want(name)) continue;
       try {
         await page.unroute(() => true);
-        await installRoutes(page, fx, { compareHistory: mode });
+        await installRoutes(page, fx, { compareHistory: mode, stationOwner: 'me' });
         // One wallet setup for both captures; the second leaves the page first so the read is made again.
         if (!ownerSignedIn) { await createWallet(page, errors); ownerSignedIn = true; } else { await goClientSide(page, '/'); }
         if (!fx.lastLoginAddress) throw new Error('wallet login did not happen');

@@ -27,7 +27,7 @@ export default function StationCompareHistoryCard({ view }: { view: StationCompa
         <Chip
           size="small"
           icon={<LockIcon sx={{ fontSize: 14 }} />}
-          label="Only you can see this"
+          label="Shown only to you"
           variant="outlined"
           sx={{ color: textSecondary, borderColor: border, '& .MuiChip-icon': { color: textSecondary } }}
         />

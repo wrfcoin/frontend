@@ -223,14 +223,18 @@ const StationReportPage: React.FC = () => {
   // (backend or edge), so the section is not shown at all.
   const compareQuery = useStationCompare(knownStationId);
   const compareOff = compareQuery.error instanceof ApiError && compareQuery.error.status === 404;
-  // The owner's 30-day comparison (Epic 8). Null for everyone but the wallet that owns the station.
-  const compareHistory = useStationCompareHistory(knownStationId);
   const earningsSummaryQuery = useWeatherEarnings(earningsStationId);
   const earningsHistoryQuery = useWeatherEarningsHistory(earningsStationId);
   // "My first WRF earned" is the owner's moment (frontend#387). The public
   // read-only build never asks; elsewhere only a backend-confirmed owner sees it.
   const stationOwner = useStationOwner(stationId, !publicProjection);
   const celebrationWallet = publicProjection ? null : stationOwner;
+  // Owner-only parts of this page need to know whether the signed-in wallet owns the station. The same
+  // owner-only backend read as above, here also in the public build: it is asked only when a wallet
+  // session exists, so a visitor's page load makes no extra request.
+  const compareOwner = useStationOwner(knownStationId, true);
+  // The owner's 30-day comparison (Epic 8). Asked for, and shown, only when the wallet owns the station.
+  const compareHistory = useStationCompareHistory(knownStationId, compareOwner !== null);
 
   const stationView = useMemo(() => {
     if (!station) return null;

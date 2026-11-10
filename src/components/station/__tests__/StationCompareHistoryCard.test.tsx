@@ -76,7 +76,7 @@ describe('StationCompareHistoryCard', () => {
     const view = normalizeStationCompareHistory(body());
     render(<StationCompareHistoryCard view={view} />);
     expect(screen.getByRole('heading', { name: 'Your station over the last 30 days' })).toBeInTheDocument();
-    expect(screen.getByText('Only you can see this')).toBeInTheDocument();
+    expect(screen.getByText('Shown only to you')).toBeInTheDocument();
     expect(screen.getByTestId('station-compare-history-row-temperature_c')).toHaveTextContent('Usually reads 3.6°F warmer than KAAA.');
     expect(screen.getByTestId('station-compare-history-row-humidity_pct')).toHaveTextContent('Usually close to KAAA');
     expect(screen.getByTestId('station-compare-history')).toHaveTextContent('does not change rewards');

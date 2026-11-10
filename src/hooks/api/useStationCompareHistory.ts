@@ -8,16 +8,18 @@ import type { StationCompareHistoryView } from '../../utils/stationCompareHistor
 /**
  * The 30-day comparison for the station's owner (Epic 8), or null when there is nothing to show.
  *
- * The backend answers only for the wallet that owns the station: 401 without a login, 403 for
- * another wallet, 404 while the feature is off. All of those, and any failure, mean "show
- * nothing". Without a wallet session no request is made at all, so a visitor's page load is
- * unchanged.
+ * The request is sent only when `isOwner` is true (the page already knows the signed-in wallet
+ * owns the station) and a wallet session exists. A visitor, and a wallet looking at someone
+ * else's station, make no request at all, so nobody spends the route's rate limit on a refusal.
+ *
+ * The backend still decides: 401 without a login, 403 for another wallet, 404 while the feature
+ * is off. All of those, and any failure, mean "show nothing".
  *
  * The answer is bound to the live session: the token is read through subscribeAuthToken, the
  * query is keyed on the JWT subject, and nothing is kept once no component is showing it, so a
  * logout or an account switch cannot leave one owner's numbers on screen for someone else.
  */
-export function useStationCompareHistory(stationId: string | undefined): StationCompareHistoryView | null {
+export function useStationCompareHistory(stationId: string | undefined, isOwner: boolean): StationCompareHistoryView | null {
   const token = useSyncExternalStore(subscribeAuthToken, getAuthToken, getAuthToken);
   const subject = token ? readJwtSubject(token) : null;
   const query = useQuery({
@@ -30,11 +32,11 @@ export function useStationCompareHistory(stationId: string | undefined): Station
         return null;
       }
     },
-    enabled: Boolean(stationId) && Boolean(subject),
+    enabled: isOwner && Boolean(stationId) && Boolean(subject),
     retry: false,
     staleTime: 10 * 60_000,
     gcTime: 0,
   });
-  if (!stationId || !subject) return null;
+  if (!isOwner || !stationId || !subject) return null;
   return query.data ?? null;
 }
