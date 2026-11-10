@@ -39,6 +39,13 @@ test('lists the six steps and reads nothing until asked', () => {
   expect(globalThis.fetch).not.toHaveBeenCalled();
 });
 
+test('says up front, with no request, that admission is not open yet', () => {
+  mockFetch(200, { admissions: [] });
+  renderCard(bonded());
+  expect(screen.getByTestId('bond-not-open')).toHaveTextContent('Admission is not open yet.');
+  expect(globalThis.fetch).not.toHaveBeenCalled();
+});
+
 test('a value that is not a key or alias is refused without a request', async () => {
   mockFetch(200, { admissions });
   renderCard(bonded());
