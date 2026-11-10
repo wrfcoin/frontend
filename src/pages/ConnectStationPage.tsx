@@ -1060,6 +1060,34 @@ export function StationRewardProgressPanel({
 
   const presentation = presentRewardProgress(progress);
   const registration = progress.chainRegistration ?? null;
+  return (
+    <LoadedRewardProgress
+      progress={progress}
+      presentation={presentation}
+      registration={registration}
+      ownershipSigner={ownershipSigner}
+      refresh={refresh}
+      loading={loading}
+    />
+  );
+}
+
+function LoadedRewardProgress({
+  progress, presentation, registration, ownershipSigner, refresh, loading,
+}: {
+  progress: StationRewardProgress;
+  presentation: ReturnType<typeof presentRewardProgress>;
+  registration: StationRewardProgress['chainRegistration'] | null;
+  ownershipSigner?: StationOwnershipSigner;
+  refresh: () => void;
+  loading: boolean;
+}) {
+  // The server has answered. Unless the station is waiting for exactly this signature (the server
+  // reports no registration state, or another one), the in-memory key has no use and is dropped.
+  const waitingForSignature = registration?.state === 'needs_owner_signature';
+  useEffect(() => {
+    if (ownershipSigner && !waitingForSignature) ownershipSigner.release();
+  }, [ownershipSigner, waitingForSignature]);
   // Until the station is registered on chain nothing it sends can earn, so "awaiting first observation"
   // would mislead; the registration notice is the whole story then.
   const showRewardProgress = !registration || registration.state === 'earning';
@@ -1188,6 +1216,51 @@ export function ConfirmStep({ address, form, ownerKind = 'phrase', ownershipSign
 // Page shell
 // ---------------------------------------------------------------------------
 
+/** The longest a brand-new wallet's key is held in memory for the station ownership signature. */
+export const OWNERSHIP_SIGNER_MAX_MS = 10 * 60 * 1000;
+
+/**
+ * Holds a brand-new wallet's ownership signer for the page, and lets go of it as early as possible.
+ * `release` on the held signer drops the key AND takes the signer out of page state, so nothing can
+ * keep offering a dead key. The key is also dropped when the page unmounts and after `maxMs`.
+ */
+export function useHeldOwnershipSigner(maxMs: number = OWNERSHIP_SIGNER_MAX_MS) {
+  const [held, setHeld] = useState<StationOwnershipSigner | undefined>(undefined);
+  const heldRef = useRef<StationOwnershipSigner | undefined>(undefined);
+  heldRef.current = held;
+  // Leaving the page drops the key, whether or not the proof was handed in.
+  useEffect(() => () => heldRef.current?.release(), []);
+  // So does time.
+  useEffect(() => {
+    if (!held) return undefined;
+    const timer = setTimeout(() => held.release(), maxMs);
+    return () => clearTimeout(timer);
+  }, [held, maxMs]);
+  const hold = useCallback((signer?: StationOwnershipSigner) => {
+    heldRef.current?.release();
+    if (!signer) {
+      setHeld(undefined);
+      return;
+    }
+    let released = false;
+    const wrapped: StationOwnershipSigner = {
+      sign: (stationId, chain) => {
+        if (released) throw new Error('This wallet is no longer held on this page.');
+        return signer.sign(stationId, chain);
+      },
+      release: () => {
+        if (released) return;
+        released = true;
+        signer.release();
+        setHeld((current) => (current === wrapped ? undefined : current));
+      },
+    };
+    // An object in state; wrapped so React does not call it.
+    setHeld(() => wrapped);
+  }, []);
+  return [held, hold] as const;
+}
+
 export default function ConnectStationPage() {
   const [activeStep, setActiveStep] = useState(0);
   // Only the public chain address crosses into page state (see
@@ -1195,11 +1268,8 @@ export default function ConnectStationPage() {
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [ownerKind, setOwnerKind] = useState<OwnerKind>('phrase');
   // A brand-new wallet's ownership signer (see WalletStepProps): one kind of signature, then released.
-  const [ownershipSigner, setOwnershipSigner] = useState<StationOwnershipSigner | undefined>(undefined);
-  const signerRef = useRef<StationOwnershipSigner | undefined>(undefined);
-  signerRef.current = ownershipSigner;
-  // Leaving the page drops the key, whether or not the proof was handed in.
-  useEffect(() => () => signerRef.current?.release(), []);
+  // It is dropped on unmount, after ten minutes, and as soon as it is no longer needed.
+  const [ownershipSigner, holdOwnershipSigner] = useHeldOwnershipSigner();
   const [verified, setVerified] = useState(false);
   const [form, setForm] = useState<StationFormData>({
     name: '',
@@ -1220,8 +1290,7 @@ export default function ConnectStationPage() {
           onAuthenticated={(address, kind = 'phrase', signer) => {
             setWalletAddress(address);
             setOwnerKind(kind);
-            // A function in state must be wrapped, or React would call it.
-            setOwnershipSigner(() => signer);
+            holdOwnershipSigner(signer);
             // The faucet step claims for the 12-word wallet; a passkey wallet has its own faucet button on
             // /wallet/passkey and needs no WRF to register, so it goes straight to the station.
             setActiveStep(kind === 'passkey' ? 2 : 1);

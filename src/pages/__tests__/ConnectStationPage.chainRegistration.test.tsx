@@ -8,7 +8,7 @@
 import { jest } from '@jest/globals';
 import React from 'react';
 import '@testing-library/jest-dom';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 
 const OWNER = `0x${'ab'.repeat(20)}`;
 const STATION = 'pws-0123456789abcdef';
@@ -52,7 +52,7 @@ await jest.unstable_mockModule('../../services/apiClient', () => ({
   },
 }));
 
-const { ConfirmStep, StationRewardProgressPanel } = await import('../ConnectStationPage');
+const { ConfirmStep, StationRewardProgressPanel, useHeldOwnershipSigner, OWNERSHIP_SIGNER_MAX_MS } = await import('../ConnectStationPage');
 
 const progress = (chainRegistration?: unknown) => ({
   schemaVersion: 1, stationId: STATION, ownerAddress: OWNER, state: 'AWAITING_OBSERVATION',
@@ -122,8 +122,75 @@ describe('connect wizard: on-chain registration status', () => {
     await waitFor(() => expect(submitStationOwnershipProof).toHaveBeenCalledWith(STATION, PROOF));
     expect(signer.sign).toHaveBeenCalledWith(STATION, { chainId: '888', networkId: 'testnet' });
     expect(await screen.findByTestId('station-chain-waiting')).toBeInTheDocument();
-    expect(signer.release).toHaveBeenCalledTimes(1);
+    expect(signer.release).toHaveBeenCalled();
     expect(submitStationOwnershipProof).toHaveBeenCalledTimes(1);
+  });
+
+  it('the key is dropped as soon as the server shows it is not needed: no registration state, or any state but the signature step', async () => {
+    for (const shown of [
+      progress(), progress(null), progress(reg('waiting', { waitingFor: 'batch' })), progress(reg('earning')),
+      progress(reg('blocked', { blockedReason: 'station_id_taken_on_chain' })),
+    ]) {
+      getStationRewardProgress.mockResolvedValue(shown);
+      const signer = { sign: jest.fn(() => PROOF), release: jest.fn() };
+      render(<StationRewardProgressPanel stationId={STATION} ownershipSigner={signer as never} />);
+      await waitFor(() => expect(signer.release).toHaveBeenCalled());
+      expect(signer.sign).not.toHaveBeenCalled();
+      expect(submitStationOwnershipProof).not.toHaveBeenCalled();
+      cleanup();
+    }
+  });
+
+  it('while the read has not answered, or failed, the key is kept (the timer and leaving the page bound it)', async () => {
+    getStationRewardProgress.mockRejectedValue(new Error('down'));
+    const signer = { sign: jest.fn(() => PROOF), release: jest.fn() };
+    render(<StationRewardProgressPanel stationId={STATION} ownershipSigner={signer as never} />);
+    expect(await screen.findByText('Reward progress unavailable')).toBeInTheDocument();
+    expect(signer.release).not.toHaveBeenCalled();
+  });
+});
+
+describe('useHeldOwnershipSigner: how long a brand-new wallet\'s key is held', () => {
+  const raw = () => ({ sign: jest.fn(() => PROOF), release: jest.fn() });
+  afterEach(() => { jest.useRealTimers(); cleanup(); });
+
+  it('release drops the key once, takes the signer out of page state, and the old handle can no longer sign', () => {
+    const signer = raw();
+    const { result } = renderHook(() => useHeldOwnershipSigner());
+    act(() => result.current[1](signer as never));
+    const held = result.current[0]!;
+    expect(held.sign(STATION, { chainId: '888', networkId: 'testnet' })).toBe(PROOF);
+    act(() => { held.release(); held.release(); });
+    expect(signer.release).toHaveBeenCalledTimes(1);
+    expect(result.current[0]).toBeUndefined();
+    expect(() => held.sign(STATION, { chainId: '888', networkId: 'testnet' })).toThrow('no longer held');
+    expect(signer.sign).toHaveBeenCalledTimes(1);
+  });
+
+  it('after ten minutes the key is dropped, and not a moment before', () => {
+    jest.useFakeTimers();
+    expect(OWNERSHIP_SIGNER_MAX_MS).toBe(600_000);
+    const signer = raw();
+    const { result } = renderHook(() => useHeldOwnershipSigner());
+    act(() => result.current[1](signer as never));
+    act(() => { jest.advanceTimersByTime(OWNERSHIP_SIGNER_MAX_MS - 1); });
+    expect(signer.release).not.toHaveBeenCalled();
+    expect(result.current[0]).toBeDefined();
+    act(() => { jest.advanceTimersByTime(1); });
+    expect(signer.release).toHaveBeenCalledTimes(1);
+    expect(result.current[0]).toBeUndefined();
+  });
+
+  it('leaving the page drops the key; a second wallet replaces and releases the first', () => {
+    const first = raw();
+    const second = raw();
+    const { result, unmount } = renderHook(() => useHeldOwnershipSigner());
+    act(() => result.current[1](first as never));
+    act(() => result.current[1](second as never));
+    expect(first.release).toHaveBeenCalledTimes(1);
+    expect(second.release).not.toHaveBeenCalled();
+    unmount();
+    expect(second.release).toHaveBeenCalledTimes(1);
   });
 
   it('registration never sends a station id: the server issues it', async () => {

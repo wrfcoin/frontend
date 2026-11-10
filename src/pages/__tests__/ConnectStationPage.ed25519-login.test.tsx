@@ -232,8 +232,12 @@ describe('ConnectStationPage first-party ed25519 wallet', () => {
     expect(root.length).toBeGreaterThan(100);
     expect(root).toMatch(/useState<string>\(''\)/);
     expect(root).not.toMatch(/SessionWallet|\baccount\b|mnemonic/);
-    // The page drops the key when it unmounts.
-    expect(root).toMatch(/useEffect\(\(\) => \(\) => signerRef\.current\?\.release\(\), \[\]\)/);
+    // The page keeps the signer only through the holder, which drops the key when the page unmounts
+    // and after ten minutes (ConnectStationPage.chainRegistration.test.tsx runs both).
+    expect(root).toMatch(/const \[ownershipSigner, holdOwnershipSigner\] = useHeldOwnershipSigner\(\);/);
+    expect(root).toMatch(/holdOwnershipSigner\(signer\);/);
+    expect(code).toMatch(/useEffect\(\(\) => \(\) => heldRef\.current\?\.release\(\), \[\]\)/);
+    expect(code).toMatch(/export const OWNERSHIP_SIGNER_MAX_MS = 10 \* 60 \* 1000;/);
     // The account is read in exactly two places: handed to the validating login signer, and captured
     // for the ownership signer, whose only uses of it are signStationOwnership and destroy.
     expect(code.match(/\.account\b/g)).toEqual(['.account', '.account']);

@@ -180,6 +180,9 @@ const CHAIN_REGISTRATION_STATES: ReadonlySet<unknown> = new Set(['needs_owner_si
 const WAITING_FOR: ReadonlySet<unknown> = new Set(['batch', 'station_report', 'operator_review']);
 const BLOCKED_REASONS: ReadonlySet<unknown> = new Set(['station_id_taken_on_chain', 'chain_record_not_active']);
 
+/** How long a reward-progress answer may be reused by a caller that asks for a recent one. */
+export const REWARD_PROGRESS_REUSE_MS = 5_000;
+
 /**
  * Untrusted input: anything but a known state with a plain station id and a named chain is "not
  * reported". Unknown detail fields fall back to the plainest reading of the state.
@@ -660,10 +663,41 @@ export class StationRegistrationService {
     if (!/^[a-zA-Z0-9_-]{1,64}$/.test(normalizedStationId)) {
       throw new Error('Invalid station ID.');
     }
-    const response = await this.weatherClient.get<unknown>(
-      `/weather/stations/${encodeURIComponent(normalizedStationId)}/reward-progress`,
-    );
+    const response = await this.readRewardProgress(normalizedStationId);
     return normalizeStationRewardProgress(response, normalizedStationId);
+  }
+
+  /**
+   * One GET of a station's reward-progress, shared by callers that ask for the same station as the same
+   * signed-in wallet. The station page asks twice (who owns it, then the registration state): callers
+   * in flight together always share one request, and a caller that says `reuseRecent` also takes an
+   * answer (or refusal) that arrived in the last few seconds instead of asking again. Every other
+   * caller asks the server, and an answer is dropped after REWARD_PROGRESS_REUSE_MS.
+   */
+  private rewardProgressReads = new Map<string, { request: Promise<unknown>; settledAt: number | null }>();
+
+  private readRewardProgress(id: string, reuseRecent = false): Promise<unknown> {
+    const key = `${getAuthToken() ?? ''}|${id}`;
+    const existing = this.rewardProgressReads.get(key);
+    if (existing && (existing.settledAt === null
+      || (reuseRecent && Date.now() - existing.settledAt < REWARD_PROGRESS_REUSE_MS))) {
+      return existing.request;
+    }
+    const entry: { request: Promise<unknown>; settledAt: number | null } = {
+      settledAt: null,
+      request: this.weatherClient.get<unknown>(`/weather/stations/${encodeURIComponent(id)}/reward-progress`),
+    };
+    const forget = () => {
+      if (this.rewardProgressReads.get(key) === entry) this.rewardProgressReads.delete(key);
+    };
+    const settled = () => {
+      entry.settledAt = Date.now();
+      const timer = setTimeout(forget, REWARD_PROGRESS_REUSE_MS) as unknown as { unref?: () => void };
+      timer.unref?.();
+    };
+    entry.request.then(settled, settled);
+    this.rewardProgressReads.set(key, entry);
+    return entry.request;
   }
 
   /**
@@ -671,17 +705,19 @@ export class StationRegistrationService {
    * the same authenticated read as reward progress, but takes only the two fields it needs, so it works
    * on the station page, where the route id is the alias. `chainRegistration` is null when the backend
    * does not report it. Throws when the caller is signed out or does not own the station.
+   * `reuseRecent` takes an answer the page read a moment ago instead of asking again (first paint
+   * only; a read after the owner has signed must not pass it).
    */
   async getStationChainRegistration(
     stationIdOrAlias: string,
+    options: { reuseRecent?: boolean } = {},
   ): Promise<{ ownerAddress: string; chainRegistration: StationChainRegistration | null }> {
     const id = stationIdOrAlias.trim();
     if (!/^[a-zA-Z0-9_-]{1,64}$/.test(id)) {
       throw new Error('Invalid station ID.');
     }
-    const response = await this.weatherClient.get<{ ownerAddress?: unknown; chainRegistration?: unknown }>(
-      `/weather/stations/${encodeURIComponent(id)}/reward-progress`,
-    );
+    const response = await this.readRewardProgress(id, options.reuseRecent === true) as
+      { ownerAddress?: unknown; chainRegistration?: unknown } | null;
     if (!response || typeof response.ownerAddress !== 'string' || !/^0x[0-9a-fA-F]{40}$/.test(response.ownerAddress)) {
       throw new Error('Station registration state failed validation.');
     }

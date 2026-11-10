@@ -7,7 +7,7 @@
 import { jest } from '@jest/globals';
 import React from 'react';
 import '@testing-library/jest-dom';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 const OWNER = `0x${'ab'.repeat(20)}`;
 const STATION = 'pws-0123456789abcdef';
@@ -22,6 +22,8 @@ const getStationChainRegistration = jest.fn<(...args: unknown[]) => Promise<unkn
 const withOwnerKey = jest.fn<(...args: unknown[]) => Promise<unknown>>();
 const signStationOwnership = jest.fn<(...args: unknown[]) => unknown>();
 
+const tokenListeners = new Set<() => void>();
+const notifyToken = () => { for (const listener of [...tokenListeners]) listener(); };
 class MockApiError extends Error {
   status: number;
   details?: Record<string, unknown>;
@@ -43,7 +45,10 @@ await jest.unstable_mockModule('../../../services/walletCrypto/passkeySend', () 
 await jest.unstable_mockModule('../../../services/walletCrypto/passkey', () => ({ passkeyRecordAddress: () => passkeyAddress }));
 await jest.unstable_mockModule('../../../services/authTokenStore', () => ({
   getAuthToken: () => token,
-  subscribeAuthToken: () => () => undefined,
+  subscribeAuthToken: (listener: () => void) => {
+    tokenListeners.add(listener);
+    return () => { tokenListeners.delete(listener); };
+  },
 }));
 await jest.unstable_mockModule('../../../services/walletJwtSubject', () => ({ readJwtSubject: () => subject }));
 await jest.unstable_mockModule('@mui/material', () => ({
@@ -99,11 +104,15 @@ describe('states that need nothing from the owner', () => {
     expect(el).toHaveTextContent(/isn.t earning yet/);
   });
 
-  it('waiting for the operator: an id made from a name is added by hand, and how to skip the wait', () => {
+  it('waiting for the operator: an id made from a name is added by hand; the station keeps its id and there is nothing to do', () => {
     notice(reg('waiting', { waitingFor: 'operator_review' }));
     const el = screen.getByTestId('station-chain-waiting-operator');
     expect(el).toHaveTextContent('public on the chain for good');
-    expect(el).toHaveTextContent('reconnect the station');
+    expect(el).toHaveTextContent('keep their id');
+    expect(el).toHaveTextContent('the network operator adds them one at a time');
+    expect(el).toHaveTextContent('You don\'t need to do anything');
+    // Connecting the station again is refused (its device is already registered), so it is never suggested.
+    expect(el.textContent).not.toMatch(/reconnect|new id|id with no name/i);
   });
 
   it('earning', () => {
@@ -111,12 +120,14 @@ describe('states that need nothing from the owner', () => {
     expect(screen.getByTestId('station-chain-earning')).toHaveTextContent('registered on chain');
   });
 
-  it('blocked: the id is taken on chain, it is not earning, and the way out is to reconnect', () => {
+  it('blocked: the id is taken on chain, it is not earning, and no way out is promised that does not exist', () => {
     notice(reg('blocked', { blockedReason: 'station_id_taken_on_chain' }));
     const el = screen.getByTestId('station-chain-blocked');
     expect(el).toHaveTextContent('already used on chain by another wallet');
     expect(el).toHaveTextContent('not earning');
-    expect(el).toHaveTextContent('Reconnect the station on the Connect page to get a new id');
+    expect(el).toHaveTextContent('connecting it again does not give it a new one');
+    expect(el).toHaveTextContent('ask the network operator');
+    expect(el.textContent).not.toMatch(/Reconnect the station|to get a new id/);
   });
 
   it('blocked: the chain shows the station as not active', () => {
@@ -208,6 +219,49 @@ describe('one step left: the owner signs', () => {
     expect(failure).toHaveTextContent('Reload this page and sign again');
     expect(screen.queryByText('Try again')).toBeNull();
     expect(submitStationOwnershipProof).toHaveBeenCalledTimes(1);
+    // Refused for good: the key is dropped at once.
+    expect(wallet.release).toHaveBeenCalledTimes(1);
+  });
+
+  it('every refusal that trying again cannot fix drops the in-memory key; a wallet that cannot sign does too', async () => {
+    for (const error of [
+      new MockApiError('x', 409, { code: 'OWNER_KEY_NOT_THIS_WALLET' }), new MockApiError('x', 404),
+      new MockApiError('x', 400), new MockApiError('x', 401),
+    ]) {
+      const wallet = memoryWallet();
+      submitStationOwnershipProof.mockRejectedValue(error);
+      notice(reg('needs_owner_signature'), wallet);
+      await screen.findByTestId('station-chain-failure');
+      expect(wallet.release).toHaveBeenCalledTimes(1);
+      expect(screen.queryByText('Try again')).toBeNull();
+      cleanup();
+      submitStationOwnershipProof.mockReset();
+    }
+    const broken = { sign: jest.fn(() => { throw new Error('no'); }), release: jest.fn() };
+    notice(reg('needs_owner_signature'), broken);
+    expect(await screen.findByText('This wallet could not sign for the station. Nothing was sent.')).toBeInTheDocument();
+    expect(broken.release).toHaveBeenCalledTimes(1);
+    expect(submitStationOwnershipProof).not.toHaveBeenCalled();
+  });
+
+  it('a station that is not waiting for a signature never keeps an in-memory key', () => {
+    for (const r of [reg('waiting', { waitingFor: 'batch' }), reg('waiting', { waitingFor: 'station_report' }),
+      reg('waiting', { waitingFor: 'operator_review' }), reg('earning'), reg('blocked', { blockedReason: 'station_id_taken_on_chain' })]) {
+      const wallet = memoryWallet();
+      notice(r, wallet);
+      expect(wallet.release).toHaveBeenCalled();
+      expect(wallet.sign).not.toHaveBeenCalled();
+      cleanup();
+    }
+  });
+
+  it('a lost session never tells the owner of a brand-new wallet to just sign in again: it names the 12 words', async () => {
+    const wallet = memoryWallet();
+    submitStationOwnershipProof.mockRejectedValue(new MockApiError('x', 401));
+    notice(reg('needs_owner_signature'), wallet);
+    const failure = await screen.findByTestId('station-chain-failure');
+    expect(failure).toHaveTextContent('nothing was saved');
+    expect(failure).toHaveTextContent('restore it on the Wallet page with your 12 words');
   });
 
   it('no saved wallet for this owner in this browser: points to this station\'s page, offers no button', () => {
@@ -250,6 +304,8 @@ describe('one step left: the owner signs', () => {
       cleanup();
     }
     await Promise.resolve();
+    // It cannot sign for that chain, so the key is not kept either.
+    expect(wallet.release).toHaveBeenCalled();
     expect(wallet.sign).not.toHaveBeenCalled();
     expect(submitStationOwnershipProof).not.toHaveBeenCalled();
   });
@@ -285,7 +341,7 @@ describe('StationChainRegistrationCard (the owner\'s station page)', () => {
     getStationChainRegistration.mockResolvedValue({ ownerAddress: OWNER, chainRegistration: reg('needs_owner_signature') });
     render(<StationChainRegistrationCard stationId={ALIAS} />);
     expect(await screen.findByTestId('station-chain-needs-signature')).toBeInTheDocument();
-    expect(getStationChainRegistration).toHaveBeenCalledWith(ALIAS);
+    expect(getStationChainRegistration).toHaveBeenCalledWith(ALIAS, { reuseRecent: true });
     expect(screen.getByText('Sign for my station')).toBeInTheDocument();
   });
 
@@ -303,6 +359,8 @@ describe('StationChainRegistrationCard (the owner\'s station page)', () => {
     fireEvent.change(screen.getByLabelText('Wallet password'), { target: { value: 'pw' } });
     fireEvent.click(screen.getByText('Sign for my station'));
     expect(await screen.findByTestId('station-chain-waiting')).toBeInTheDocument();
+    // The read after signing asks the server again; only the first paint may reuse a recent answer.
+    expect(getStationChainRegistration.mock.calls.map((c) => c[1])).toEqual([{ reuseRecent: true }, { reuseRecent: false }]);
   });
 
   it('somebody else\'s station, a backend that reports nothing, or a failed read: nothing is shown', async () => {
@@ -324,5 +382,43 @@ describe('StationChainRegistrationCard (the owner\'s station page)', () => {
     const { container } = render(<StationChainRegistrationCard stationId={ALIAS} />);
     await waitFor(() => expect(getStationChainRegistration).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('switching account clears the card at once, and a late answer for the old account is ignored', async () => {
+    const OTHER = `0x${'77'.repeat(20)}`;
+    token = 'jwt';
+    subject = OWNER;
+    vaultAddress = OWNER;
+    getStationChainRegistration.mockResolvedValue({ ownerAddress: OWNER, chainRegistration: reg('needs_owner_signature') });
+    const { container } = render(<StationChainRegistrationCard stationId={ALIAS} />);
+    await screen.findByTestId('station-chain-needs-signature');
+
+    // Another account signs in; its own read has not answered yet.
+    getStationChainRegistration.mockReset();
+    getStationChainRegistration.mockReturnValue(new Promise(() => undefined));
+    act(() => { token = 'jwt-other'; subject = OTHER; notifyToken(); });
+    // Gone at once, before any answer.
+    expect(container).toBeEmptyDOMElement();
+    await waitFor(() => expect(getStationChainRegistration).toHaveBeenCalledTimes(1));
+  });
+
+  it('a late answer for the account that was signed in before is ignored', async () => {
+    const OTHER = `0x${'77'.repeat(20)}`;
+    token = 'jwt';
+    subject = OWNER;
+    vaultAddress = OWNER;
+    let late: (v: unknown) => void = () => undefined;
+    getStationChainRegistration
+      .mockReturnValueOnce(new Promise((resolve) => { late = resolve; }))
+      .mockRejectedValue(new MockApiError('not yours', 404));
+    const { container } = render(<StationChainRegistrationCard stationId={ALIAS} />);
+    await waitFor(() => expect(getStationChainRegistration).toHaveBeenCalledTimes(1));
+    act(() => { token = 'jwt-other'; subject = OTHER; notifyToken(); });
+    await waitFor(() => expect(getStationChainRegistration).toHaveBeenCalledTimes(2));
+    // The old account signs back in as the subject the late answer names: still not shown, because
+    // that answer belongs to a request that is no longer the newest.
+    await act(async () => { late({ ownerAddress: OTHER, chainRegistration: reg('needs_owner_signature') }); await Promise.resolve(); });
+    expect(container).toBeEmptyDOMElement();
+    expect(screen.queryByText('Sign for my station')).toBeNull();
   });
 });

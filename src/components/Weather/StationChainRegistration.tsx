@@ -30,7 +30,9 @@ export const STATION_NETWORK_ID = 'testnet';
 /**
  * A wallet that is still in memory and can sign for a station: the brand-new wallet made on the connect
  * page, which is not saved in the browser. It can only produce a station ownership proof for its own
- * address; `release` drops the key.
+ * address; `release` drops the key. It is released as soon as it can no longer be needed: the proof
+ * was accepted, the server refused it for good, the station is not waiting for a signature, the server
+ * reports no registration state, or ten minutes have passed (see ConnectStationPage).
  */
 export interface StationOwnershipSigner {
   sign: (stationId: string, chain: { chainId: string; networkId: string }) => StationOwnershipProof;
@@ -73,7 +75,12 @@ export function describeProofRejection(error: unknown, chainId: string): { messa
     return { retry: false, message: 'The server did not accept the signature. Nothing was saved. Reload this page and sign again.' };
   }
   if (status === 401) {
-    return { retry: false, message: 'Your wallet session ended. Sign in again with this station\'s wallet, then sign here.' };
+    return {
+      retry: false,
+      message: 'Your wallet session ended, so nothing was saved. Sign in with the 12-word wallet that owns this '
+        + 'station (if it is not saved in this browser, restore it on the Wallet page with your 12 words), then '
+        + 'sign from this station\'s page.',
+    };
   }
   return { retry: true, message: 'Your signature could not be saved just now. Please try again.' };
 }
@@ -119,7 +126,10 @@ export function StationChainRegistrationNotice({
       signer?.release();
       onChanged();
     } catch (error) {
-      setFailure(describeProofRejection(error, registration.chainId));
+      const rejection = describeProofRejection(error, registration.chainId);
+      setFailure(rejection);
+      // Refused for good: this key can do nothing more here, so it is dropped now.
+      if (!rejection.retry) signer?.release();
     }
   }, [registration.stationId, registration.chainId, signer, onChanged]);
 
@@ -132,6 +142,7 @@ export function StationChainRegistrationNotice({
         proof = signer.sign(registration.stationId, chain);
       } catch {
         setFailure({ retry: false, message: 'This wallet could not sign for the station. Nothing was sent.' });
+        signer.release();
         return;
       }
       await send(proof);
@@ -142,6 +153,11 @@ export function StationChainRegistrationNotice({
 
   // A brand-new wallet is only in memory: sign and hand in once, without asking, while it is still here.
   const needsSignature = registration.state === 'needs_owner_signature';
+  // The key is kept only while it can still be used for this: not once the station is past the
+  // signature step, and not when this site cannot sign for the server's chain.
+  useEffect(() => {
+    if (signer && (!needsSignature || !chainMatches)) signer.release();
+  }, [signer, needsSignature, chainMatches]);
   useEffect(() => {
     if (!needsSignature || !signer || !chainMatches || autoTried.current) return;
     autoTried.current = true;
@@ -182,7 +198,7 @@ export function StationChainRegistrationNotice({
       <WrfAlert severity="error" title="This station can't be registered on chain as it is" data-testid="station-chain-blocked">
         {registration.blockedReason === 'chain_record_not_active'
           ? 'The chain has this station, but shows it as not active, so it is not earning. Nothing you sign here can change that; ask the network operator.'
-          : 'This station id is already used on chain by another wallet, so this station can\'t be registered under it and is not earning. Reconnect the station on the Connect page to get a new id.'}
+          : 'This station id is already used on chain by another wallet, so this station can\'t be registered under it and is not earning. A station keeps the id it was given; connecting it again does not give it a new one. Nothing you do on this page can change that; ask the network operator.'}
       </WrfAlert>
     );
   }
@@ -192,8 +208,8 @@ export function StationChainRegistrationNotice({
       return (
         <WrfAlert severity="warning" title="Connected. Waiting for your station to report" data-testid="station-chain-waiting-report">
           Your wallet has signed for this station. It isn&apos;t earning yet, and it can&apos;t join an on-chain
-          registration batch until it has sent a reading in the last 24 hours. Check that the station is
-          online and that its Ambient keys still work.
+          registration batch until its data collection is active and it has sent a reading in the last
+          24 hours. Check that the station is online and that its Ambient keys still work.
         </WrfAlert>
       );
     }
@@ -201,9 +217,9 @@ export function StationChainRegistrationNotice({
       return (
         <WrfAlert severity="info" title="Connected. Waiting for the operator" data-testid="station-chain-waiting-operator">
           Your wallet has signed for this station. It isn&apos;t earning yet. Its id ({registration.stationId})
-          was made from the name you gave it, and a station id is public on the chain for good, so the
-          network operator adds stations like this one at a time. To skip the wait, reconnect the station
-          to get an id with no name in it.
+          was made from the name you gave it, and a station id is public on the chain for good. Older
+          stations like this one keep their id, so the network operator adds them one at a time. You
+          don&apos;t need to do anything, and there is nothing to do on this page to speed it up.
         </WrfAlert>
       );
     }
@@ -291,14 +307,21 @@ export function StationChainRegistrationCard({ stationId }: { stationId: string 
   const token = useSyncExternalStore(subscribeAuthToken, getAuthToken, getAuthToken);
   const subject = token ? readJwtSubject(token) : null;
   const [view, setView] = useState<{ ownerAddress: string; registration: StationChainRegistration } | null>(null);
+  // Only the newest request may set what is shown: an answer for the account that was signed in
+  // before, or for another station, is dropped when it arrives late.
+  const latest = useRef(0);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (reuseRecent = false) => {
+    const mine = ++latest.current;
     if (!subject) {
       setView(null);
       return;
     }
     try {
-      const next = await stationRegistrationService.getStationChainRegistration(stationId);
+      // First paint may take the answer the page read a moment ago (who owns this station), so the
+      // page asks once. A read after signing always asks again.
+      const next = await stationRegistrationService.getStationChainRegistration(stationId, { reuseRecent });
+      if (latest.current !== mine) return;
       setView(
         next && next.chainRegistration && next.ownerAddress.toLowerCase() === subject.toLowerCase()
           ? { ownerAddress: next.ownerAddress, registration: next.chainRegistration }
@@ -306,12 +329,15 @@ export function StationChainRegistrationCard({ stationId }: { stationId: string 
       );
     } catch {
       // Not the owner, signed out, or the route is not live: this card simply is not shown.
-      setView(null);
+      if (latest.current === mine) setView(null);
     }
   }, [stationId, subject]);
 
   useEffect(() => {
-    void load();
+    // Another account or station: what was shown belongs to the old one, so it goes at once.
+    setView(null);
+    void load(true);
+    return () => { latest.current += 1; };
   }, [load]);
 
   if (!view) return null;
@@ -320,7 +346,7 @@ export function StationChainRegistrationCard({ stationId }: { stationId: string 
       <StationChainRegistrationNotice
         registration={view.registration}
         ownerAddress={view.ownerAddress}
-        onChanged={load}
+        onChanged={() => { void load(); }}
       />
     </Box>
   );

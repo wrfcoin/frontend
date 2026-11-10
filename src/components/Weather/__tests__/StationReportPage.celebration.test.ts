@@ -219,11 +219,12 @@ describe('FirstEarnCelebration on the station page', () => {
       setAuthToken(jwtFor(STRANGER));
       installBackend({ owner: OWNER });
       await renderStation();
-      // Two reads for a signed-in wallet: the celebration's ownership read and the registration status card's.
-      await waitFor(() => expect(progressRequests()).toHaveLength(2));
+      // One read for a signed-in wallet: the registration status card reuses the ownership read.
+      await waitFor(() => expect(progressRequests()).toHaveLength(1));
       expect(progressRequests()[0].auth).toBe(`Bearer ${jwtFor(STRANGER)}`);
       // Let the 404 settle before asserting absence.
       await new Promise(resolve => setTimeout(resolve, 50));
+      expect(progressRequests()).toHaveLength(1);
       expect(screen.queryByText(CELEBRATION)).toBeNull();
     });
 
@@ -231,8 +232,9 @@ describe('FirstEarnCelebration on the station page', () => {
       setAuthToken(jwtFor(OWNER));
       installBackend({ owner: OWNER, progressOwnerOverride: STRANGER });
       await renderStation();
-      await waitFor(() => expect(progressRequests()).toHaveLength(2));
+      await waitFor(() => expect(progressRequests()).toHaveLength(1));
       await new Promise(resolve => setTimeout(resolve, 50));
+      expect(progressRequests()).toHaveLength(1);
       expect(screen.queryByText(CELEBRATION)).toBeNull();
     });
 

@@ -305,6 +305,30 @@ describe('StationRegistrationService', () => {
     await expect(service.getStationChainRegistration('bad id')).rejects.toThrow(/Invalid station ID/);
   });
 
+  it('the station page asks once: reads in flight together share one request, and first paint reuses a recent answer', async () => {
+    const owner = `0x${'ab'.repeat(20)}`;
+    const body = { stationId: 'st_0123456789ab', ownerAddress: owner, chainRegistration: null };
+    const service = new StationRegistrationService(serviceUrls);
+    const calls = () => global.fetch.mock.calls.length;
+    const before = calls();
+    global.fetch.mockImplementation(() => Promise.resolve(jsonResponse(body)));
+    // Together: one request.
+    const [a, b] = await Promise.all([
+      service.getStationChainRegistration('st_0123456789ab'),
+      service.getStationChainRegistration('st_0123456789ab'),
+    ]);
+    expect(a).toEqual(b);
+    expect(calls() - before).toBe(1);
+    // A moment later, a caller that accepts a recent answer does not ask again...
+    await service.getStationChainRegistration('st_0123456789ab', { reuseRecent: true });
+    expect(calls() - before).toBe(1);
+    // ...another station does, and so does any caller that did not say so (a read after signing).
+    await service.getStationChainRegistration('st_ba9876543210', { reuseRecent: true });
+    expect(calls() - before).toBe(2);
+    await service.getStationChainRegistration('st_0123456789ab');
+    expect(calls() - before).toBe(3);
+  });
+
   it('submitStationOwnershipProof posts only the public key and signature for that station', async () => {
     const service = new StationRegistrationService(serviceUrls);
     const answer = { state: 'waiting', waitingFor: 'batch', stationId: 'station-2456', chainId: '888', networkId: 'testnet' };
