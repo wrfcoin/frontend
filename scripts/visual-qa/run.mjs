@@ -377,6 +377,25 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    // "Bond your node" is a build switch (default off): these run only when the harness was started with it.
+    for (const [name, query, verdict, mode] of [['nodes-bond-admitted', 'node-1a2b3c4d', /Admitted, waiting/, 'populated'], ['nodes-bond-earning', 'ws-node', /Bonded, earning/, 'populated'], ['nodes-bond-closed', 'node-1a2b3c4d', /Admission is not open\./, 'off']]) {
+      if (!want(name)) continue;
+      if (process.env.VITE_ENABLE_BOND_GUIDE !== 'true') { if (only.includes(name)) console.log(`SKIP ${name}: start with VITE_ENABLE_BOND_GUIDE=true`); continue; }
+      try {
+        await page.unroute(() => true);
+        // The house fixture bonds use hand-picked aliases; the earning capture gives one a generated alias.
+        const nodes = { ...fx.NETWORK_NODES, bonded: { ...fx.NETWORK_NODES.bonded, nodes: fx.NETWORK_NODES.bonded.nodes.map((n, i) => (i === 0 ? { ...n, alias: 'node-5e6f7a8b' } : n)) } };
+        await installRoutes(page, name === 'nodes-bond-earning' ? { ...fx, NETWORK_NODES: nodes } : fx, { bondAdmissions: mode });
+        await loadRoute(page, '/nodes', errors);
+        await page.getByLabel('Check your node').fill(name === 'nodes-bond-earning' ? 'node-5e6f7a8b' : query);
+        await page.getByRole('button', { name: 'Check' }).click();
+        await page.getByTestId('bond-verdict').filter({ hasText: verdict }).waitFor({ timeout: 10_000 });
+        await page.getByTestId('bond-your-node').scrollIntoViewIfNeeded();
+        await capture(page, errors, name, `/nodes (${name.replace('nodes-', '')})`, suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     if (want('proof-card-wolfram')) {
       const name = 'proof-card-wolfram';
       try {

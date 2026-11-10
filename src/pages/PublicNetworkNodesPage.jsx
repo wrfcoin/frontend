@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { WrfAlert, WrfCard, WrfEmptyState } from '../components/DesignSystem';
+import { FEATURES } from '../config/features';
 import { NETWORK_NODES_PATH, publicGet } from '../services/publicReadonlyApi';
 import { When, splitBaseUnits, useForecasterThemeVars } from './publicForecastersShared';
 import './PublicForecastersPage.css';
+import BondYourNode from './BondYourNode';
 import './PublicNetworkNodesPage.css';
 
 /**
@@ -213,6 +215,7 @@ export default function PublicNetworkNodesPage() {
       <WrfCard component="section" aria-label="Bonded nodes" className="fc-section" header={<div className="fc-section-head"><h2>Bonded nodes</h2><span className="fc-count">Rung 2</span></div>} noPadding>
         <Bonded b={d.bonded} />
       </WrfCard>
+      {FEATURES.bondGuide ? <BondYourNode bonded={d.bonded} /> : null}
       <WrfCard component="section" aria-label="Attesters" className="fc-section" header={<div className="fc-section-head"><h2>Attesters</h2><span className="fc-count">Rung 3</span></div>} noPadding>
         <Attesters a={d.attesters} />
       </WrfCard>
