@@ -13,7 +13,7 @@ await jest.unstable_mockModule('../../../services/walletCrypto/deviceKeyStore', 
 
 const {
   default: RemovePhraseWallet, REMOVE_CHANGED, REMOVE_CHECK_CAVEAT, REMOVE_CHECK_FAILED, REMOVE_FAILED,
-  REMOVE_DEVICE_KEY_GONE, REMOVE_RECORD_UNREADABLE, REMOVE_STATION_BOUND, REMOVE_UNSUPPORTED, REMOVE_WARNINGS, addressTail,
+  REMOVE_DEVICE_KEY_GONE, REMOVE_RECORD_UNREADABLE, REMOVE_CHECK_ALL, KEEP_WORDS_TITLE, KEEP_WORDS_NOTE, REMOVE_STATION_BOUND, REMOVE_UNSUPPORTED, REMOVE_WARNINGS, addressTail,
 } = await import('../RemovePhraseWallet');
 // jsdom's crypto has getRandomValues but no subtle; browsers in a secure context have both.
 const { webcrypto } = await import('node:crypto');
@@ -36,11 +36,12 @@ const saveVaultRecord = (address = ADDRESS) => localStorage.setItem(VAULT_KEY, J
 }));
 
 const onRemoved = jest.fn(async () => {});
-const mount = (props: { signedIn?: boolean; hasPhoneStation?: () => Promise<boolean> } = {}) => render(
+const mount = (props: { signedIn?: boolean; hasPhoneStation?: () => Promise<boolean>; hasServerStation?: () => Promise<boolean> } = {}) => render(
   <RemovePhraseWallet
     address={ADDRESS}
     signedIn={props.signedIn ?? true}
     hasPhoneStation={props.hasPhoneStation ?? (async () => false)}
+    hasServerStation={props.hasServerStation}
     onRemoved={onRemoved}
   />,
 );
@@ -213,5 +214,49 @@ describe('RemovePhraseWallet', () => {
     expect(await screen.findByText(REMOVE_FAILED)).toBeInTheDocument();
     expect(localStorage.getItem(VAULT_KEY)).not.toBeNull();
     expect(onRemoved).not.toHaveBeenCalled();
+  });
+  describe('my stations on (owner rule 2026-11-10)', () => {
+    it('the dialog opens with "Keep your 12 words" before any other warning', async () => {
+      mount({ signedIn: false });
+      await openDialog();
+      const note = screen.getByTestId('remove-wallet-keep-words');
+      expect(note).toHaveTextContent(KEEP_WORDS_TITLE);
+      expect(note).toHaveTextContent(KEEP_WORDS_NOTE);
+      const first = screen.getByText(REMOVE_WARNINGS[0]);
+      expect(note.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('a locked wallet with no station is removable, and the server is not asked', async () => {
+      const hasServerStation = jest.fn(async () => true);
+      mount({ signedIn: false, hasServerStation });
+      await openDialog();
+      expect(hasServerStation).not.toHaveBeenCalled();
+      expect(screen.getByTestId('remove-wallet-check-caveat')).toHaveTextContent(REMOVE_CHECK_CAVEAT);
+      fireEvent.click(screen.getByTestId('remove-wallet-written'));
+      fireEvent.change(screen.getByTestId('remove-wallet-tail'), { target: { value: addressTail(ADDRESS) } });
+      expect(confirmButton()).toBeEnabled();
+      await act(async () => { fireEvent.click(confirmButton()); });
+      await waitFor(() => expect(localStorage.getItem(VAULT_KEY)).toBeNull());
+    });
+
+    it('signed in: a station connected from another browser blocks removal', async () => {
+      mount({ signedIn: true, hasServerStation: async () => true });
+      await openDialog();
+      expect(await screen.findByTestId('remove-wallet-station-bound')).toHaveTextContent(REMOVE_STATION_BOUND);
+      expect(confirmButton()).toBeDisabled();
+    });
+
+    it('signed in: a failed server read refuses removal', async () => {
+      mount({ signedIn: true, hasServerStation: async () => { throw new Error('503'); } });
+      await openDialog();
+      expect(await screen.findByText(REMOVE_CHECK_FAILED)).toBeInTheDocument();
+      expect(confirmButton()).toBeDisabled();
+    });
+
+    it('signed in with no station anywhere: says every station was checked', async () => {
+      mount({ signedIn: true, hasServerStation: async () => false });
+      await openDialog();
+      expect(await screen.findByTestId('remove-wallet-check-caveat')).toHaveTextContent(REMOVE_CHECK_ALL);
+    });
   });
 });

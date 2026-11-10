@@ -502,6 +502,58 @@ export function normalizeMobileStationStatus(body: unknown): MobileStationStatus
   return { stationId, phase, updatedAt };
 }
 
+/** "My stations" (owner decision 2026-11-10): the signed-in wallet's own stations, from any browser. */
+export type MyStationFreshness = 'live' | 'stale' | 'registered';
+export type MyStationChainState = 'needs_owner_signature' | 'waiting' | 'earning' | 'blocked';
+export interface MyStation {
+  /** Public alias (`st_` + 12 hex). The list never carries a raw station id. */
+  alias: string;
+  name: string;
+  status: MyStationFreshness | null;
+  lastReadingAt: string | null;
+  /** Absent: the server does not report the on-chain step. null: it could not be read. */
+  onChain?: { state: MyStationChainState; waitingFor?: string; blockedReason?: string } | null;
+}
+export interface MyStationsList {
+  stations: MyStation[];
+  truncated: boolean;
+  /** True for a passkey session before passkey station owners are switched on (Phase 2). */
+  passkeyLater: boolean;
+  /** Rows the server sent that failed validation and are not shown. */
+  dropped: number;
+}
+
+const MY_STATION_FRESHNESS: readonly string[] = ['live', 'stale', 'registered'];
+const MY_STATION_CHAIN_STATES: readonly string[] = ['needs_owner_signature', 'waiting', 'earning', 'blocked'];
+
+/** Validate the list fail-closed: a row that is not exactly what the page expects is dropped, never guessed. */
+export function normalizeMyStations(body: unknown): MyStationsList {
+  const b = (body ?? {}) as Record<string, unknown>;
+  if (!Array.isArray(b.stations)) throw new Error('Your stations could not be read.');
+  const stations: MyStation[] = [];
+  let dropped = 0;
+  for (const raw of b.stations) {
+    const r = (raw ?? {}) as Record<string, unknown>;
+    if (typeof r.alias !== 'string' || !/^st_[0-9a-f]{12}$/.test(r.alias)) { dropped += 1; continue; }
+    const name = typeof r.name === 'string' && r.name.trim() ? r.name.trim() : `Weather station ${r.alias}`;
+    const status = typeof r.status === 'string' && MY_STATION_FRESHNESS.includes(r.status) ? r.status as MyStationFreshness : null;
+    const lastReadingAt = typeof r.lastReadingAt === 'string' && !Number.isNaN(Date.parse(r.lastReadingAt)) ? r.lastReadingAt : null;
+    const station: MyStation = { alias: r.alias, name, status, lastReadingAt };
+    if ('onChain' in r) {
+      const c = r.onChain as Record<string, unknown> | null;
+      station.onChain = c && typeof c.state === 'string' && MY_STATION_CHAIN_STATES.includes(c.state)
+        ? {
+          state: c.state as MyStationChainState,
+          ...(typeof c.waitingFor === 'string' ? { waitingFor: c.waitingFor } : {}),
+          ...(typeof c.blockedReason === 'string' ? { blockedReason: c.blockedReason } : {}),
+        }
+        : null;
+    }
+    stations.push(station);
+  }
+  return { stations, truncated: b.truncated === true, passkeyLater: b.passkey === 'later', dropped };
+}
+
 /**
  * Subject claim of a JWT, or null when the token is not a decodable JWT with a
  * string `sub`. Read-only inspection (no signature check): it exists so the
@@ -650,6 +702,14 @@ export class StationRegistrationService {
       if (error instanceof ApiError && error.status === 404 && error.details?.code === 'NOT_REGISTERED') return null;
       throw error;
     }
+  }
+
+  /**
+   * The signed-in wallet's own stations (GET /weather/stations/mine; backend MY_STATIONS_ENABLED). Owner-only:
+   * the server reads the session's wallet. Throws when the list cannot be read (a 404 means switched off).
+   */
+  async getMyStations(): Promise<MyStationsList> {
+    return normalizeMyStations(await this.weatherClient.get<unknown>('/weather/stations/mine'));
   }
 
   /**
