@@ -206,7 +206,7 @@ export default function PublicForecastCheckPage() {
             station&apos;s own readings on chain for the target hour, next to NOAA&apos;s forecast for the same station and hour.
           </p>
           <p className="fc-note" data-testid="practice-score-note">
-            Practice scores, not paid yet: these scores do not change any reward. <Link to="/forecast/new">Make a forecast</Link> from your 12-word wallet.
+            Practice scores. Nothing is paid for them, and they do not change any reward. <Link to="/forecast/new">Make a forecast</Link> from your 12-word wallet.
           </p>
         </div>
       </header>

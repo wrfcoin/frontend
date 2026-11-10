@@ -484,9 +484,22 @@ async function runViewport(browser, vp, tall, theme) {
         await page.evaluate(() => { try { window.localStorage.removeItem('wrfcoin.passkey.credential.v1'); } catch { /* storage blocked */ } });
       } catch (e) { console.log('FAIL connect-station-passkey', suffix, String(e).slice(0, 160)); report.push({ name: 'connect-station-passkey', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
-    if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review') || want('wallet-address-book') || want('wallet-send-allowlist-refused') || want('challenges-signed-in')) {
+    if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review') || want('wallet-address-book') || want('wallet-send-allowlist-refused') || want('challenges-signed-in') || want('forecast-new-scored')) {
       try {
         await createWallet(page, errors);
+        if (want('forecast-new-scored')) {
+          await page.unroute(() => true);
+          await installRoutes(page, fx, { websiteForecast: 'scored' });
+          await goClientSide(page, '/forecast/new');
+          await page.getByTestId('practice-score').first().waitFor({ timeout: 20_000 }).catch(() => undefined);
+          await capture(page, errors, 'forecast-new-scored', '/forecast/new (signed in, practice scores)', suffix);
+          // The scores are below the form: a second capture with the first scored forecast in view.
+          await page.evaluate(() => { const el = document.querySelector('.page-content'); const h = document.querySelector('.ps--scored')?.closest('article'); if (el && h) el.scrollTop += h.getBoundingClientRect().top - el.getBoundingClientRect().top - 12; });
+          await page.waitForTimeout(400);
+          await capture(page, errors, 'forecast-new-scored-list', '/forecast/new (my forecasts, practice scores)', suffix);
+          await page.unroute(() => true);
+          await installRoutes(page, fx);
+        }
         if (want('wallet-unlocked')) { await goClientSide(page, '/wallet'); await page.getByText('Recent activity').first().waitFor({ timeout: 20_000 }).catch(() => undefined); await capture(page, errors, 'wallet-unlocked', '/wallet', suffix); }
         if (want('challenges-signed-in')) {
           await goClientSide(page, '/challenges');

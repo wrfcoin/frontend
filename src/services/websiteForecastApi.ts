@@ -11,6 +11,35 @@ export interface ForecastStatus { enabled: boolean; leads: number[]; variables: 
 
 export interface ForecastScore { status: 'pending' | 'scored' | 'unavailable'; forecast: number | null; truth: number | null; error: number | null }
 
+/**
+ * The integer practice score (backend services/forecast-score). Values are whole numbers in hundredths of the
+ * display unit (`temp_c_centi` = 0.01 °C, `pressure_pa` = Pa = 0.01 hPa); `skill` is in millionths. Never paid.
+ */
+export interface PracticeScore {
+  status: 'pending' | 'scored' | 'unscored';
+  reason: 'waiting_for_reading' | 'node_unavailable' | 'no_reading' | 'no_baseline' | 'out_of_range' | null;
+  text: string;
+  paid: false;
+  note: string;
+  unit: 'temp_c_centi' | 'pressure_pa';
+  skillMax: number;
+  pendingUntil?: string | null;
+  giveUpAt?: string | null;
+  validAt?: string | null;
+  forecast?: number | null;
+  truth?: number | null;
+  truthObservedAt?: string | null;
+  /** The truth reading's chain commit id and block height, so the score can be checked. */
+  truthCommitId?: string | null;
+  truthHeight?: number | null;
+  error?: number | null;
+  baseline?: { error: number | null; kind: 'climatology_spread' | 'persistence_spread' | null };
+  skill?: number | null;
+  copied?: boolean;
+  beatBaseline?: boolean;
+  nws?: { source: string; forecast: number | null; error: number; skill: number | null; leadHours: number | null; result: 'you_beat_nws' | 'nws_beat_you' | 'tie' } | null;
+}
+
 export interface MyForecast {
   commitId: string;
   stationAlias: string;
@@ -26,6 +55,8 @@ export interface MyForecast {
   committedAtHeight: number | null;
   revealedAtHeight: number | null;
   score: ForecastScore | null;
+  /** Present (possibly null) only while the backend's practice-score switch is on. */
+  practiceScore?: PracticeScore | null;
 }
 
 export interface SubmitResult { commitId: string; status: string; commitTxHash: string | null; stationAlias: string; issuedAt: number; validAt: number }

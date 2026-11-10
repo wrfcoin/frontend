@@ -17,3 +17,23 @@
   .fn-facts { grid-template-columns: 1fr; padding: 0 16px 12px; }
   .fn-fail { margin: 0 16px 12px; }
 }
+
+/* Practice score panel (ForecastPracticeScore.jsx): full width under the facts, phone first. */
+.ps { margin: 0 16px 14px; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--fc-border, rgba(128, 128, 128, 0.3)); border-left-width: 4px; }
+.ps--beat { border-left-color: var(--fc-success-light); }
+.ps--missed, .ps--unscored { border-left-color: var(--fc-text-muted); }
+.ps--pending { border-left-color: var(--fc-info-light); }
+.ps-top { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.ps-head { margin: 0; font-size: 0.9375rem; font-weight: 700; color: var(--fc-text); }
+.ps-points { font-size: 1.75rem; line-height: 1; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.ps-of { font-weight: 400; color: var(--fc-text-muted); }
+.ps-pill { font-size: 0.8125rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.ps-pill--yes { color: var(--fc-success-light); }
+.ps-pill--no { color: var(--fc-text-muted); }
+.ps-line { margin: 8px 0 0; font-size: 0.9375rem; line-height: 1.45; color: var(--fc-text); }
+.ps-note { margin: 10px 0 0; font-size: 0.8125rem; color: var(--fc-text-muted); }
+
+@media (min-width: 601px) {
+  .ps { margin: 0 20px 16px; padding: 14px 18px; }
+  .ps--scored .ps-line { max-width: 68ch; }
+}

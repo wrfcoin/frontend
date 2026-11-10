@@ -250,6 +250,29 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
       fcRecord(5, 'scored', 'st_7d29a4c1e0b8', 12.3, 11.7, null, 27),
     ],
   };
+  // Website forecasts with practice scores, in the exact shape website-forecast-routes.ts answers GET /mine while
+  // WEBSITE_FORECAST_SCORE_ENABLED is on: whole numbers in hundredths (0.01 °C, Pa), skill in millionths.
+  const myForecast = (i, variable, value, leadHours, hoursAgo, practiceScore, status = 'revealed') => ({
+    commitId: `${'5c0re'.replace(/[^0-9a-f]/g, 'a')}${i}`.padEnd(64, 'b'), stationAlias: 'st_7d29a4c1e0b8', variable, value, leadHours,
+    issuedAt: iso((hoursAgo + leadHours) * 3_600_000), validAt: iso(hoursAgo * 3_600_000), status, failure: null,
+    commitTxHash: `c${i}`.padEnd(64, 'd'), revealTxHash: status === 'revealed' ? `e${i}`.padEnd(64, 'f') : null,
+    committedAtHeight: 44000 + i * 40, revealedAtHeight: status === 'revealed' ? 44001 + i * 40 : null, score: null, practiceScore,
+  });
+  const psBase = unit => ({ paid: false, note: 'Practice score. Nothing is paid for it.', unit, skillMax: 1_000_000 });
+  const psScored = (unit, hoursAgo, f, t, ref, kind, extra = {}) => {
+    const error = Math.abs(f - t);
+    const skill = ref === 0 || extra.copied ? 0 : Math.max(0, 1_000_000 - Math.floor(1_000_000 * error / ref));
+    return { ...psBase(unit), status: 'scored', reason: null, text: 'scored', validAt: iso(hoursAgo * 3_600_000), forecast: f, truth: t,
+      truthObservedAt: iso(hoursAgo * 3_600_000 - 4 * 60_000), error, baseline: { error: ref, kind }, skill, copied: false, beatBaseline: skill > 0, nws: null, ...extra };
+  };
+  const MY_FORECASTS = { forecasts: [
+    myForecast(1, 'temperature_c', 14.5, 6, -5, null, 'committed'),
+    myForecast(2, 'temperature_c', 13.2, 1, 0.1, { ...psBase('temp_c_centi'), status: 'pending', reason: null, text: 'pending', pendingUntil: iso(-14 * 60_000), giveUpAt: iso(-23.9 * 3_600_000) }),
+    myForecast(3, 'temperature_c', 18.1, 6, 3, psScored('temp_c_centi', 3, 1810, 1900, 180, 'persistence_spread', { nws: { source: 'NOAA National Weather Service forecast', forecast: 1780, error: 120, skill: 333_334, leadHours: 7, result: 'you_beat_nws' } })),
+    myForecast(4, 'pressure_hpa', 1009.5, 12, 9, psScored('pressure_pa', 9, 100950, 101325, 210, 'climatology_spread')),
+    myForecast(5, 'temperature_c', 9.4, 24, 20, psScored('temp_c_centi', 20, 940, 1010, 310, 'climatology_spread', { nws: { source: 'NOAA National Weather Service forecast', forecast: 990, error: 20, skill: 935_484, leadHours: 12, result: 'nws_beat_you' } })),
+    myForecast(6, 'temperature_c', 11.0, 6, 30, { ...psBase('temp_c_centi'), status: 'unscored', reason: 'no_reading', text: 'unscored: no reading', validAt: iso(30 * 3_600_000), forecast: 1100, truth: null, truthObservedAt: null }),
+  ] };
   const FORECAST_CHECK_EMPTY = {
     ...FORECAST_CHECK, status: 'unavailable', reason: 'No forecast has been scored against station readings in this window yet.',
     counts: { pending: 0, scored: 0, unavailable: 0 }, stations: [], recent: [],
@@ -326,7 +349,7 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
       producer_settlement: { amount: '50000000', height: 44807 },
     },
   };
-  return { EXPLORE_TX, EXPLORE_TX_ANSWER, EXPLORE_BLOCK_ANSWER, NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, FORECAST_CHECK, FORECAST_CHECK_EMPTY, CHALLENGE_CODE, CHALLENGE: challengeFor_, TEAM_CHALLENGE, DUEL_ID, DUELS, DUEL_DECIDED, downloadsManifest: readFixture('downloads-manifest.json') };
+  return { EXPLORE_TX, EXPLORE_TX_ANSWER, EXPLORE_BLOCK_ANSWER, NETWORK_NODES, PEER, jwtFor, challengeFor, BLOCKS, STATIONS, ZONES, LEADERBOARD, PROPOSALS, TREASURY, CURRENT, hourly, daily, wallet, OBSERVATIONS, SUBMISSIONS, PROFILE, FORECASTERS, FORECASTERS_EMPTY, FORECASTER, COMPETITIONS, COMPETITION, BOND_GRANTS, PROOF_COMMIT, PROOF_CARD, WOLFRAM_ANSWER, CALIBRATION, FORECAST_CHECK, FORECAST_CHECK_EMPTY, MY_FORECASTS, CHALLENGE_CODE, CHALLENGE: challengeFor_, TEAM_CHALLENGE, DUEL_ID, DUELS, DUEL_DECIDED, downloadsManifest: readFixture('downloads-manifest.json') };
 }
 
 /**
@@ -346,6 +369,8 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * `options.forecastCheck`: 'populated' (default), 'empty' (nothing scored yet) or 'off' (the 404 while
  * FORECAST_VERIFICATION_ENABLED is not true).
  * `options.challenges`: 'populated' (default) or 'off' (the 404 while FRIEND_CHALLENGES_ENABLED is not true).
+ * `options.websiteForecast`: 'off' (default: the 404 while WEBSITE_FORECAST_ENABLED is not true) or 'scored'
+ * (open, and the signed-in wallet's forecasts carry practice scores).
  * `options.duels`: 'populated' (default) or 'off' (the 404 while FORECAST_DUELS_ENABLED is not true).
  * `options.proofCard`: 'populated' (default), 'not_located' (the reveal is outside the server's
  * bounded block search) or 'off' (the 404 while PROOF_CARDS_ENABLED is not true).
@@ -376,6 +401,7 @@ export async function installRoutes(page, fx, options = {}) {
   const calibrationMode = options.calibration || 'calibrated';
   const forecastCheckMode = options.forecastCheck || 'populated';
   const challengesMode = options.challenges || 'populated';
+  const websiteForecastMode = options.websiteForecast || 'off';
   const duelsMode = options.duels || 'populated';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
     const req = route.request();
@@ -482,6 +508,8 @@ export async function installRoutes(page, fx, options = {}) {
       if (forecastCheckMode === 'off') return json(route, { error: 'Not found' }, 404);
       return json(route, forecastCheckMode === 'empty' ? fx.FORECAST_CHECK_EMPTY : fx.FORECAST_CHECK);
     }
+    if (websiteForecastMode === 'scored' && p === '/api/forecasts/status') return json(route, { enabled: true, leads: [1, 6, 12, 24], variables: ['temperature_c', 'pressure_hpa'], stations: ['st_7d29a4c1e0b8'] });
+    if (websiteForecastMode === 'scored' && p === '/api/forecasts/mine') return json(route, fx.MY_FORECASTS);
     if ((m = /^\/api\/challenges\/code\/([A-Z0-9]{4}-[A-Z0-9]{4})$/.exec(p))) {
       if (challengesMode === 'off' || m[1] !== fx.CHALLENGE_CODE) return json(route, { error: 'Not found' }, 404);
       return json(route, { challenge: fx.CHALLENGE('0x7e57ab1e00000000000000000000000000c0ffee') });
