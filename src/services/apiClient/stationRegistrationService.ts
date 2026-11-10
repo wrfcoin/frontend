@@ -131,12 +131,6 @@ export interface RegisterStationRequest {
   appKey?: string;
   hardware?: string;
   mac?: string;
-  /**
-   * A station id chosen by the browser, for a brand-new wallet that has to sign for its station before
-   * the wallet is dropped (see walletCrypto/stationOwnership). Letters, digits, `_` and `-` only. Omit it
-   * and the backend picks the id.
-   */
-  stationId?: string;
 }
 
 export interface RegisterStationResult {
@@ -166,28 +160,61 @@ export type StationRewardProgressState =
  * Where a website station is on its way to earning. A station earns only once it is registered on
  * chain; that is done in batches, after the owner's wallet has signed for the station.
  */
-export type StationChainRegistrationState = 'needs_owner_signature' | 'waiting' | 'earning';
+export type StationChainRegistrationState = 'needs_owner_signature' | 'waiting' | 'earning' | 'blocked';
+/** Why a waiting station is not in a batch yet. `batch` = nothing is missing. */
+export type StationWaitingFor = 'batch' | 'station_report' | 'operator_review';
+export type StationBlockedReason = 'station_id_taken_on_chain' | 'chain_record_not_active';
 
 export interface StationChainRegistration {
   state: StationChainRegistrationState;
   /** The station's chain id: what the owner's wallet signs for. */
   stationId: string;
+  /** The chain the backend checks ownership signatures against. The page refuses to sign for another. */
+  chainId: string;
+  networkId: string;
+  waitingFor?: StationWaitingFor;
+  blockedReason?: StationBlockedReason;
 }
 
-const CHAIN_REGISTRATION_STATES: ReadonlySet<unknown> = new Set(['needs_owner_signature', 'waiting', 'earning']);
+const CHAIN_REGISTRATION_STATES: ReadonlySet<unknown> = new Set(['needs_owner_signature', 'waiting', 'earning', 'blocked']);
+const WAITING_FOR: ReadonlySet<unknown> = new Set(['batch', 'station_report', 'operator_review']);
+const BLOCKED_REASONS: ReadonlySet<unknown> = new Set(['station_id_taken_on_chain', 'chain_record_not_active']);
 
-/** Untrusted input: anything but a known state with a plain station id is "not reported". */
+/**
+ * Untrusted input: anything but a known state with a plain station id and a named chain is "not
+ * reported". Unknown detail fields fall back to the plainest reading of the state.
+ */
 export function normalizeStationChainRegistration(raw: unknown): StationChainRegistration | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const value = raw as Record<string, unknown>;
   if (
-    !raw || typeof raw !== 'object' ||
-    !CHAIN_REGISTRATION_STATES.has((raw as { state?: unknown }).state) ||
-    typeof (raw as { stationId?: unknown }).stationId !== 'string' ||
-    !/^[a-zA-Z0-9_-]{1,64}$/.test((raw as { stationId: string }).stationId)
+    !CHAIN_REGISTRATION_STATES.has(value.state) ||
+    typeof value.stationId !== 'string' ||
+    !/^[a-zA-Z0-9_-]{1,64}$/.test(value.stationId) ||
+    typeof value.chainId !== 'string' ||
+    !/^[1-9][0-9]{0,18}$/.test(value.chainId) ||
+    typeof value.networkId !== 'string' ||
+    !/^[A-Za-z0-9._-]{1,64}$/.test(value.networkId)
   ) {
     return null;
   }
-  const value = raw as StationChainRegistration;
-  return { state: value.state, stationId: value.stationId };
+  const state = value.state as StationChainRegistrationState;
+  return {
+    state,
+    stationId: value.stationId,
+    chainId: value.chainId,
+    networkId: value.networkId,
+    ...(state === 'waiting'
+      ? { waitingFor: (WAITING_FOR.has(value.waitingFor) ? value.waitingFor : 'batch') as StationWaitingFor }
+      : {}),
+    ...(state === 'blocked'
+      ? {
+        blockedReason: (BLOCKED_REASONS.has(value.blockedReason)
+          ? value.blockedReason
+          : 'station_id_taken_on_chain') as StationBlockedReason,
+      }
+      : {}),
+  };
 }
 
 export interface StationRewardProgress {
@@ -583,9 +610,6 @@ export class StationRegistrationService {
         ...(isAmbient && request.appKey ? { ambientAppKey: request.appKey } : {}),
         ...(request.hardware ? { hardware: request.hardware } : {}),
         ...(request.mac ? { mac: request.mac } : {}),
-        ...(request.stationId && /^(?!mob-)[A-Za-z0-9_-]{1,64}$/.test(request.stationId)
-          ? { stationId: request.stationId }
-          : {}),
       },
     );
 
@@ -640,6 +664,31 @@ export class StationRegistrationService {
       `/weather/stations/${encodeURIComponent(normalizedStationId)}/reward-progress`,
     );
     return normalizeStationRewardProgress(response, normalizedStationId);
+  }
+
+  /**
+   * The owner's read of one station's on-chain registration state, by station id or public alias. It is
+   * the same authenticated read as reward progress, but takes only the two fields it needs, so it works
+   * on the station page, where the route id is the alias. `chainRegistration` is null when the backend
+   * does not report it. Throws when the caller is signed out or does not own the station.
+   */
+  async getStationChainRegistration(
+    stationIdOrAlias: string,
+  ): Promise<{ ownerAddress: string; chainRegistration: StationChainRegistration | null }> {
+    const id = stationIdOrAlias.trim();
+    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(id)) {
+      throw new Error('Invalid station ID.');
+    }
+    const response = await this.weatherClient.get<{ ownerAddress?: unknown; chainRegistration?: unknown }>(
+      `/weather/stations/${encodeURIComponent(id)}/reward-progress`,
+    );
+    if (!response || typeof response.ownerAddress !== 'string' || !/^0x[0-9a-fA-F]{40}$/.test(response.ownerAddress)) {
+      throw new Error('Station registration state failed validation.');
+    }
+    return {
+      ownerAddress: response.ownerAddress,
+      chainRegistration: normalizeStationChainRegistration(response.chainRegistration),
+    };
   }
 
   /**

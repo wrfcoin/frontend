@@ -252,23 +252,38 @@ describe('StationRegistrationService', () => {
     ...extra,
   });
 
-  it('getStationRewardProgress passes on a known on-chain registration state and nothing else', async () => {
+  it('getStationRewardProgress passes on a known on-chain registration state, with the chain, and nothing else', async () => {
     const service = new StationRegistrationService(serviceUrls);
-    for (const state of ['needs_owner_signature', 'waiting', 'earning']) {
+    const chain = { chainId: '888', networkId: 'testnet' };
+    for (const [sent, got] of [
+      [{ state: 'needs_owner_signature' }, { state: 'needs_owner_signature' }],
+      [{ state: 'waiting', waitingFor: 'station_report' }, { state: 'waiting', waitingFor: 'station_report' }],
+      [{ state: 'waiting', waitingFor: 'operator_review' }, { state: 'waiting', waitingFor: 'operator_review' }],
+      // An unknown detail falls back to the plainest reading of the state.
+      [{ state: 'waiting', waitingFor: 'soon' }, { state: 'waiting', waitingFor: 'batch' }],
+      [{ state: 'waiting' }, { state: 'waiting', waitingFor: 'batch' }],
+      [{ state: 'earning', waitingFor: 'batch' }, { state: 'earning' }],
+      [{ state: 'blocked', blockedReason: 'chain_record_not_active' }, { state: 'blocked', blockedReason: 'chain_record_not_active' }],
+      [{ state: 'blocked' }, { state: 'blocked', blockedReason: 'station_id_taken_on_chain' }],
+    ]) {
       global.fetch.mockResolvedValueOnce(
-        jsonResponse(awaitingProjection({ chainRegistration: { state, stationId: 'station-2456', owner: '0xleak' } })),
+        jsonResponse(awaitingProjection({ chainRegistration: { ...sent, ...chain, stationId: 'station-2456', owner: '0xleak' } })),
       );
       const result = await service.getStationRewardProgress('station-2456');
-      expect(result.chainRegistration).toEqual({ state, stationId: 'station-2456' });
+      expect(result.chainRegistration).toEqual({ ...got, ...chain, stationId: 'station-2456' });
     }
-    // Absent, null, an unknown state or a malformed id all read as "not reported": never as earning.
+    // Absent, null, an unknown state, a malformed id or no named chain all read as "not reported":
+    // never as earning, and never as something to sign.
     for (const chainRegistration of [
       undefined,
       null,
       'earning',
-      { state: 'paid', stationId: 'station-2456' },
-      { state: 'earning' },
-      { state: 'earning', stationId: 'bad id' },
+      { state: 'paid', stationId: 'station-2456', ...chain },
+      { state: 'earning', ...chain },
+      { state: 'earning', stationId: 'bad id', ...chain },
+      { state: 'needs_owner_signature', stationId: 'station-2456' },
+      { state: 'needs_owner_signature', stationId: 'station-2456', chainId: '0x378', networkId: 'testnet' },
+      { state: 'needs_owner_signature', stationId: 'station-2456', chainId: '888' },
     ]) {
       global.fetch.mockResolvedValueOnce(jsonResponse(awaitingProjection({ chainRegistration })));
       const result = await service.getStationRewardProgress('station-2456');
@@ -276,14 +291,27 @@ describe('StationRegistrationService', () => {
     }
   });
 
+  it('getStationChainRegistration reads the owner and the state by alias, without the strict id match', async () => {
+    const service = new StationRegistrationService(serviceUrls);
+    const owner = '0x' + 'ab'.repeat(20);
+    const chainRegistration = { state: 'waiting', waitingFor: 'batch', stationId: 'pws-0123456789abcdef', chainId: '888', networkId: 'testnet' };
+    global.fetch.mockResolvedValueOnce(jsonResponse({ stationId: 'pws-0123456789abcdef', ownerAddress: owner, chainRegistration }));
+    expect(await service.getStationChainRegistration('st_0123456789ab')).toEqual({ ownerAddress: owner, chainRegistration });
+    expect(global.fetch.mock.calls.at(-1)[0]).toBe('https://api.example.com/api/weather/stations/st_0123456789ab/reward-progress');
+    global.fetch.mockResolvedValueOnce(jsonResponse({ ownerAddress: owner }));
+    expect((await service.getStationChainRegistration('st_0123456789ab')).chainRegistration).toBeNull();
+    global.fetch.mockResolvedValueOnce(jsonResponse({ ownerAddress: 'nobody' }));
+    await expect(service.getStationChainRegistration('st_0123456789ab')).rejects.toThrow(/failed validation/);
+    await expect(service.getStationChainRegistration('bad id')).rejects.toThrow(/Invalid station ID/);
+  });
+
   it('submitStationOwnershipProof posts only the public key and signature for that station', async () => {
     const service = new StationRegistrationService(serviceUrls);
-    global.fetch.mockResolvedValueOnce(
-      jsonResponse({ success: true, chainRegistration: { state: 'waiting', stationId: 'station-2456' } }),
-    );
+    const answer = { state: 'waiting', waitingFor: 'batch', stationId: 'station-2456', chainId: '888', networkId: 'testnet' };
+    global.fetch.mockResolvedValueOnce(jsonResponse({ success: true, chainRegistration: answer }));
     const proof = { owner_pubkey: 'ab'.repeat(32), owner_signature: 'cd'.repeat(64), mnemonic: 'never sent' };
     const result = await service.submitStationOwnershipProof('station-2456', proof);
-    expect(result).toEqual({ state: 'waiting', stationId: 'station-2456' });
+    expect(result).toEqual(answer);
     const [url, init] = global.fetch.mock.calls.at(-1);
     expect(url).toBe('https://api.example.com/api/weather/stations/station-2456/ownership-proof');
     expect(init.method).toBe('POST');
@@ -291,20 +319,12 @@ describe('StationRegistrationService', () => {
     await expect(service.submitStationOwnershipProof('bad id', proof)).rejects.toThrow(/Invalid station ID/);
   });
 
-  it('registerStation sends a browser-chosen station id only when it is a plain website id', async () => {
+  it('registerStation never sends a station id: the server issues it', async () => {
     const service = new StationRegistrationService(serviceUrls);
     const base = { name: 'Back yard', latitude: 10, longitude: 20, provider: 'ambient', apiKey: 'k', appKey: 'a' };
-    for (const [stationId, sent] of [
-      ['pws-0123456789abcdef', true],
-      ['mob-' + '0'.repeat(32), false],
-      ['has space', false],
-      [undefined, false],
-    ]) {
-      global.fetch.mockResolvedValueOnce(jsonResponse({ success: true, stationId: 'pws-0123456789abcdef' }));
-      await service.registerStation({ ...base, stationId });
-      const body = JSON.parse(global.fetch.mock.calls.at(-1)[1].body);
-      expect('stationId' in body).toBe(sent);
-    }
+    global.fetch.mockResolvedValueOnce(jsonResponse({ success: true, stationId: 'pws-0123456789abcdef' }));
+    await service.registerStation({ ...base, stationId: 'pws-my-own-name' });
+    expect('stationId' in JSON.parse(global.fetch.mock.calls.at(-1)[1].body)).toBe(false);
   });
 
   it('getStationRewardProgress rejects a rewarded claim without exact reward evidence', async () => {

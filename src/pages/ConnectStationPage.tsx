@@ -32,9 +32,11 @@ import {
   type FirstPartyAccount,
 } from '../services/walletCrypto/firstPartyKeys';
 import { ed25519LoginSigner } from '../services/walletCrypto/firstPartyLoginSigner';
-import { signStationOwnership, type StationOwnershipProof } from '../services/walletCrypto/stationOwnership';
-import { withOwnerKey } from '../services/walletCrypto/deviceSession';
-import { WRFCOIN_CHAIN_ID } from '../config/network';
+import { signStationOwnership } from '../services/walletCrypto/stationOwnership';
+import {
+  StationChainRegistrationNotice,
+  type StationOwnershipSigner,
+} from '../components/Weather/StationChainRegistration';
 import {
   Box,
   Stepper,
@@ -49,7 +51,6 @@ import {
   FAUCET_DISCLAIMER,
   stationRegistrationService,
   type DetectedDevice,
-  type StationChainRegistration,
   type StationRewardProgress,
 } from '../services/apiClient';
 import { STATION_NAME_PUBLIC_NOTICE } from '../config/stationNamePublicNotice';
@@ -126,35 +127,18 @@ export async function createFirstPartySessionWallet(): Promise<SessionWallet> {
 // reusing an existing wallet will return via external browser-wallet signing.
 type WalletMode = 'choose' | 'create';
 
-/** The chain's network name on this site (the station ownership message names it). */
-const STATION_NETWORK_ID = 'testnet';
-
-/**
- * A brand-new wallet is not saved in this browser, so it has to sign for its station while it is still
- * here. It signs for a station id made up on the spot (random, no name in it); only this public pair
- * leaves the wallet step.
- */
-export interface PresignedStationOwnership {
-  stationId: string;
-  proof: StationOwnershipProof;
-}
-
-/** A fresh station id with nothing personal in it: `pws-` + 16 random hex. */
-export function newNeutralStationId(): string {
-  const bytes = new Uint8Array(8);
-  globalThis.crypto.getRandomValues(bytes);
-  return `pws-${bytesToHex(bytes)}`;
-}
-
 interface WalletStepProps {
   /**
    * Called with the authenticated wallet's lowercase chain address and, for a brand-new wallet, a
-   * station ownership proof it signed in advance (public material: a station id, a public key and a
-   * signature). The FirstPartyAccount (raw `sign`) and the mnemonic stay in WalletStep's own state and
-   * are dropped when it unmounts; they are never handed to the page root, later wizard steps, or any
-   * shared context/provider.
+   * station ownership signer. A brand-new wallet is not saved in this browser, and its station id is
+   * only known after registration, so the wallet must still be able to sign once then. The signer is a
+   * closure that can produce ONE kind of signature (a station ownership proof for this wallet's own
+   * address, see walletCrypto/stationOwnership) and a `release` that drops the key; it is released as
+   * soon as the proof is accepted, and when the page unmounts. The FirstPartyAccount itself (raw `sign`)
+   * and the mnemonic are never handed to the page root, later wizard steps, or any shared
+   * context/provider.
    */
-  onAuthenticated: (address: string, kind?: OwnerKind, presigned?: PresignedStationOwnership) => void;
+  onAuthenticated: (address: string, kind?: OwnerKind, ownershipSigner?: StationOwnershipSigner) => void;
 }
 
 /** Which wallet owns the station: the 12-word (ed25519) wallet, or a passkey wallet (Phase 1, not earning yet). */
@@ -293,22 +277,12 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
         createWallet.publicKeyHex,
         ed25519LoginSigner(createWallet.account),
       );
-      // Sign for the station now: this wallet is gone once this step unmounts. A failure here (say the
-      // site has no chain configured) only means the station page asks for the signature later.
-      let presigned: PresignedStationOwnership | undefined;
-      try {
-        const stationId = newNeutralStationId();
-        presigned = {
-          stationId,
-          proof: signStationOwnership(createWallet.account, stationId, {
-            chainId: WRFCOIN_CHAIN_ID ?? '',
-            networkId: STATION_NETWORK_ID,
-          }),
-        };
-      } catch {
-        presigned = undefined;
-      }
-      onAuthenticated(createWallet.address, 'phrase', presigned);
+      const account = createWallet.account;
+      const ownershipSigner: StationOwnershipSigner = {
+        sign: (stationId, chain) => signStationOwnership(account, stationId, chain),
+        release: () => account.destroy?.(),
+      };
+      onAuthenticated(createWallet.address, 'phrase', ownershipSigner);
     } catch {
       setCreateError('Wallet login failed. Please try again.');
     } finally {
@@ -939,8 +913,8 @@ interface ConfirmStepProps {
   address: string;
   form: StationFormData;
   ownerKind?: OwnerKind;
-  /** A brand-new wallet's signature for its station, made before the wallet was dropped. */
-  presigned?: PresignedStationOwnership;
+  /** A brand-new wallet still in memory, able to sign for its station once. */
+  ownershipSigner?: StationOwnershipSigner;
 }
 
 interface RewardProgressPresentation {
@@ -1030,136 +1004,13 @@ function presentRewardProgress(
   }
 }
 
-/**
- * Where the station is on its way to earning. A station connected here is collected right away, but it
- * earns only once it is registered on chain, and that is done in batches after the owner's wallet has
- * signed for it. Shown only when the backend reports the state; "earning" comes from the chain, never
- * from this page.
- */
-export function StationChainRegistrationNotice({
-  registration,
-  ownerAddress,
-  presigned,
-  onChanged,
-}: {
-  registration: StationChainRegistration;
-  ownerAddress: string;
-  presigned?: PresignedStationOwnership;
-  onChanged: () => void;
-}) {
-  const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const autoSent = useRef(false);
-  const owner = ownerAddress.toLowerCase();
-  const savedHere = useMemo(() => readVault()?.address.toLowerCase() === owner, [owner]);
-  const usablePresigned =
-    presigned && presigned.stationId === registration.stationId ? presigned : undefined;
-
-  const send = useCallback(async (proof: StationOwnershipProof) => {
-    setError('');
-    setBusy(true);
-    try {
-      await stationRegistrationService.submitStationOwnershipProof(registration.stationId, proof);
-      onChanged();
-    } catch {
-      setError('Your signature could not be saved. Please try again.');
-    } finally {
-      setBusy(false);
-    }
-  }, [registration.stationId, onChanged]);
-
-  // A brand-new wallet signed before it was dropped: hand that signature in once, without asking.
-  useEffect(() => {
-    if (registration.state !== 'needs_owner_signature' || !usablePresigned || autoSent.current) return;
-    autoSent.current = true;
-    void send(usablePresigned.proof);
-  }, [registration.state, usablePresigned, send]);
-
-  const signWithSavedWallet = useCallback(async () => {
-    if (!password) return;
-    setError('');
-    setBusy(true);
-    let proof: StationOwnershipProof;
-    try {
-      proof = await withOwnerKey(owner, password, (account) =>
-        signStationOwnership(account, registration.stationId, {
-          chainId: WRFCOIN_CHAIN_ID ?? '',
-          networkId: STATION_NETWORK_ID,
-        }));
-    } catch {
-      setBusy(false);
-      setError('That password did not unlock your 12-word wallet. Nothing was signed.');
-      return;
-    } finally {
-      setPassword('');
-    }
-    await send(proof);
-  }, [owner, password, registration.stationId, send]);
-
-  if (registration.state === 'earning') {
-    return (
-      <WrfAlert severity="success" title="Earning" data-testid="station-chain-earning">
-        This station is registered on chain. Rewards for its readings are listed below as they are recorded.
-      </WrfAlert>
-    );
-  }
-
-  if (registration.state === 'waiting') {
-    return (
-      <WrfAlert severity="info" title="Connected. Waiting for on-chain registration" data-testid="station-chain-waiting">
-        Your station is connected and its weather data is collected. It isn&apos;t earning yet: stations are
-        registered on chain in batches, and yours is in the queue. It starts earning once its batch is on
-        chain. You don&apos;t need to do anything.
-      </WrfAlert>
-    );
-  }
-
-  return (
-    <WrfAlert severity="warning" title="One step left before this station can earn" data-testid="station-chain-needs-signature">
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, alignItems: 'flex-start', textAlign: 'left' }}>
-        <span>
-          Your station is connected and its weather data is collected. To earn, it has to be registered on
-          chain, and for that your wallet signs once to say it owns this station. Signing is free and moves
-          no coins.
-        </span>
-        {error && <span role="alert">{error}</span>}
-        {usablePresigned ? (
-          <WrfButton variant="outline" onClick={() => send(usablePresigned.proof)} loading={busy} disabled={busy}>
-            {busy ? 'Saving your signature' : 'Try again'}
-          </WrfButton>
-        ) : savedHere ? (
-          <>
-            <WrfInput
-              label="Wallet password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              fullWidth
-            />
-            <WrfButton variant="primary" onClick={signWithSavedWallet} loading={busy} disabled={busy || !password}>
-              Sign for my station
-            </WrfButton>
-          </>
-        ) : (
-          <span data-testid="station-chain-no-wallet-here">
-            This browser has no saved 12-word wallet for this station&apos;s owner. Open this page in the
-            browser where that wallet is saved, or restore it on the Wallet page with your 12 words, then
-            sign here.
-          </span>
-        )}
-      </Box>
-    </WrfAlert>
-  );
-}
-
 export function StationRewardProgressPanel({
   stationId,
-  presigned,
+  ownershipSigner,
 }: {
   stationId: string;
-  presigned?: PresignedStationOwnership;
+  /** A brand-new wallet still in memory, able to sign for its station once. */
+  ownershipSigner?: StationOwnershipSigner;
 }) {
   const [progress, setProgress] = useState<StationRewardProgress | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1218,7 +1069,7 @@ export function StationRewardProgressPanel({
         <StationChainRegistrationNotice
           registration={registration}
           ownerAddress={progress.ownerAddress}
-          presigned={presigned}
+          signer={ownershipSigner}
           onChanged={refresh}
         />
       )}
@@ -1237,7 +1088,7 @@ export function StationRewardProgressPanel({
   );
 }
 
-export function ConfirmStep({ address, form, ownerKind = 'phrase', presigned }: ConfirmStepProps) {
+export function ConfirmStep({ address, form, ownerKind = 'phrase', ownershipSigner }: ConfirmStepProps) {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -1257,8 +1108,6 @@ export function ConfirmStep({ address, form, ownerKind = 'phrase', presigned }: 
         appKey: form.appKey.trim() || undefined,
         hardware: form.hardware.trim() || undefined,
         mac: form.mac,
-        // The id the brand-new wallet signed for, so its signature fits the station.
-        ...(presigned ? { stationId: presigned.stationId } : {}),
       });
       setStationId(result.stationId);
     } catch (err) {
@@ -1266,7 +1115,7 @@ export function ConfirmStep({ address, form, ownerKind = 'phrase', presigned }: 
     } finally {
       setSubmitting(false);
     }
-  }, [form, presigned]);
+  }, [form]);
 
   if (stationId) {
     return (
@@ -1276,7 +1125,7 @@ export function ConfirmStep({ address, form, ownerKind = 'phrase', presigned }: 
         </Typography>
         {ownerKind === 'passkey'
           ? <PasskeyNotEarningYet />
-          : <StationRewardProgressPanel stationId={stationId} presigned={presigned} />}
+          : <StationRewardProgressPanel stationId={stationId} ownershipSigner={ownershipSigner} />}
         <WrfCard variant="filled">
           <Typography variant="subtitle2" gutterBottom>
             Station ID
@@ -1345,8 +1194,12 @@ export default function ConnectStationPage() {
   // WalletStepProps.onAuthenticated); the signing account never does.
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [ownerKind, setOwnerKind] = useState<OwnerKind>('phrase');
-  // Public material only: a station id and the brand-new wallet's signature for it.
-  const [presigned, setPresigned] = useState<PresignedStationOwnership | undefined>(undefined);
+  // A brand-new wallet's ownership signer (see WalletStepProps): one kind of signature, then released.
+  const [ownershipSigner, setOwnershipSigner] = useState<StationOwnershipSigner | undefined>(undefined);
+  const signerRef = useRef<StationOwnershipSigner | undefined>(undefined);
+  signerRef.current = ownershipSigner;
+  // Leaving the page drops the key, whether or not the proof was handed in.
+  useEffect(() => () => signerRef.current?.release(), []);
   const [verified, setVerified] = useState(false);
   const [form, setForm] = useState<StationFormData>({
     name: '',
@@ -1364,10 +1217,11 @@ export default function ConnectStationPage() {
     case 0:
       return (
         <WalletStep
-          onAuthenticated={(address, kind = 'phrase', signedInAdvance) => {
+          onAuthenticated={(address, kind = 'phrase', signer) => {
             setWalletAddress(address);
             setOwnerKind(kind);
-            setPresigned(signedInAdvance);
+            // A function in state must be wrapped, or React would call it.
+            setOwnershipSigner(() => signer);
             // The faucet step claims for the 12-word wallet; a passkey wallet has its own faucet button on
             // /wallet/passkey and needs no WRF to register, so it goes straight to the station.
             setActiveStep(kind === 'passkey' ? 2 : 1);
@@ -1392,7 +1246,7 @@ export default function ConnectStationPage() {
         />
       );
     case 3:
-      return <ConfirmStep address={walletAddress} form={form} ownerKind={ownerKind} presigned={presigned} />;
+      return <ConfirmStep address={walletAddress} form={form} ownerKind={ownerKind} ownershipSigner={ownershipSigner} />;
     default:
       return null;
     }

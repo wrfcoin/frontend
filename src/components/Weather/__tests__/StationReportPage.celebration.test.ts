@@ -192,12 +192,18 @@ describe('FirstEarnCelebration on the station page', () => {
       expect(progressRequests()).toHaveLength(0);
     });
 
-    it('even the owner signed in: no celebration and no ownership request', async () => {
+    it('even the owner signed in: no celebration; the only owner read is the on-chain registration status', async () => {
       setAuthToken(jwtFor(OWNER));
       installBackend({ owner: OWNER });
       await renderStation();
       expect(screen.queryByText(CELEBRATION)).toBeNull();
-      expect(progressRequests()).toHaveLength(0);
+      // The signed-in wallet's station page asks once whether the station is registered on chain
+      // (StationChainRegistrationCard), so its owner can sign for it here. The celebration never asks.
+      await waitFor(() => expect(progressRequests()).toHaveLength(1));
+      expect(progressRequests()[0].auth).toBe(`Bearer ${jwtFor(OWNER)}`);
+      await new Promise(resolve => setTimeout(resolve, 50));
+      expect(progressRequests()).toHaveLength(1);
+      expect(screen.queryByText(CELEBRATION)).toBeNull();
     });
   });
 
@@ -213,7 +219,8 @@ describe('FirstEarnCelebration on the station page', () => {
       setAuthToken(jwtFor(STRANGER));
       installBackend({ owner: OWNER });
       await renderStation();
-      await waitFor(() => expect(progressRequests()).toHaveLength(1));
+      // Two reads for a signed-in wallet: the celebration's ownership read and the registration status card's.
+      await waitFor(() => expect(progressRequests()).toHaveLength(2));
       expect(progressRequests()[0].auth).toBe(`Bearer ${jwtFor(STRANGER)}`);
       // Let the 404 settle before asserting absence.
       await new Promise(resolve => setTimeout(resolve, 50));
@@ -224,7 +231,7 @@ describe('FirstEarnCelebration on the station page', () => {
       setAuthToken(jwtFor(OWNER));
       installBackend({ owner: OWNER, progressOwnerOverride: STRANGER });
       await renderStation();
-      await waitFor(() => expect(progressRequests()).toHaveLength(1));
+      await waitFor(() => expect(progressRequests()).toHaveLength(2));
       await new Promise(resolve => setTimeout(resolve, 50));
       expect(screen.queryByText(CELEBRATION)).toBeNull();
     });
