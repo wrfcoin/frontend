@@ -394,6 +394,7 @@ export async function installRoutes(page, fx, options = {}) {
   const notificationsMode = options.notifications || 'off';
   const proofCardMode = options.proofCard || 'populated';
   const networkNodesMode = options.networkNodes || 'populated';
+  const bondAdmissionsMode = options.bondAdmissions || 'populated';
   const competitionsMode = options.competitions || 'populated';
   const sessionKeysMode = options.sessionKeys || 'off';
   const protectionsMode = options.protections || 'off';
@@ -546,6 +547,10 @@ export async function installRoutes(page, fx, options = {}) {
     if ((m = /^\/api\/blockchain\/blocks\/([0-9]{1,10})$/.exec(p))) {
       if (Number(m[1]) !== fx.EXPLORE_BLOCK_ANSWER.height) return json(route, { error: true, message: 'Block not found' }, 404);
       return json(route, fx.EXPLORE_BLOCK_ANSWER);
+    }
+    if (p === '/api/bond-admission/recent') {
+      if (bondAdmissionsMode === 'off') return json(route, { error: { code: 'ADMISSION_DISABLED', message: 'Bond admission is not enabled' } }, 404);
+      return json(route, { admissions: [{ action: 'Deposit', deploymentId: 'b0'.repeat(32), serverKey: '1a2b3c4d'.padEnd(64, 'e'), serviceAlias: 'node-1a2b3c4d', effectiveEpoch: 12, renewal: false, time: fx.NETWORK_NODES.checkedAt }] });
     }
     if (p === '/api/faucet/bond-grants') {
       if (bondGrantsMode === 'unavailable') return json(route, { error: { code: 'BOND_GRANTS_UNAVAILABLE', message: 'Bond grant history is unavailable' } }, 503);
