@@ -109,6 +109,8 @@ export const SCENARIOS = [
   { name: 'station-detail-derived', route: '/weather/station/st-1', note: 'calculated values on a mild reading: dew point only' },
   { name: 'station-detail-derived-hot', route: '/weather/station/st-1', note: 'calculated values on a hot, humid reading: dew point and heat index' },
   { name: 'station-detail-derived-cold', route: '/weather/station/st-1', note: 'calculated values on a cold, windy reading: dew point and wind chill' },
+  { name: 'station-detail-owner-history', route: '/weather/station/st-1', note: 'signed in as the owner: the 30-day comparison with the nearest NWS station' },
+  { name: 'station-detail-owner-history-waiting', route: '/weather/station/st-1', note: 'signed in as the owner: not enough history yet' },
   { name: 'station-detail-calibration-off', route: '/weather/station/st-0', note: 'the 404 while CALIBRATION_CERTIFICATES_ENABLED is not true: no badge, no section' },
 ];
 

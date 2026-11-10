@@ -70,6 +70,8 @@ import StationDerivedCard from '../station/StationDerivedCard';
 import ApiError from '../../utils/apiError';
 import { useStationOwner } from '../../hooks/api/useStationOwnerQueries';
 import { StationChainRegistrationCard } from './StationChainRegistration';
+import { useStationCompareHistory } from '../../hooks/api/useStationCompareHistory';
+import StationCompareHistoryCard from '../station/StationCompareHistoryCard';
 import { formatBaseUnitsToWrf } from '../../services/apiClient/number';
 import { buildStationReportEarningsChartData } from './stationReportPrecision';
 import { FEATURES } from '../../config/features';
@@ -227,6 +229,12 @@ const StationReportPage: React.FC = () => {
   // read-only build never asks; elsewhere only a backend-confirmed owner sees it.
   const stationOwner = useStationOwner(stationId, !publicProjection);
   const celebrationWallet = publicProjection ? null : stationOwner;
+  // Owner-only parts of this page need to know whether the signed-in wallet owns the station. The same
+  // owner-only backend read as above, here also in the public build: it is asked only when a wallet
+  // session exists, so a visitor's page load makes no extra request.
+  const compareOwner = useStationOwner(knownStationId, true);
+  // The owner's 30-day comparison (Epic 8). Asked for, and shown, only when the wallet owns the station.
+  const compareHistory = useStationCompareHistory(knownStationId, compareOwner !== null);
 
   const stationView = useMemo(() => {
     if (!station) return null;
@@ -651,6 +659,14 @@ const StationReportPage: React.FC = () => {
         <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, color: palette.text, mb: 3 }}>
           <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
             <StationCompareCard view={compareQuery.data} unavailable={compareQuery.isError} />
+          </CardContent>
+        </Card>
+      )}
+
+      {knownStationId && compareHistory && (
+        <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, color: palette.text, mb: 3 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <StationCompareHistoryCard view={compareHistory} />
           </CardContent>
         </Card>
       )}

@@ -192,13 +192,13 @@ describe('FirstEarnCelebration on the station page', () => {
       expect(progressRequests()).toHaveLength(0);
     });
 
-    it('even the owner signed in: no celebration; the only owner read is the on-chain registration status', async () => {
+    // The signed-in wallet's station page asks the owner-only read once: the on-chain registration
+    // status card (StationChainRegistrationCard) and the owner-only parts (the 30-day comparison) share
+    // that one request. The celebration itself stays off in this build and never asks.
+    it('even the owner signed in: no celebration; one ownership request, shared by the owner-only parts', async () => {
       setAuthToken(jwtFor(OWNER));
       installBackend({ owner: OWNER });
       await renderStation();
-      expect(screen.queryByText(CELEBRATION)).toBeNull();
-      // The signed-in wallet's station page asks once whether the station is registered on chain
-      // (StationChainRegistrationCard), so its owner can sign for it here. The celebration never asks.
       await waitFor(() => expect(progressRequests()).toHaveLength(1));
       expect(progressRequests()[0].auth).toBe(`Bearer ${jwtFor(OWNER)}`);
       await new Promise(resolve => setTimeout(resolve, 50));

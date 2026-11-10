@@ -495,6 +495,25 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log('FAIL explore-notify-owner', suffix, String(e).slice(0, 160)); report.push({ name: 'explore-notify-owner', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    let ownerSignedIn = false;
+    for (const [name, mode] of [['station-detail-owner-history', 'ok'], ['station-detail-owner-history-waiting', 'waiting']]) {
+      if (!want(name)) continue;
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { compareHistory: mode, stationOwner: 'me' });
+        // One wallet setup for both captures; the second leaves the page first so the read is made again.
+        if (!ownerSignedIn) { await createWallet(page, errors); ownerSignedIn = true; } else { await goClientSide(page, '/'); }
+        if (!fx.lastLoginAddress) throw new Error('wallet login did not happen');
+        // st-1: a fixture station with no alias, so its page id is the fixture id.
+        await goClientSide(page, '/weather/station/st-1');
+        await page.getByTestId('station-compare-history').waitFor({ timeout: 15_000 });
+        await page.getByTestId('station-compare-history').scrollIntoViewIfNeeded();
+        await page.evaluate(() => window.scrollBy(0, 80));
+        await capture(page, errors, name, `/weather/station/st-1 (owner signed in, 30-day comparison ${mode})`, suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     if (want('duels-off')) {
       try {
         await page.unroute(() => true);
