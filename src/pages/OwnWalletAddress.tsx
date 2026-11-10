@@ -18,6 +18,7 @@ import WalletSwitcher from '../components/wallet/WalletSwitcher';
 import RemovePhraseWallet from '../components/wallet/RemovePhraseWallet';
 import MyStationsCard from '../components/wallet/MyStationsCard';
 import { stationRegistrationService } from '../services/apiClient';
+import { ownsServerStation } from '../services/myStationsCheck';
 import { clearWalletAuthSession } from '../services/walletAuthService';
 import { getAuthToken } from '../services/authTokenStore';
 import { tokenWallet } from '../services/walletApi';
@@ -112,7 +113,7 @@ export default function OwnWalletAddress() {
   );
   // "My stations" on: a station connected from any browser also blocks removal (owner-only server read).
   const hasServerStation = useCallback(
-    () => stationRegistrationService.getMyStations().then(list => list.stations.length > 0), [],
+    () => stationRegistrationService.getMyStations().then(ownsServerStation), [],
   );
   const vaultRemoved = useCallback(async () => {
     // Only the removed wallet's own session ends: another wallet signed in here stays signed in.

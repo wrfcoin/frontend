@@ -519,6 +519,8 @@ export interface MyStationsList {
   truncated: boolean;
   /** True for a passkey session before passkey station owners are switched on (Phase 2). */
   passkeyLater: boolean;
+  /** Rows the server sent that failed validation and are not shown. */
+  dropped: number;
 }
 
 const MY_STATION_FRESHNESS: readonly string[] = ['live', 'stale', 'registered'];
@@ -529,9 +531,10 @@ export function normalizeMyStations(body: unknown): MyStationsList {
   const b = (body ?? {}) as Record<string, unknown>;
   if (!Array.isArray(b.stations)) throw new Error('Your stations could not be read.');
   const stations: MyStation[] = [];
+  let dropped = 0;
   for (const raw of b.stations) {
     const r = (raw ?? {}) as Record<string, unknown>;
-    if (typeof r.alias !== 'string' || !/^st_[0-9a-f]{12}$/.test(r.alias)) continue;
+    if (typeof r.alias !== 'string' || !/^st_[0-9a-f]{12}$/.test(r.alias)) { dropped += 1; continue; }
     const name = typeof r.name === 'string' && r.name.trim() ? r.name.trim() : `Weather station ${r.alias}`;
     const status = typeof r.status === 'string' && MY_STATION_FRESHNESS.includes(r.status) ? r.status as MyStationFreshness : null;
     const lastReadingAt = typeof r.lastReadingAt === 'string' && !Number.isNaN(Date.parse(r.lastReadingAt)) ? r.lastReadingAt : null;
@@ -548,7 +551,7 @@ export function normalizeMyStations(body: unknown): MyStationsList {
     }
     stations.push(station);
   }
-  return { stations, truncated: b.truncated === true, passkeyLater: b.passkey === 'later' };
+  return { stations, truncated: b.truncated === true, passkeyLater: b.passkey === 'later', dropped };
 }
 
 /**
