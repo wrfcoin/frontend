@@ -99,6 +99,8 @@ export const SCENARIOS = [
   { name: 'forecast-new-scored', route: '/forecast/new', note: 'signed in, practice scores on: my forecasts scored, pending and not scored' },
   { name: 'challenge-board-off', route: '/challenges/RAIN-7K2Q', note: 'the 404 while FRIEND_CHALLENGES_ENABLED is not true' },
   { name: 'duels-off', route: '/duels', note: 'the 404 while FORECAST_DUELS_ENABLED is not true' },
+  { name: 'wallet-my-stations', route: '/wallet', note: 'signed in: Your stations (fixture list, one earning, one waiting); runs only with VITE_ENABLE_MY_STATIONS=true' },
+  { name: 'wallet-remove-locked', route: '/wallet', note: 'a locked 12-word wallet (fixture record), Remove from this browser opened: Keep your 12 words; runs only with VITE_ENABLE_PASSKEY_WALLET=true VITE_ENABLE_MULTI_WALLET=true' },
   { name: 'connect-station-passkey', route: '/connect-station', note: 'a passkey wallet saved in this browser (fixture record), no 12-word wallet signed in' },
   { name: 'explore-address-off', route: '/explore', note: 'the 404 while the public balance read is switched off' },
   { name: 'explore-notify-visitor', route: '/explore', note: 'notifications on, not signed in: how to turn them on (backend#389)' },
