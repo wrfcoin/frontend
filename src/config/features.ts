@@ -46,6 +46,11 @@ const PASSKEY_STATION_OWNER = import.meta.env?.VITE_ENABLE_PASSKEY_STATION_OWNER
 // relays under /api/wallet/:address/{security-key,send-allowlist}.
 const CHAIN_PROTECTIONS = import.meta.env?.VITE_ENABLE_CHAIN_PROTECTIONS === 'true';
 
+// Advisory governance from the website (owner decision 2026-11-09): propose and vote with the 12-word or the
+// passkey wallet. Exact string "true" only; default OFF. Even when on, the controls show only once the node
+// reports advisory_governance active, and they need the backend relay (ADVISORY_GOVERNANCE_RELAY_ENABLED).
+const ADVISORY_VOTING = import.meta.env?.VITE_ENABLE_ADVISORY_VOTING === 'true';
+
 /**
  * Opt-IN gate for surfaces that render fabricated data. (frontend#214)
  *
@@ -85,6 +90,8 @@ export const FEATURES = {
   passkeyWallet: PASSKEY_WALLET,
   /** Chain-enforced protections on the 12-word wallet. Default FALSE; also gated on the node. */
   chainProtections: CHAIN_PROTECTIONS,
+  /** Website advisory propose/vote (12-word and passkey wallets). Default FALSE; also gated on the node. */
+  advisoryVoting: ADVISORY_VOTING,
   /** Passkey wallet link to the node bond payout approval page. Default FALSE. */
   passkeyBondPayout: PASSKEY_BOND_PAYOUT,
   /** Passkey wallet can own a station on /connect-station. Default FALSE; needs backend passkey login. */
