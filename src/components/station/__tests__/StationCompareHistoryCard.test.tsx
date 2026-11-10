@@ -8,6 +8,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import StationCompareHistoryCard from '../StationCompareHistoryCard';
 import { detailSentence, formatAmount, normalizeStationCompareHistory, usualSentence } from '../../../utils/stationCompareHistory';
 import { shouldAttachBearer } from '../../../services/apiClient/authScope';
+import edgeAllowlist from '../../../routes/__fixtures__/public-edge-allowlist.json';
 
 afterEach(cleanup);
 
@@ -91,5 +92,20 @@ describe('wallet session token scope', () => {
     expect(shouldAttachBearer('GET', '/api/stations/st_0123456789ab/compare/history')).toBe(true);
     expect(shouldAttachBearer('GET', '/api/stations/st_0123456789ab/compare')).toBe(false);
     expect(shouldAttachBearer('GET', '/api/stations/st_0123456789ab/compare/history/extra')).toBe(false);
+  });
+});
+
+describe('public edge allowlist copy', () => {
+  it('admits the owner history read only by alias, with no query and with the wallet session token', () => {
+    const entry = (edgeAllowlist as { get: Array<{ name: string; path: string; query: string[] | null; requiresBearer?: boolean }> }).get
+      .find(e => e.name === 'station_owner_compare_history');
+    expect(entry).toBeDefined();
+    if (!entry) return;
+    const path = new RegExp(entry.path);
+    expect(path.test('/api/stations/st_0123456789ab/compare/history')).toBe(true);
+    expect(path.test('/api/stations/some-raw-id/compare/history')).toBe(false);
+    expect(path.test('/api/stations/st_0123456789ab/compare/history/x')).toBe(false);
+    expect(entry.query).toEqual(['']);
+    expect(entry.requiresBearer).toBe(true);
   });
 });
