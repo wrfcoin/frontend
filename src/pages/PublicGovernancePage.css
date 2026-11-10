@@ -55,3 +55,19 @@ body.light-mode .pg-table .pg-id, body.light-mode .pg-table .pg-sub { color: var
   .pg-kv { grid-template-columns: 1fr; gap: 2px 0; }
   .pg-kv dt { margin-top: 10px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--pg-text-muted); }
 }
+
+/* Advisory proposals (core4 advisory_governance) */
+.pg-adv-note { margin: 0 0 12px; color: var(--pg-text-secondary); font-size: 14px; line-height: 1.5; }
+.pg-adv-list { list-style: none; margin: 0; padding: 0; }
+.pg-adv-item { padding: 12px 0; border-top: 1px solid var(--pg-border); }
+.pg-adv-item:first-child { border-top: 0; }
+.pg-adv-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.pg-adv-top .pg-title { overflow-wrap: anywhere; }
+.pg-adv-summary { margin-top: 8px; }
+.pg-adv-summary summary { cursor: pointer; color: var(--pg-text-secondary); font-size: 14px; }
+.pg-adv-summary p { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.pg-adv-meta { color: var(--pg-text-muted); font-size: 12px; }
+.pg-mono { font-family: var(--pg-mono); overflow-wrap: anywhere; }
+.pg-adv-item .pg-sub { font-size: 0.75rem; color: var(--pg-text-muted); margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pg-adv-item .pg-title { font-weight: 600; color: var(--pg-text); }
+body.light-mode .pg-adv-item .pg-sub { color: var(--pg-text-secondary); }
