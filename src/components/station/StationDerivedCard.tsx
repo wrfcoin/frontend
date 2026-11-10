@@ -65,9 +65,9 @@ export default function StationDerivedCard({ reading }: { reading: Reading | nul
       )}
       <Typography variant="caption" sx={{ color: textSecondary, display: 'block' }} data-testid="station-derived-note">
         {derived.heatIndexC === null && derived.windChillC === null
-          ? 'Heat index appears from 80°F (26.7°C) with humidity of 40% or more. Wind chill appears at 50°F (10°C) or colder with wind over 3 mph (4.8 km/h). '
+          ? 'Heat index appears from 80°F (26.7°C) with humidity of 40% or more, up to the top of the National Weather Service chart. Wind chill appears at 50°F (10°C) or colder with wind over 3 mph (4.8 km/h). '
           : derived.heatIndexC === null
-            ? 'Heat index appears from 80°F (26.7°C) with humidity of 40% or more. '
+            ? 'Heat index appears from 80°F (26.7°C) with humidity of 40% or more, up to the top of the National Weather Service chart. '
             : 'Wind chill appears at 50°F (10°C) or colder with wind over 3 mph (4.8 km/h). '}
         Standard formulas (Magnus dew point, US National Weather Service heat index and wind chill), worked out in your
         browser from this station&apos;s temperature, humidity and wind. A guide only, not medical or safety advice.

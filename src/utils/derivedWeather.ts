@@ -7,9 +7,12 @@
  *
  *  - Dew point: Magnus formula with the Alduchov and Eskridge (1996) coefficients
  *    (a = 17.625, b = 243.04 °C). Used for -40 to 50 °C and 1 to 100 % humidity.
- *  - Heat index: the US National Weather Service Rothfusz regression (NWS Technical Attachment
- *    SR 90-23), with the NWS high-humidity adjustment. Used for 80 to 110 °F (26.7 to 43.3 °C)
- *    and humidity of 40 % or more, the range of the NWS heat index chart.
+ *  - Heat index: the US National Weather Service procedure. The simple (Steadman) formula is
+ *    averaged with the temperature; if that is 80 °F or more, the Rothfusz regression (NWS
+ *    Technical Attachment SR 90-23) with the NWS high-humidity adjustment is used instead.
+ *    Inputs are limited to the NWS heat index chart: 80 to 110 °F (26.7 to 43.3 °C) and humidity
+ *    of 40 % or more. A result above the top of that chart (137 °F, 58.3 °C) is not shown: up
+ *    there the regression is an extrapolation (110 °F at 100 % humidity would give 278 °F).
  *  - Wind chill: the 2001 NWS / Environment Canada formula. Used at 10 °C (50 °F) or colder,
  *    down to -50 °C, with wind above 4.8 km/h (3 mph).
  */
@@ -20,7 +23,7 @@ export const cToF = (c: number) => (c * 9) / 5 + 32;
 export const fToC = (f: number) => ((f - 32) * 5) / 9;
 
 export const DEW_POINT_RANGE = { minTempC: -40, maxTempC: 50, minHumidityPct: 1, maxHumidityPct: 100 } as const;
-export const HEAT_INDEX_RANGE = { minTempF: 80, maxTempF: 110, minHumidityPct: 40, maxHumidityPct: 100 } as const;
+export const HEAT_INDEX_RANGE = { minTempF: 80, maxTempF: 110, minHumidityPct: 40, maxHumidityPct: 100, maxResultF: 137 } as const;
 export const WIND_CHILL_RANGE = { minTempC: -50, maxTempC: 10, minWindKmh: 4.8, maxWindKmh: 180 } as const;
 
 const MAGNUS_A = 17.625;
@@ -36,7 +39,10 @@ export function dewPointC(temperatureC: unknown, humidityPct: unknown): number |
   return (MAGNUS_B * gamma) / (MAGNUS_A - gamma);
 }
 
-/** Heat index in °C, or null outside the NWS chart's range (below 80 °F, above 110 °F, or under 40 % humidity). */
+/**
+ * Heat index in °C, or null outside the NWS chart: inputs below 80 °F, above 110 °F or under 40 %
+ * humidity, or a result above the chart's top value of 137 °F.
+ */
 export function heatIndexC(temperatureC: unknown, humidityPct: unknown): number | null {
   if (!finite(temperatureC) || !finite(humidityPct)) return null;
   const r = HEAT_INDEX_RANGE;
@@ -45,18 +51,26 @@ export function heatIndexC(temperatureC: unknown, humidityPct: unknown): number 
   // A tiny tolerance so 26.67 °C, which is 80 °F to the precision stations report, counts as 80 °F.
   if (t < r.minTempF - 0.01 || t > r.maxTempF + 0.01) return null;
   if (h < r.minHumidityPct || h > r.maxHumidityPct) return null;
-  let hi = -42.379
-    + 2.04901523 * t
-    + 10.14333127 * h
-    - 0.22475541 * t * h
-    - 0.00683783 * t * t
-    - 0.05481717 * h * h
-    + 0.00122874 * t * t * h
-    + 0.00085282 * t * h * h
-    - 0.00000199 * t * t * h * h;
-  // NWS adjustment for very humid air between 80 and 87 °F. (The dry-air adjustment applies only
-  // under 13 % humidity, which is outside the range used here.)
-  if (h > 85 && t >= 80 && t <= 87) hi += ((h - 85) / 10) * ((87 - t) / 5);
+  // NWS step 1: the simple formula, averaged with the temperature.
+  const simple = 0.5 * (t + 61 + (t - 68) * 1.2 + h * 0.094);
+  let hi = (simple + t) / 2;
+  // NWS step 2: at 80 °F or more, the full regression replaces it.
+  if (hi >= 80) {
+    hi = -42.379
+      + 2.04901523 * t
+      + 10.14333127 * h
+      - 0.22475541 * t * h
+      - 0.00683783 * t * t
+      - 0.05481717 * h * h
+      + 0.00122874 * t * t * h
+      + 0.00085282 * t * h * h
+      - 0.00000199 * t * t * h * h;
+    // NWS adjustment for very humid air between 80 and 87 °F. (The dry-air adjustment applies only
+    // under 13 % humidity, which is outside the range used here.)
+    if (h > 85 && t >= 80 && t <= 87) hi += ((h - 85) / 10) * ((87 - t) / 5);
+  }
+  // Above the top of the NWS chart the regression is an extrapolation: show nothing.
+  if (hi > r.maxResultF) return null;
   return fToC(hi);
 }
 

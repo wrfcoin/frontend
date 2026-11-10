@@ -44,6 +44,23 @@ describe('heatIndexC (NWS Rothfusz)', () => {
     expect(heatIndexC(26, 90)).toBeNull();
     expect(heatIndexC(30, undefined)).toBeNull();
   });
+  it('uses the NWS simple formula where its averaged result is under 80 °F', () => {
+    // 80 °F at 40 %: simple = 0.5 * (80 + 61 + 14.4 + 3.76) = 79.58, averaged with 80 = 79.79.
+    expect(hiF(80, 40)).toBeCloseTo(79.79, 2);
+    // 81 °F at 45 % averages to 80.85, so the regression is used: 81.4 on the NWS chart.
+    expect(hiF(81, 45)).toBeCloseTo(81.4, 0);
+  });
+  it('shows nothing above the top of the NWS chart instead of an extrapolated number', () => {
+    expect(hiF(110, 100)).toBeNull(); // the regression alone would say about 278 °F
+    expect(hiF(104, 80)).toBeNull();  // about 166 °F
+    expect(hiF(100, 65)).toBeCloseTo(136, 0); // the chart's last value in that row is shown
+    for (let t = 80; t <= 110; t += 1) {
+      for (let rh = 40; rh <= 100; rh += 5) {
+        const v = hiF(t, rh);
+        if (v !== null) { expect(v).toBeLessThanOrEqual(137); expect(v).toBeGreaterThanOrEqual(79); }
+      }
+    }
+  });
   it('counts 26.67 °C as 80 °F', () => {
     expect(heatIndexC(26.67, 50)).not.toBeNull();
   });
