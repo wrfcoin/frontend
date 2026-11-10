@@ -10,9 +10,15 @@ import { normalizeStationCompareHistory, type StationCompareHistoryView } from '
  */
 export class StationCompareService {
   private readonly client: ApiClient;
+  /**
+   * Owner-only reads go out once. The shared client repeats a GET up to twice after a 429 or a server error,
+   * which on a route limited per client would spend the limit on repeats of a refusal.
+   */
+  private readonly ownerClient: ApiClient;
 
   constructor(baseUrls: ServiceBaseUrls) {
     this.client = new ApiClient({ baseUrl: baseUrls.weather });
+    this.ownerClient = new ApiClient({ baseUrl: baseUrls.weather, retries: 0 });
   }
 
   /** The public edge admits only the bare alias form (no query). 404 means not live here, as ApiError. */
@@ -28,7 +34,7 @@ export class StationCompareService {
    */
   async getStationCompareHistory(stationId: string): Promise<StationCompareHistoryView> {
     const alias = toStationAlias(stationId);
-    const response = await this.client.get<unknown>(`/stations/${encodeURIComponent(alias)}/compare/history`);
+    const response = await this.ownerClient.get<unknown>(`/stations/${encodeURIComponent(alias)}/compare/history`);
     return normalizeStationCompareHistory(response);
   }
 }

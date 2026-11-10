@@ -78,7 +78,8 @@ describe('useStationCompareHistory', () => {
     answer(status, { error: { code: 'X', message: 'x' } });
     const { result } = renderHook(() => useStationCompareHistory(STATION, true), { wrapper });
     await waitFor(() => expect(requests).toHaveLength(1));
-    await settle();
+    // Long enough for the shared API client's first repeat (it waits before repeating a GET) to have shown up.
+    await new Promise(resolve => { setTimeout(resolve, 1500); });
     expect(requests).toHaveLength(1);
     expect(result.current).toBeNull();
   });
