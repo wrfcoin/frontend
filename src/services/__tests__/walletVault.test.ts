@@ -23,6 +23,50 @@ const { CustomWalletProvider } = await import('../walletProviders/CustomWalletPr
 describe('wallet vault (frontend#438)', () => {
   beforeEach(() => localStorage.clear());
 
+  describe('removeVaultIfAddress', () => {
+    const KEY = 'wrfcoin_wallet_vault_v1';
+    const record = (address: string) => JSON.stringify({
+      v: 1, scheme: 'ed25519-slip10-master-v1', address,
+      kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 600_000, salt: 'AA==' },
+      cipher: { name: 'AES-GCM', iv: 'AA==' }, ct: 'AA==',
+    });
+    const A = `0x${'ab'.repeat(20)}`;
+    const B = `0x${'cd'.repeat(20)}`;
+
+    it('removes the stored wallet for that address (case-insensitive) and says so', async () => {
+      localStorage.setItem(KEY, record(A));
+      await expect(vault.removeVaultIfAddress(A.toUpperCase().replace('0X', '0x'))).resolves.toBe(true);
+      expect(localStorage.getItem(KEY)).toBeNull();
+    });
+
+    it('never removes a different wallet, an unreadable record, or nothing', async () => {
+      localStorage.setItem(KEY, record(B));
+      await expect(vault.removeVaultIfAddress(A)).resolves.toBe(false);
+      expect(localStorage.getItem(KEY)).toBe(record(B));
+      localStorage.setItem(KEY, '{broken');
+      await expect(vault.removeVaultIfAddress(A)).resolves.toBe(false);
+      expect(localStorage.getItem(KEY)).toBe('{broken');
+      localStorage.clear();
+      await expect(vault.removeVaultIfAddress(A)).resolves.toBe(false);
+    });
+
+    it('waits for the vault lock: a wallet saved first by another tab is not deleted by a removal queued behind it', async () => {
+      localStorage.setItem(KEY, record(A));
+      let release: () => void = () => {};
+      // Another tab holds the lock and replaces the stored wallet before letting go.
+      const otherTab = navigator.locks.request(KEY, { mode: 'exclusive' }, () => new Promise<void>(resolve => {
+        release = () => { localStorage.setItem(KEY, record(B)); resolve(); };
+      }));
+      const removal = vault.removeVaultIfAddress(A);
+      await Promise.resolve();
+      expect(localStorage.getItem(KEY)).toBe(record(A));
+      release();
+      await otherTab;
+      await expect(removal).resolves.toBe(false);
+      expect(localStorage.getItem(KEY)).toBe(record(B));
+    });
+  });
+
   it('round-trips the words; a wrong password fails the authenticated decryption', async () => {
     await vault.saveVault(VECTOR.mnemonic, VECTOR.address, 'correct horse 1');
     expect(await vault.unlockVault('correct horse 1')).toEqual({ mnemonic: VECTOR.mnemonic, address: VECTOR.address });

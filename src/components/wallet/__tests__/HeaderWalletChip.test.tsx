@@ -11,9 +11,9 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 const features = { passkeyWallet: true, multiWallet: true };
 await jest.unstable_mockModule('../../../config/features', () => ({ FEATURES: features, default: features }));
-const disconnectWallet = jest.fn(async () => {});
-const walletState = { isConnected: false, disconnectWallet };
-await jest.unstable_mockModule('../../../contexts/WalletContext.jsx', () => ({ useOptionalWallet: () => walletState }));
+// The real sign-out path (provider manager, as the app mounts it) is in HeaderWalletChip.signOut.test.jsx.
+const lockUnlockedWallet = jest.fn(async () => {});
+await jest.unstable_mockModule('../../../services/walletSessionSwitch', () => ({ lockUnlockedWallet }));
 const { clearAuthToken, getAuthToken, setAuthToken } = await import('../../../services/authTokenStore');
 await jest.unstable_mockModule('../../../services/walletAuthService', () => ({ clearWalletAuthSession: () => clearAuthToken() }));
 
@@ -48,8 +48,8 @@ const mount = () => render(
 );
 
 beforeEach(() => {
-  localStorage.clear(); clearAuthToken(); disconnectWallet.mockClear();
-  features.passkeyWallet = true; features.multiWallet = true; walletState.isConnected = false;
+  localStorage.clear(); clearAuthToken(); lockUnlockedWallet.mockClear();
+  features.passkeyWallet = true; features.multiWallet = true;
 });
 afterEach(cleanup);
 
@@ -118,17 +118,26 @@ describe('HeaderWalletChip', () => {
     fireEvent.click(screen.getByTestId('wallet-chip-row-passkey'));
     expect(screen.getByText('passkey page')).toBeInTheDocument();
     expect(getAuthToken()).toBe(tokenFor(VAULT_ADDRESS));
-    expect(disconnectWallet).not.toHaveBeenCalled();
+    expect(lockUnlockedWallet).not.toHaveBeenCalled();
   });
 
   it('sign out locks an unlocked wallet and clears the session', async () => {
-    saveVaultRecord(); setAuthToken(tokenFor(VAULT_ADDRESS)); walletState.isConnected = true;
+    saveVaultRecord(); setAuthToken(tokenFor(VAULT_ADDRESS));
     mount();
     fireEvent.click(screen.getByTestId('wallet-chip'));
     await act(async () => { fireEvent.click(screen.getByTestId('wallet-chip-sign-out')); });
-    expect(disconnectWallet).toHaveBeenCalledTimes(1);
+    expect(lockUnlockedWallet).toHaveBeenCalledTimes(1);
     expect(getAuthToken()).toBe('');
     expect(screen.getByTestId('wallet-chip')).toHaveTextContent('Wallets');
+  });
+
+  it('a wallet removed on the page is dropped from the button at once', () => {
+    savePasskey(); saveVaultRecord();
+    mount();
+    expect(screen.getByTestId('wallet-chip')).toHaveAccessibleName('Your wallets. 2 wallets in this browser, none signed in');
+    localStorage.removeItem('wrfcoin_wallet_vault_v1');
+    act(() => { window.dispatchEvent(new Event('wrfcoin:wallets-changed')); });
+    expect(screen.getByTestId('wallet-chip')).toHaveAccessibleName('Your wallets. 1 wallet in this browser, none signed in');
   });
 
   it('no sign-out entry when nobody is signed in', () => {

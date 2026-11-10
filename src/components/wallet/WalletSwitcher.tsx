@@ -35,10 +35,16 @@ export function readSavedWallets(): SavedWallets {
   return { passkey: savedPasskeyAddress(), phrase: readVault()?.address.toLowerCase() ?? null };
 }
 
+// Deriving the address hashes the public key; the same saved record always gives the same address.
+let derived: { key: string; address: string } | null = null;
+
 function savedPasskeyAddress(): string | null {
   try {
     const record = FEATURES.passkeyWallet ? loadStoredPasskey() : null;
-    return record ? passkeyRecordAddress(record).toLowerCase() : null;
+    if (!record) return null;
+    const key = `${record.rpId}|${Array.from(record.publicKeyXY).join(',')}`;
+    if (derived?.key !== key) derived = { key, address: passkeyRecordAddress(record).toLowerCase() };
+    return derived.address;
   } catch {
     return null;
   }

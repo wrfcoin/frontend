@@ -58,6 +58,16 @@ describe('passkey wallet page, multi-wallet build', () => {
     expect(clearStoredPasskey).not.toHaveBeenCalled();
   });
 
+  it('an unreadable or forged station record does not block forgetting; it says the check could not be made', async () => {
+    localStorage.setItem('wrfcoin.wallet.station_bound.v1', '{broken');
+    render(<PasskeyWalletPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Forget on this device' }));
+    expect(await screen.findByTestId('passkey-forget-record-unreadable')).toHaveTextContent('could not be read');
+    expect(screen.queryByTestId('passkey-forget-station-bound')).toBeNull();
+    fireEvent.change(screen.getByTestId('passkey-forget-tail'), { target: { value: addressTail(address) } });
+    expect(screen.getByTestId('passkey-forget-confirm')).toBeEnabled();
+  });
+
   it('without a station it can still be forgotten', async () => {
     render(<PasskeyWalletPage />);
     fireEvent.click(await screen.findByRole('button', { name: 'Forget on this device' }));

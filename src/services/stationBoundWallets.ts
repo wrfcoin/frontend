@@ -6,8 +6,9 @@
  * succeeds, the station id is recorded under the signed-in address.
  *
  * Public data only (an address and a station id; no key, no word, no token). Nothing here is ever sent. A
- * record that cannot be read counts as "owns a station", so a damaged record blocks removal rather than
- * allowing it.
+ * record that cannot be read is reported as unreadable, never as "owns a station": anything on the page could
+ * have written it, so it must not be able to lock a person out of removing their own wallet. The caller says
+ * that stations could not be checked and keeps the keep-your-words warning.
  */
 const STORAGE_KEY = 'wrfcoin.wallet.station_bound.v1';
 const ADDRESS_RE = /^0x[0-9a-f]{40}$/;
@@ -37,8 +38,9 @@ function read(): Markers | 'unreadable' {
 export function markStationBound(address: string | null | undefined, stationId: string): void {
   const owner = (address ?? '').toLowerCase();
   if (!ADDRESS_RE.test(owner) || !STATION_ID_RE.test(stationId)) return;
-  const current = read();
-  if (current === 'unreadable') return; // Already blocks removal; never overwrite what cannot be read.
+  const stored = read();
+  // An unreadable record holds nothing that can be used; start again from this registration.
+  const current = stored === 'unreadable' ? {} : stored;
   const ids = current[owner] ?? [];
   if (ids.includes(stationId)) return;
   try {
@@ -46,13 +48,13 @@ export function markStationBound(address: string | null | undefined, stationId: 
   } catch { /* storage unavailable: the registration itself still succeeded */ }
 }
 
-export type StationBound = { bound: false } | { bound: true; stationIds: string[] };
+export type StationBound = { bound: false; unreadable?: true } | { bound: true; stationIds: string[] };
 
-/** Whether this browser knows `address` to own a station. An unreadable record answers "bound". */
+/** Whether this browser knows `address` to own a station. An unreadable record answers "not known". */
 export function stationBound(address: string | null | undefined): StationBound {
   const owner = (address ?? '').toLowerCase();
   const current = read();
-  if (current === 'unreadable') return { bound: true, stationIds: [] };
+  if (current === 'unreadable') return { bound: false, unreadable: true };
   const ids = current[owner] ?? [];
   return ids.length > 0 ? { bound: true, stationIds: ids } : { bound: false };
 }

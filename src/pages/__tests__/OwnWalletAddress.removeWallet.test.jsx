@@ -3,7 +3,7 @@
  * locked panel, the passkey record is untouched, and the offer is absent without the flag.
  */
 import React from 'react';
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { jest, describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -26,6 +26,14 @@ await jest.unstable_mockModule('../../services/walletCrypto/deviceKeyStore', () 
 await jest.unstable_mockModule('../../components/wallet/VaultSend', () => ({ default: () => null }));
 const { default: OwnWalletAddress } = await import('../OwnWalletAddress');
 const { markStationBound } = await import('../../services/stationBoundWallets');
+const { clearAuthToken, getAuthToken, setAuthToken } = await import('../../services/authTokenStore');
+const { createWebLocksStub, installWebLocks } = await import('../../services/__fixtures__/webLocksStub.ts');
+let uninstallLocks = () => {};
+beforeAll(() => { uninstallLocks = installWebLocks(createWebLocksStub()); });
+afterAll(() => uninstallLocks());
+const b64 = o => globalThis.btoa(JSON.stringify(o)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+const tokenFor = sub => `${b64({ alg: 'HS256' })}.${b64({ sub })}.sig`;
+const OTHER_WALLET = `0x${'9a'.repeat(20)}`;
 
 const VAULT_KEY = 'wrfcoin_wallet_vault_v1';
 const PASSKEY_KEY = 'wrfcoin.passkey.credential.v1';
@@ -34,7 +42,7 @@ const PASSKEY_RECORD = JSON.stringify({ credentialId: '01'.repeat(16), publicKey
 const mount = () => render(<MemoryRouter initialEntries={['/wallet']}><OwnWalletAddress /></MemoryRouter>);
 
 beforeEach(() => {
-  localStorage.clear(); multiWalletOn = true; disconnectWallet.mockClear(); forgetDeviceKey.mockClear();
+  localStorage.clear(); multiWalletOn = true; disconnectWallet.mockClear(); forgetDeviceKey.mockClear(); clearAuthToken();
   localStorage.setItem(VAULT_KEY, JSON.stringify({
     v: 1, scheme: 'ed25519-slip10-master-v1', address: ADDRESS,
     kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 600_000, salt: 'AA==' },
@@ -65,6 +73,18 @@ describe('wallet page: remove the 12-word wallet from this browser', () => {
     expect(screen.queryByTestId('remove-wallet-open')).toBeNull();
     // The passkey wallet is still offered.
     expect(screen.getByRole('button', { name: 'Open my passkey wallet' })).toBeTruthy();
+  });
+
+  it('removing a locked 12-word wallet leaves another wallet\'s session signed in', async () => {
+    setAuthToken(tokenFor(OTHER_WALLET)); // e.g. the passkey wallet holds the session
+    mount();
+    await act(async () => { fireEvent.click(screen.getByTestId('remove-wallet-open')); });
+    fireEvent.click(screen.getByTestId('remove-wallet-written'));
+    fireEvent.change(screen.getByTestId('remove-wallet-tail'), { target: { value: '12ef' } });
+    await act(async () => { fireEvent.click(screen.getByTestId('remove-wallet-confirm')); });
+    await waitFor(() => expect(localStorage.getItem(VAULT_KEY)).toBeNull());
+    expect(getAuthToken()).toBe(tokenFor(OTHER_WALLET));
+    expect(disconnectWallet).not.toHaveBeenCalled();
   });
 
   it('a wallet that owns a station stays', async () => {

@@ -1,7 +1,5 @@
-import { useSyncExternalStore } from 'react';
-import { getAuthToken, subscribeAuthToken } from '../../services/authTokenStore';
 import { tokenWallet } from '../../services/walletApi';
-import { readSavedWallets, type SavedWallets, type WalletKind } from './WalletSwitcher';
+import type { SavedWallets, WalletKind } from './WalletSwitcher';
 
 /** What a person calls each kind of wallet, everywhere the site names one. */
 export const WALLET_KIND_LABEL: Record<WalletKind, string> = { passkey: 'Passkey', phrase: '12-word' };
@@ -25,7 +23,5 @@ export function activeWalletOf(token: string, saved: SavedWallets): ActiveWallet
   return { address, kind: 'other' };
 }
 
-export function useActiveWallet(): ActiveWallet | null {
-  const token = useSyncExternalStore(subscribeAuthToken, getAuthToken, getAuthToken);
-  return activeWalletOf(token, readSavedWallets());
-}
+/** Fired on window when a wallet is removed from this browser, so the taskbar button re-reads the saved wallets. */
+export const WALLETS_CHANGED_EVENT = 'wrfcoin:wallets-changed';

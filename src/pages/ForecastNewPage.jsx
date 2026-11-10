@@ -13,7 +13,7 @@ import { useForecasterThemeVars, When } from './publicForecastersShared';
 import ForecastPracticeScore, { hasPracticePanel } from './ForecastPracticeScore';
 import { useSignedInWallet } from './friendChallengesShared';
 import { FEATURES } from '../config/features';
-import ForecastWalletNotice, { forecastWalletNoticeReplaces } from './ForecastWalletNotice';
+import ForecastWalletNotice, { forecastWalletNoticeReplaces, useForecastWallets } from './ForecastWalletNotice';
 import './PublicForecastersPage.css';
 import './FriendChallengesPage.css';
 import './ForecastNewPage.css';
@@ -179,8 +179,9 @@ export default function ForecastNewPage() {
   const valueOk = value.trim() !== '' && Number.isFinite(numeric) && numeric >= range.min && numeric <= range.max;
   const canSign = Boolean(you) && vaultAddress === you;
   // Multi-wallet builds name the wallet that signs, and offer to unlock or switch to it.
+  const savedWallets = useForecastWallets(Boolean(FEATURES.multiWallet));
   const walletNotice = FEATURES.multiWallet && open === 'open';
-  const noticeReplaces = walletNotice && forecastWalletNoticeReplaces(you, canSign);
+  const noticeReplaces = walletNotice && forecastWalletNoticeReplaces(you, canSign, savedWallets);
 
   const submit = async e => {
     e.preventDefault();
@@ -225,7 +226,7 @@ export default function ForecastNewPage() {
       {open === 'closed' ? <WrfAlert severity="info" role="status" className="ch-notice">Website forecasts are not open yet. They switch on when the network is ready; see <Link to="/forecast-check">how forecasts score</Link> in the meantime.</WrfAlert> : null}
       {open === 'error' ? <WrfAlert severity="info" role="status" className="ch-notice">Forecasts are unavailable right now. Try again in a minute.</WrfAlert> : null}
 
-      {walletNotice ? <ForecastWalletNotice you={you} canSign={canSign} /> : null}
+      {walletNotice ? <ForecastWalletNotice you={you} canSign={canSign} saved={savedWallets} /> : null}
 
       {open === 'open' && !you && !noticeReplaces ? (
         <WrfCard component="section" aria-label="Sign in" className="fc-section" noPadding>

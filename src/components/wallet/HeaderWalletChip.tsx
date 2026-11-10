@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -7,12 +7,13 @@ import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import KeyOutlinedIcon from '@mui/icons-material/KeyOutlined';
 import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
 import { FEATURES } from '../../config/features';
-import { useOptionalWallet } from '../../contexts/WalletContext.jsx';
 import { clearWalletAuthSession } from '../../services/walletAuthService';
+import { getAuthToken, subscribeAuthToken } from '../../services/authTokenStore';
+import { lockUnlockedWallet } from '../../services/walletSessionSwitch';
 import {
   PASSKEY_WALLET_PATH, PHRASE_SETUP_PATH, PHRASE_WALLET_PATH, readSavedWallets, shortAddress, type WalletKind,
 } from './WalletSwitcher';
-import { useActiveWallet, WALLET_KIND_LABEL, WALLET_KIND_NAME } from './activeWallet';
+import { activeWalletOf, WALLET_KIND_LABEL, WALLET_KIND_NAME, WALLETS_CHANGED_EVENT } from './activeWallet';
 
 const KIND_ICON: Record<WalletKind, typeof FingerprintIcon> = { passkey: FingerprintIcon, phrase: KeyOutlinedIcon };
 
@@ -31,21 +32,34 @@ export function walletRowStatus(kind: WalletKind, signedIn: boolean): string {
 export default function HeaderWalletChip() {
   const navigate = useNavigate();
   const location = useLocation();
-  const wallet = useOptionalWallet() as { isConnected?: boolean; disconnectWallet?: () => Promise<void> } | null;
-  const active = useActiveWallet();
+  const token = useSyncExternalStore(subscribeAuthToken, getAuthToken, getAuthToken);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const [open, setOpen] = useState(false);
-  // Re-read on navigation and whenever the menu opens or the session changes: a wallet may have been added
-  // or removed on another page.
-  const saved = useMemo(readSavedWallets, [location.pathname, open, active?.address]);
+  // A wallet removed on this page, or added or removed in another tab, changes what the button shows.
+  const [changes, setChanges] = useState(0);
+  useEffect(() => {
+    const changed = () => setChanges(n => n + 1);
+    window.addEventListener(WALLETS_CHANGED_EVENT, changed);
+    window.addEventListener('storage', changed);
+    return () => {
+      window.removeEventListener(WALLETS_CHANGED_EVENT, changed);
+      window.removeEventListener('storage', changed);
+    };
+  }, []);
+  // One read of the saved wallets per navigation, menu opening, session change or wallet change (public
+  // addresses only), and the active wallet is worked out from that same read.
+  // `changes`, `open`, the path and the token are triggers, not inputs.
+  const saved = useMemo(readSavedWallets, [location.pathname, open, token, changes]);
+  const active = useMemo(() => activeWalletOf(token, saved), [token, saved]);
 
   const go = useCallback((path: string) => { setOpen(false); navigate(path); }, [navigate]);
   const signOut = useCallback(async () => {
     setOpen(false);
-    // Locking the 12-word wallet drops its session through the wallet context; the token is cleared either way.
-    if (wallet?.isConnected) await wallet.disconnectWallet?.().catch(() => {});
+    // The taskbar sits outside every wallet provider, so this locks through the provider manager itself: an
+    // unlocked 12-word wallet is locked (a mounted wallet page hears it and updates), then the token goes.
+    await lockUnlockedWallet().catch(() => {});
     clearWalletAuthSession();
-  }, [wallet]);
+  }, []);
 
   if (!FEATURES.multiWallet) return null;
 

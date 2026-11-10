@@ -655,9 +655,12 @@ body.light-mode .current-location span { color: #475569; }
 /* 390 px: the button keeps the kind icon and the last four characters of the address; the rest is in its
    label and menu, and the clock gives up its place so nothing is pushed past the edge. */
 @media screen and (max-width: 480px) {
+  /* A touch target of at least 40 px in both directions (the taskbar is 48 px high). */
   .wallet-chip {
-    height: 28px;
-    padding: 0 6px;
+    height: 40px;
+    min-width: 40px;
+    justify-content: center;
+    padding: 0 8px;
     gap: 4px;
   }
 

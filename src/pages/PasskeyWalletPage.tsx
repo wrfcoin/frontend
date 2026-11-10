@@ -183,7 +183,9 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
 
   // Multi-wallet builds: a wallet that owns a station is not removable (owner ruling 2026-10-28). Read when
   // the dialog opens, from this browser's public station record.
-  const ownsStation = FEATURES.multiWallet && confirmOpen && address !== null && stationBound(address).bound;
+  const stationRecord = FEATURES.multiWallet && confirmOpen && address !== null ? stationBound(address) : null;
+  const ownsStation = Boolean(stationRecord?.bound);
+  const stationRecordUnreadable = Boolean(stationRecord && !stationRecord.bound && stationRecord.unreadable);
   const forget = useCallback(() => { clearStoredPasskey(); setRecord(null); setSent(null); setError(null); setOpened(false); setConfirmOpen(false); setTypedTail(''); }, []);
   const tailOk = address !== null && typedTail.trim().toLowerCase() === addressTail(address);
 
@@ -314,6 +316,11 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
         {ownsStation && (
           <WrfAlert severity="warning" sx={{ mb: 1.5 }} data-testid="passkey-forget-station-bound">
             This wallet owns a weather station, so it cannot be forgotten on this device. The station stays with this wallet.
+          </WrfAlert>
+        )}
+        {stationRecordUnreadable && (
+          <WrfAlert severity="info" sx={{ mb: 1.5 }} data-testid="passkey-forget-record-unreadable">
+            This browser's record of connected stations could not be read, so it could not be checked. If this wallet owns a station, the station stays with it: keep the passkey.
           </WrfAlert>
         )}
         <Typography sx={{ mb: 1.5 }}>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { WrfAlert } from '../components/DesignSystem/WrfAlert';
 import { WrfButton } from '../components/DesignSystem/WrfButton';
-import { readSavedWallets, shortAddress } from '../components/wallet/WalletSwitcher';
+import { readSavedWallets, shortAddress, type SavedWallets } from '../components/wallet/WalletSwitcher';
 import { clearWalletAuthSession } from '../services/walletAuthService';
 import { UNLOCK_RETURN_STATE } from './unlockReturn';
 
@@ -13,6 +13,8 @@ interface Props {
   you: string | null;
   /** True when the signed-in wallet is the 12-word wallet saved in this browser, so it can sign here. */
   canSign: boolean;
+  /** The saved wallets, from useForecastWallets (the page decides with the same read). */
+  saved: SavedWallets;
 }
 
 /**
@@ -22,9 +24,8 @@ interface Props {
  * 12-word wallet then signs in with its own password. Returns null when it has nothing to add, and the page
  * shows its usual text.
  */
-export default function ForecastWalletNotice({ you, canSign }: Props) {
+export default function ForecastWalletNotice({ you, canSign, saved }: Props) {
   const navigate = useNavigate();
-  const [saved] = useState(readSavedWallets);
   const openSetup = () => navigate('/onboarding', { state: UNLOCK_RETURN_STATE.forecastNew });
 
   if (you && canSign) {
@@ -72,10 +73,18 @@ export default function ForecastWalletNotice({ you, canSign }: Props) {
   return null;
 }
 
-/** True when the notice above replaces the page's own sign-in card or "cannot sign" alert. */
-export function forecastWalletNoticeReplaces(you: string | null, canSign: boolean): boolean {
+/** True when the notice above replaces the page's own sign-in card or "cannot sign" alert, for the same read. */
+export function forecastWalletNoticeReplaces(you: string | null, canSign: boolean, saved: SavedWallets): boolean {
   if (you && canSign) return false;
-  const saved = readSavedWallets();
   if (!you) return Boolean(saved.phrase);
   return Boolean(saved.passkey && saved.passkey.toLowerCase() === you);
+}
+
+/**
+ * The saved wallets, read once per mount for both the notice and the page's decision to hide its own text.
+ * Not read at all when the build has no multi-wallet notice.
+ */
+export function useForecastWallets(enabled: boolean): SavedWallets {
+  const [saved] = useState<SavedWallets>(() => (enabled ? readSavedWallets() : { passkey: null, phrase: null }));
+  return saved;
 }

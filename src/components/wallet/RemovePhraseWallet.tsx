@@ -8,6 +8,7 @@ import { WrfAlert } from '../DesignSystem/WrfAlert';
 import { WrfModal } from '../DesignSystem/WrfModal';
 import { readVault } from '../../services/walletVault';
 import { stationBound } from '../../services/stationBoundWallets';
+import { WALLETS_CHANGED_EVENT } from './activeWallet';
 
 const mono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
 
@@ -20,8 +21,13 @@ export const REMOVE_STATION_BOUND =
   'This wallet owns a weather station, so it cannot be removed from this browser. The station and its rewards stay with this wallet.';
 export const REMOVE_CHECK_FAILED =
   'Could not check whether this wallet owns a station, so nothing was removed. Try again in a minute.';
-export const REMOVE_LOCKED_NOTE =
-  'This wallet is locked, so only stations connected in this browser were checked. If it owns a phone station, its rewards keep going to this address: keep your 12 words.';
+/** Always shown: what the station check covers, signed in or not. */
+export const REMOVE_CHECK_CAVEAT =
+  'Only stations connected in this browser, and a phone station, were checked. A station connected elsewhere keeps paying this address: keep your 12 words.';
+export const REMOVE_RECORD_UNREADABLE =
+  "This browser's record of connected stations could not be read, so stations connected here could not be checked.";
+export const REMOVE_CHANGED = 'The wallet saved in this browser changed. Its saved words were not removed.';
+export const REMOVE_FAILED = "Could not remove the wallet. This browser's saved words were not removed.";
 
 /** Last four characters of the address, lower-cased: what a person types to confirm. */
 export const addressTail = (address: string): string => address.slice(-4).toLowerCase();
@@ -43,13 +49,16 @@ interface Props {
  * Remove the 12-word wallet from this browser (multi-wallet builds). Explicit: a warning, a ticked "I have my
  * 12 words written down" and the last four characters of the address. Refused while the wallet owns a station
  * (owner ruling 2026-10-28): known from this browser's station record and, when signed in, the wallet's own
- * phone-station read; a read that fails refuses too. Deletes only this browser's records for THIS wallet (the
- * encrypted words and its device key). The passkey wallet's record is never touched, and nothing is sent.
+ * phone-station read; a read that fails refuses too. That is all the site can check, and the dialog says so.
+ * Deletes only this browser's records for THIS wallet: its device key, then the encrypted words, removed under
+ * the vault's cross-tab lock and only if they are still this wallet's. The passkey wallet's record is never
+ * touched, and nothing is sent.
  */
 export default function RemovePhraseWallet({ address, signedIn, hasPhoneStation, onRemoved }: Props) {
   const [open, setOpen] = useState(false);
   const [check, setCheck] = useState<Check>('checking');
   const [stationIds, setStationIds] = useState<string[]>([]);
+  const [recordUnreadable, setRecordUnreadable] = useState(false);
   const [written, setWritten] = useState(false);
   const [typed, setTyped] = useState('');
   const [busy, setBusy] = useState(false);
@@ -62,6 +71,7 @@ export default function RemovePhraseWallet({ address, signedIn, hasPhoneStation,
     let live = true;
     const local = stationBound(address);
     if (local.bound) { setStationIds(local.stationIds); setCheck('bound'); return undefined; }
+    setRecordUnreadable(Boolean(local.unreadable));
     if (!signedIn) { setCheck('free'); return undefined; }
     setCheck('checking');
     hasPhoneStation()
@@ -79,18 +89,20 @@ export default function RemovePhraseWallet({ address, signedIn, hasPhoneStation,
       // Checked again at the moment of removal: the record may have changed since the dialog opened.
       const saved = readVault();
       if (!saved || saved.address.toLowerCase() !== address.toLowerCase() || stationBound(address).bound) {
-        setError('The wallet saved in this browser changed. Nothing was removed.');
+        setError(REMOVE_CHANGED);
         return;
       }
-      // This wallet's device key first: with the words gone it must not keep signing for the address.
+      // This wallet's device key first: with the words gone it must not keep signing for the address. If
+      // the words then cannot be removed, the device key is gone and can be set up again; no coins move.
       const { forgetDeviceKey } = await import('../../services/walletCrypto/deviceKeyStore');
       await forgetDeviceKey(address.toLowerCase());
-      const { clearVault } = await import('../../services/walletVault');
-      clearVault();
+      const { removeVaultIfAddress } = await import('../../services/walletVault');
+      if (!(await removeVaultIfAddress(address))) { setError(REMOVE_CHANGED); return; }
+      try { window.dispatchEvent(new Event(WALLETS_CHANGED_EVENT)); } catch { /* no window events: nothing to refresh */ }
       await onRemoved();
       close();
     } catch {
-      setError('Could not remove the wallet. Nothing else was changed.');
+      setError(REMOVE_FAILED);
     } finally {
       setBusy(false);
     }
@@ -127,7 +139,9 @@ export default function RemovePhraseWallet({ address, signedIn, hasPhoneStation,
         {check === 'free' && (
           <>
             {REMOVE_WARNINGS.map(line => <Typography key={line} sx={{ mb: 1.5 }}>{line}</Typography>)}
-            {!signedIn && <WrfAlert severity="info" sx={{ mb: 1.5 }} data-testid="remove-wallet-locked-note">{REMOVE_LOCKED_NOTE}</WrfAlert>}
+            <WrfAlert severity="info" sx={{ mb: 1.5 }} data-testid="remove-wallet-check-caveat">
+              {recordUnreadable ? `${REMOVE_RECORD_UNREADABLE} ` : ''}{REMOVE_CHECK_CAVEAT}
+            </WrfAlert>
             <FormControlLabel
               control={<Checkbox checked={written} onChange={e => setWritten(e.target.checked)} inputProps={{ 'data-testid': 'remove-wallet-written' } as React.InputHTMLAttributes<HTMLInputElement>} />}
               label="I have my 12 words written down"

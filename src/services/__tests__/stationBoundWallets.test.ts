@@ -49,11 +49,16 @@ describe('station record', () => {
     expect(localStorage.getItem(MARKER_KEY)).toBeNull();
   });
 
-  it('an unreadable record counts as bound and is never overwritten', () => {
+  it.each(['{broken', '[]', '"x"', JSON.stringify({ nope: ['st_1'] }), JSON.stringify({ [A]: 'st_1' })])(
+    'an unreadable or forged record (%s) is reported as unreadable, never as "owns a station"', raw => {
+      localStorage.setItem(MARKER_KEY, raw);
+      expect(stationBound(A)).toEqual({ bound: false, unreadable: true });
+    });
+
+  it('a registration after an unreadable record starts a clean record', () => {
     localStorage.setItem(MARKER_KEY, '{broken');
-    expect(stationBound(A)).toEqual({ bound: true, stationIds: [] });
     markStationBound(A, 'st_1');
-    expect(localStorage.getItem(MARKER_KEY)).toBe('{broken');
+    expect(stationBound(A)).toEqual({ bound: true, stationIds: ['st_1'] });
   });
 });
 

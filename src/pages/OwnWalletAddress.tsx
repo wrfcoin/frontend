@@ -18,6 +18,8 @@ import WalletSwitcher from '../components/wallet/WalletSwitcher';
 import RemovePhraseWallet from '../components/wallet/RemovePhraseWallet';
 import { stationRegistrationService } from '../services/apiClient';
 import { clearWalletAuthSession } from '../services/walletAuthService';
+import { getAuthToken } from '../services/authTokenStore';
+import { tokenWallet } from '../services/walletApi';
 import { loadStoredPasskey } from '../services/walletCrypto/passkeySend';
 import { readVault } from '../services/walletVault';
 import { FEATURES } from '../config/features';
@@ -108,10 +110,11 @@ export default function OwnWalletAddress() {
     () => stationRegistrationService.getMobileStationStatus().then(status => status !== null), [],
   );
   const vaultRemoved = useCallback(async () => {
+    // Only the removed wallet's own session ends: another wallet signed in here stays signed in.
     if (ownsAddress) await disconnectWallet().catch(() => {});
-    clearWalletAuthSession();
+    if (vaultAddress && tokenWallet(getAuthToken()) === vaultAddress) clearWalletAuthSession();
     setVaultRemoved(n => n + 1);
-  }, [ownsAddress, disconnectWallet]);
+  }, [ownsAddress, disconnectWallet, vaultAddress]);
   const removeWallet = FEATURES.multiWallet && vaultAddress ? (
     <RemovePhraseWallet
       key={`remove-${vaultAddress}`}

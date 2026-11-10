@@ -12,8 +12,14 @@ const forgetDeviceKey = jest.fn(async (_owner: string) => {});
 await jest.unstable_mockModule('../../../services/walletCrypto/deviceKeyStore', () => ({ forgetDeviceKey }));
 
 const {
-  default: RemovePhraseWallet, REMOVE_CHECK_FAILED, REMOVE_STATION_BOUND, REMOVE_WARNINGS, addressTail,
+  default: RemovePhraseWallet, REMOVE_CHANGED, REMOVE_CHECK_CAVEAT, REMOVE_CHECK_FAILED, REMOVE_FAILED,
+  REMOVE_RECORD_UNREADABLE, REMOVE_STATION_BOUND, REMOVE_WARNINGS, addressTail,
 } = await import('../RemovePhraseWallet');
+const { createWebLocksStub, installWebLocks } = await import('../../../services/__fixtures__/webLocksStub.ts');
+// The vault is removed under its cross-tab lock; jsdom has no Web Locks, browsers in a secure context do.
+let uninstallLocks: () => void = () => {};
+beforeAll(() => { uninstallLocks = installWebLocks(createWebLocksStub()); });
+afterAll(() => uninstallLocks());
 const { markStationBound } = await import('../../../services/stationBoundWallets');
 
 const VAULT_KEY = 'wrfcoin_wallet_vault_v1';
@@ -98,20 +104,59 @@ describe('RemovePhraseWallet', () => {
     expect(localStorage.getItem(VAULT_KEY)).not.toBeNull();
   });
 
-  it('a locked wallet is checked against this browser only, says so, and never asks the server', async () => {
+  it('a locked wallet never asks the server, and says what was checked', async () => {
     const hasPhoneStation = jest.fn(async () => true);
     mount({ signedIn: false, hasPhoneStation });
     await openDialog();
-    expect(screen.getByTestId('remove-wallet-locked-note')).toHaveTextContent('keep your 12 words');
+    expect(screen.getByTestId('remove-wallet-check-caveat')).toHaveTextContent(REMOVE_CHECK_CAVEAT);
     expect(hasPhoneStation).not.toHaveBeenCalled();
   });
 
-  it('an unreadable station record blocks removal', async () => {
+  it('a signed-in wallet gets the same caveat: the check does not cover stations connected elsewhere', async () => {
+    mount({ signedIn: true });
+    await openDialog();
+    expect(await screen.findByTestId('remove-wallet-check-caveat')).toHaveTextContent(REMOVE_CHECK_CAVEAT);
+    expect(REMOVE_CHECK_CAVEAT).toContain('A station connected elsewhere keeps paying this address: keep your 12 words.');
+  });
+
+  it('an unreadable or forged station record does not lock the person out: it says so and removal stays possible', async () => {
     localStorage.setItem('wrfcoin.wallet.station_bound.v1', '{broken');
     mount();
     await openDialog();
-    expect(screen.getByTestId('remove-wallet-station-bound')).toBeInTheDocument();
-    expect(confirmButton()).toBeDisabled();
+    expect(screen.queryByTestId('remove-wallet-station-bound')).toBeNull();
+    expect(await screen.findByTestId('remove-wallet-check-caveat')).toHaveTextContent(`${REMOVE_RECORD_UNREADABLE} ${REMOVE_CHECK_CAVEAT}`);
+    fireEvent.click(screen.getByTestId('remove-wallet-written'));
+    fireEvent.change(screen.getByTestId('remove-wallet-tail'), { target: { value: addressTail(ADDRESS) } });
+    expect(confirmButton()).toBeEnabled();
+  });
+
+  it('removal takes the vault lock: without Web Locks nothing is removed', async () => {
+    uninstallLocks();
+    try {
+      mount();
+      await openDialog();
+      fireEvent.click(screen.getByTestId('remove-wallet-written'));
+      fireEvent.change(screen.getByTestId('remove-wallet-tail'), { target: { value: addressTail(ADDRESS) } });
+      await act(async () => { fireEvent.click(confirmButton()); });
+      expect(await screen.findByText(REMOVE_FAILED)).toBeInTheDocument();
+      expect(localStorage.getItem(VAULT_KEY)).not.toBeNull();
+      expect(onRemoved).not.toHaveBeenCalled();
+    } finally {
+      uninstallLocks = installWebLocks(createWebLocksStub());
+    }
+  });
+
+  it('tells the taskbar button that the saved wallets changed', async () => {
+    const changed = jest.fn();
+    window.addEventListener('wrfcoin:wallets-changed', changed);
+    mount();
+    await openDialog();
+    fireEvent.click(screen.getByTestId('remove-wallet-written'));
+    fireEvent.change(screen.getByTestId('remove-wallet-tail'), { target: { value: addressTail(ADDRESS) } });
+    await act(async () => { fireEvent.click(confirmButton()); });
+    await waitFor(() => expect(onRemoved).toHaveBeenCalledTimes(1));
+    expect(changed).toHaveBeenCalledTimes(1);
+    window.removeEventListener('wrfcoin:wallets-changed', changed);
   });
 
   it('refuses if the saved wallet changed while the dialog was open', async () => {
@@ -121,7 +166,7 @@ describe('RemovePhraseWallet', () => {
     fireEvent.change(screen.getByTestId('remove-wallet-tail'), { target: { value: addressTail(ADDRESS) } });
     saveVaultRecord(`0x${'11'.repeat(20)}`);
     await act(async () => { fireEvent.click(confirmButton()); });
-    expect(await screen.findByText('The wallet saved in this browser changed. Nothing was removed.')).toBeInTheDocument();
+    expect(await screen.findByText(REMOVE_CHANGED)).toBeInTheDocument();
     expect(localStorage.getItem(VAULT_KEY)).not.toBeNull();
     expect(onRemoved).not.toHaveBeenCalled();
     expect(forgetDeviceKey).not.toHaveBeenCalled();
@@ -134,7 +179,7 @@ describe('RemovePhraseWallet', () => {
     fireEvent.click(screen.getByTestId('remove-wallet-written'));
     fireEvent.change(screen.getByTestId('remove-wallet-tail'), { target: { value: addressTail(ADDRESS) } });
     await act(async () => { fireEvent.click(confirmButton()); });
-    expect(await screen.findByText('Could not remove the wallet. Nothing else was changed.')).toBeInTheDocument();
+    expect(await screen.findByText(REMOVE_FAILED)).toBeInTheDocument();
     expect(localStorage.getItem(VAULT_KEY)).not.toBeNull();
     expect(onRemoved).not.toHaveBeenCalled();
   });

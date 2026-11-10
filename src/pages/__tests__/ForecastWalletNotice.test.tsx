@@ -15,7 +15,7 @@ const { clearAuthToken, getAuthToken, setAuthToken } = await import('../../servi
 await jest.unstable_mockModule('../../services/walletAuthService', () => ({ clearWalletAuthSession: () => clearAuthToken() }));
 
 const { default: ForecastWalletNotice, forecastWalletNoticeReplaces } = await import('../ForecastWalletNotice');
-const { shortAddress } = await import('../../components/wallet/WalletSwitcher');
+const { shortAddress, readSavedWallets } = await import('../../components/wallet/WalletSwitcher');
 const { passkeyRecordAddress, hexToBytes } = await import('../../services/walletCrypto/passkey');
 
 const VAULT_ADDRESS = `0x${'cd'.repeat(20)}`;
@@ -38,7 +38,7 @@ function Setup() {
 const mount = (you: string | null, canSign: boolean) => render(
   <MemoryRouter initialEntries={['/forecast/new']}>
     <Routes>
-      <Route path="/forecast/new" element={<ForecastWalletNotice you={you} canSign={canSign} />} />
+      <Route path="/forecast/new" element={<ForecastWalletNotice you={you} canSign={canSign} saved={readSavedWallets()} />} />
       <Route path="/onboarding" element={<Setup />} />
     </Routes>
   </MemoryRouter>,
@@ -52,14 +52,14 @@ describe('ForecastWalletNotice', () => {
     saveVaultRecord(); savePasskey();
     mount(VAULT_ADDRESS, true);
     expect(screen.getByTestId('forecast-wallet-line')).toHaveTextContent(`Forecasting as your 12-word wallet ${shortAddress(VAULT_ADDRESS)}.`);
-    expect(forecastWalletNoticeReplaces(VAULT_ADDRESS, true)).toBe(false);
+    expect(forecastWalletNoticeReplaces(VAULT_ADDRESS, true, readSavedWallets())).toBe(false);
   });
 
   it('12-word wallet saved but locked: offers to unlock it and comes back to the forecast', () => {
     saveVaultRecord(); savePasskey();
     mount(null, false);
     expect(screen.getByTestId('forecast-wallet-unlock')).toHaveTextContent(shortAddress(VAULT_ADDRESS));
-    expect(forecastWalletNoticeReplaces(null, false)).toBe(true);
+    expect(forecastWalletNoticeReplaces(null, false, readSavedWallets())).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Unlock 12-word wallet' }));
     expect(screen.getByText('setup page, returns to /forecast/new')).toBeInTheDocument();
   });
@@ -89,10 +89,10 @@ describe('ForecastWalletNotice', () => {
     savePasskey();
     const first = mount(null, false);
     expect(first.container).toBeEmptyDOMElement();
-    expect(forecastWalletNoticeReplaces(null, false)).toBe(false);
+    expect(forecastWalletNoticeReplaces(null, false, readSavedWallets())).toBe(false);
     cleanup();
     const second = mount(OTHER, false);
     expect(second.container).toBeEmptyDOMElement();
-    expect(forecastWalletNoticeReplaces(OTHER, false)).toBe(false);
+    expect(forecastWalletNoticeReplaces(OTHER, false, readSavedWallets())).toBe(false);
   });
 });
