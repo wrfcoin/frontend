@@ -13,7 +13,12 @@ import { getAuthToken, subscribeAuthToken } from '../../services/authTokenStore'
  * when the JWT wallet owns the station, 401 without a wallet, and 404 for
  * every other wallet. No token means no request. Any error or validation
  * failure means "not the owner", and the returned owner must be the JWT
- * subject. Never enable this in the Stage 1.5 public read-only build.
+ * subject.
+ *
+ * The station page asks this in every build, the public read-only one
+ * included, for its owner-only parts (the 30-day comparison). That costs a
+ * visitor nothing: no token means no request. The "first WRF earned"
+ * dialog is a separate caller and stays off in the public read-only build.
  *
  * The answer is bound to the live session. The token is read through
  * subscribeAuthToken, so logout, refresh failure or an account switch
