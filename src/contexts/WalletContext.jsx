@@ -12,6 +12,7 @@ import {
   loginWalletWithEd25519,
   loginWalletWithSigner,
 } from '../services/walletAuthService.ts';
+import { onBeforeWalletLogin } from '../services/walletSessionSwitch.ts';
 
 // Initial state
 const initialState = {
@@ -203,6 +204,17 @@ export const WalletProvider = ({ children, passive }) => {
     return () => {
       cleanup();
     };
+  }, [isPassive]);
+
+  // Multi-wallet: one session, one wallet. Before another wallet signs in (the passkey wallet), lock the
+  // wallet unlocked here; its disconnect event drops its session and updates this context.
+  useEffect(() => {
+    if (isPassive || !FEATURES.multiWallet) return undefined;
+    return onBeforeWalletLogin(async address => {
+      const own = walletProviderManager.getLoginIdentity()?.address?.toLowerCase();
+      if (!walletProviderManager.getActiveProvider() || own === address) return;
+      await walletProviderManager.disconnect();
+    });
   }, [isPassive]);
 
   // Auto-refresh balance when account or chain changes

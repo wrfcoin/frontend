@@ -1,5 +1,6 @@
 import { ApiClient } from './apiClient/client';
 import { clearAuthToken, setAuthToken } from './authTokenStore';
+import { beforeWalletLogin } from './walletSessionSwitch';
 import { applyPendingReferralForWallet } from './referralAttribution';
 import { sha3_256 } from '@noble/hashes/sha3.js';
 import {
@@ -395,6 +396,9 @@ export class WalletAuthService {
       throw new Error('Wallet login challenge is not a valid passkey challenge.');
     }
     const passkeyAuth = await assert(record, sha3_256(message));
+    // One session, one wallet: a wallet unlocked in this tab is locked (and its session dropped) before the
+    // passkey's session exists. After the prompt, so a cancelled prompt changes nothing.
+    await beforeWalletLogin(address);
     const login = await this.client.post<LoginResponse>('/auth/wallet-login', {
       scheme: 'passkey',
       address,

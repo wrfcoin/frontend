@@ -39,6 +39,10 @@ const PASSKEY_BOND_PAYOUT = import.meta.env?.VITE_ENABLE_PASSKEY_BOND_PAYOUT ===
 // in (backend PASSKEY_LOGIN_ENABLED) and owns the station on the website; it earns once core4's
 // passkey_station_owner is live. Exact string "true" only; default OFF.
 const PASSKEY_STATION_OWNER = import.meta.env?.VITE_ENABLE_PASSKEY_STATION_OWNER === 'true';
+// Multi-wallet part 2: the header wallet button, one session per wallet, "which wallet" lines on Make a
+// forecast and Send, and removing the 12-word wallet from this browser. Exact string "true" only; default
+// OFF. Only meaningful where the passkey wallet is served, so it also needs VITE_ENABLE_PASSKEY_WALLET.
+const MULTI_WALLET = PASSKEY_WALLET && import.meta.env?.VITE_ENABLE_MULTI_WALLET === 'true';
 
 // Chain-enforced account protections on the 12-word wallet ("require my YubiKey to spend", send allowlist):
 // exact string "true" only; default OFF. Even when on, each control shows only once the node reports its
@@ -96,6 +100,8 @@ export const FEATURES = {
   passkeyBondPayout: PASSKEY_BOND_PAYOUT,
   /** Passkey wallet can own a station on /connect-station. Default FALSE; needs backend passkey login. */
   passkeyStationOwner: PASSKEY_STATION_OWNER,
+  /** Header wallet button, single-wallet session, wallet removal. Default FALSE; needs passkeyWallet. */
+  multiWallet: MULTI_WALLET,
   explorer: true,
   pop: true,
   mining: true,

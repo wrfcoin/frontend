@@ -22,7 +22,8 @@ import { getPasskeyPublicBalance } from '../services/walletCrypto/passkeyBalance
 import { PasskeyFaucetPanel } from '../components/wallet/PasskeyFaucetPanel';
 import PasskeyUseExisting from '../components/wallet/PasskeyUseExisting';
 import NotifyMe from '../components/explorer/NotifyMe';
-import WalletSwitcher from '../components/wallet/WalletSwitcher';
+import WalletSwitcher, { shortAddress } from '../components/wallet/WalletSwitcher';
+import { stationBound } from '../services/stationBoundWallets';
 import { useOwnedFirstPartyAddress } from '../hooks/useOwnedFirstPartyAddress';
 import { UNSUPPORTED_MESSAGE, SECURITY_KEY_UNSUPPORTED_MESSAGE } from './passkeyMessages';
 
@@ -180,6 +181,9 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
     } catch (e) { setError(describeError(e)); } finally { setBusy(false); }
   }, [record, address, to, amount, noFunds, exceeds, guard]);
 
+  // Multi-wallet builds: a wallet that owns a station is not removable (owner ruling 2026-10-28). Read when
+  // the dialog opens, from this browser's public station record.
+  const ownsStation = FEATURES.multiWallet && confirmOpen && address !== null && stationBound(address).bound;
   const forget = useCallback(() => { clearStoredPasskey(); setRecord(null); setSent(null); setError(null); setOpened(false); setConfirmOpen(false); setTypedTail(''); }, []);
   const tailOk = address !== null && typedTail.trim().toLowerCase() === addressTail(address);
 
@@ -260,6 +264,11 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
             <ContactPicks onPick={setTo} disabled={busy !== false} />
             <AddressBookButton size="sm" />
           </Box>
+          {FEATURES.multiWallet && (
+            <Typography variant="body2" sx={{ color: palette.text.secondary }} data-testid="passkey-send-from">
+              Sending from your passkey wallet <span title={address} style={{ fontFamily: mono }}>{shortAddress(address)}</span>.
+            </Typography>
+          )}
           <WrfInput label="Recipient address" value={to} onChange={(e) => setTo(e.target.value)} placeholder="0x…" autoComplete="off" inputProps={{ style: { fontFamily: mono } }} />
           <WrfInput label="Amount (WRF)" value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" autoComplete="off" />
           {allowlistRefusal && <WrfAlert severity="error" data-testid="passkey-allowlist-refusal">{allowlistRefusal}</WrfAlert>}
@@ -298,10 +307,15 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
         actions={(
           <>
             <WrfButton variant="ghost" onClick={() => { setConfirmOpen(false); setTypedTail(''); }}>Keep it</WrfButton>
-            <WrfButton variant="primary" onClick={forget} disabled={!tailOk} data-testid="passkey-forget-confirm">Forget this account</WrfButton>
+            <WrfButton variant="primary" onClick={forget} disabled={!tailOk || ownsStation} data-testid="passkey-forget-confirm">Forget this account</WrfButton>
           </>
         )}
       >
+        {ownsStation && (
+          <WrfAlert severity="warning" sx={{ mb: 1.5 }} data-testid="passkey-forget-station-bound">
+            This wallet owns a weather station, so it cannot be forgotten on this device. The station stays with this wallet.
+          </WrfAlert>
+        )}
         <Typography sx={{ mb: 1.5 }}>
           This removes the pointer to your passkey account from this device. To open it here again you need the same passkey: choose "Use an existing passkey". If that passkey is gone too, the account cannot be recovered, and any funds sent to it stay on the chain but cannot be spent.
         </Typography>

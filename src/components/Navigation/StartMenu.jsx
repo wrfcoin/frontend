@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { TestnetChip } from '../common/TestnetNotice';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './StartMenu.css';
@@ -15,7 +15,10 @@ import {
   isOperatorPreviewEnabled,
   isPublicReadonlyEnabled,
 } from '../../config/contractSurfacePolicy';
-import { getPublicNavEntries, isPasskeyWalletEnabled } from '../../config/publicNavigation';
+import { getPublicNavEntries, isMultiWalletEnabled, isPasskeyWalletEnabled } from '../../config/publicNavigation';
+
+// Multi-wallet builds only: kept out of the shell bundle otherwise.
+const HeaderWalletChip = lazy(() => import('../wallet/HeaderWalletChip'));
 
 const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false }) => {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -522,6 +525,11 @@ const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false })
     isPublicReadonlyEnabled(import.meta.env?.VITE_PUBLIC_READONLY_PATHS),
     isPasskeyWalletEnabled(import.meta.env?.VITE_ENABLE_PASSKEY_WALLET),
   ).map(({ name, path, icon }) => ({ name, path, icon }));
+  // Read from the env at render time, like the passkey flag above (tests replace features.ts wholesale).
+  const multiWallet = isMultiWalletEnabled(
+    import.meta.env?.VITE_ENABLE_PASSKEY_WALLET,
+    import.meta.env?.VITE_ENABLE_MULTI_WALLET,
+  );
   const visibleMenuItems = !allowShellHiddenFeatures ? publicMenuItems : filterPublicSurfaces(
     menuItems,
     allowShellHiddenFeatures,
@@ -870,7 +878,7 @@ const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false })
       )}
 
       {/* Taskbar */}
-      <nav className="taskbar" aria-label="Taskbar">
+      <nav className={`taskbar${multiWallet ? ' taskbar--wallet' : ''}`} aria-label="Taskbar">
         <div className="taskbar-left">
           {/* A real button: the menu opens from the keyboard (Enter/Space) and reports its state. */}
           <button
@@ -945,6 +953,9 @@ const StartMenu = ({ darkMode, toggleDarkMode, isFeatureEnabled = () => false })
             </div>
           )}
           <TestnetChip />
+          {multiWallet && (
+            <Suspense fallback={null}><HeaderWalletChip /></Suspense>
+          )}
           <button className="theme-toggle-btn" aria-label="Toggle color theme" onClick={toggleDarkMode}>
             <i className={`bi ${darkMode ? 'bi-sun' : 'bi-moon'}`}></i>
           </button>

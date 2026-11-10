@@ -9,6 +9,7 @@ import {
   type PasskeyAssert,
 } from '../walletAuthService';
 import { bytesToHex, passkeyRecordAddress, type PasskeyCredentialRecord } from '../walletCrypto/passkey';
+import { onBeforeWalletLogin } from '../walletSessionSwitch';
 
 // Byte vector produced by the backend's buildPasskeyWalletLoginMessage (backend passkey login PR) for these
 // fields, so the two sides frame the login message identically.
@@ -65,6 +66,35 @@ describe('passkey wallet login (client)', () => {
     expect(bytesToHex(message)).toBe(VECTOR_MESSAGE_HEX);
     expect(bytesToHex(sha3_256(message))).toBe(VECTOR_CHALLENGE_HEX);
     expect(new TextDecoder().decode(message.subarray(0, PASSKEY_WALLET_LOGIN_DOMAIN.length))).toBe(PASSKEY_WALLET_LOGIN_DOMAIN);
+  });
+
+  it('one session, one wallet: the other wallet is locked after the passkey prompt and before the login is posted', async () => {
+    const order: string[] = [];
+    (global.fetch as jest.Mock<typeof fetch>)
+      .mockImplementationOnce(async () => { order.push('nonce'); return ok(nonceData()); })
+      .mockImplementationOnce(async () => { order.push('login'); return ok({ jwt: jwtFor(ADDRESS), refreshToken: 'r', expiresIn: 900 }); });
+    const assert = jest.fn<PasskeyAssert>(async () => { order.push('prompt'); return FAKE_AUTH; });
+    const remove = onBeforeWalletLogin(address => { order.push(`lock-others:${address}`); });
+    try {
+      await new WalletAuthService('/api').loginWithPasskey(RECORD, EXPECT, assert);
+    } finally {
+      remove();
+    }
+    expect(order).toEqual(['nonce', 'prompt', `lock-others:${ADDRESS}`, 'login']);
+  });
+
+  it('a cancelled passkey prompt locks nothing and posts nothing', async () => {
+    (global.fetch as jest.Mock<typeof fetch>).mockResolvedValueOnce(ok(nonceData()));
+    const lock = jest.fn<(address: string) => void>();
+    const remove = onBeforeWalletLogin(lock);
+    const assert = jest.fn<PasskeyAssert>(async () => { throw new Error('cancelled'); });
+    try {
+      await expect(new WalletAuthService('/api').loginWithPasskey(RECORD, EXPECT, assert)).rejects.toThrow('cancelled');
+    } finally {
+      remove();
+    }
+    expect(lock).not.toHaveBeenCalled();
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
   it('asks for a passkey nonce, signs SHA3 of the rebuilt message, and posts passkey_auth', async () => {
