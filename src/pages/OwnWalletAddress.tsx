@@ -16,7 +16,9 @@ import VaultSend from '../components/wallet/VaultSend';
 import RecoveryPhraseBackup from '../components/wallet/RecoveryPhraseBackup';
 import WalletSwitcher from '../components/wallet/WalletSwitcher';
 import RemovePhraseWallet from '../components/wallet/RemovePhraseWallet';
+import MyStationsCard from '../components/wallet/MyStationsCard';
 import { stationRegistrationService } from '../services/apiClient';
+import { ownsServerStation } from '../services/myStationsCheck';
 import { clearWalletAuthSession } from '../services/walletAuthService';
 import { getAuthToken } from '../services/authTokenStore';
 import { tokenWallet } from '../services/walletApi';
@@ -109,6 +111,10 @@ export default function OwnWalletAddress() {
   const hasPhoneStation = useCallback(
     () => stationRegistrationService.getMobileStationStatus().then(status => status !== null), [],
   );
+  // "My stations" on: a station connected from any browser also blocks removal (owner-only server read).
+  const hasServerStation = useCallback(
+    () => stationRegistrationService.getMyStations().then(ownsServerStation), [],
+  );
   const vaultRemoved = useCallback(async () => {
     // Only the removed wallet's own session ends: another wallet signed in here stays signed in.
     if (ownsAddress) await disconnectWallet().catch(() => {});
@@ -121,6 +127,7 @@ export default function OwnWalletAddress() {
       address={vaultAddress}
       signedIn={ownerAddress?.toLowerCase() === vaultAddress}
       hasPhoneStation={hasPhoneStation}
+      hasServerStation={FEATURES.myStations ? hasServerStation : undefined}
       onRemoved={vaultRemoved}
     />
   ) : null;
@@ -229,6 +236,7 @@ export default function OwnWalletAddress() {
                 <ChainProtectionsCard ownerAddress={ownerAddress} />
               </Suspense>
             )}
+            {FEATURES.myStations && <MyStationsCard ownerAddress={ownerAddress} />}
             <PhoneStationStatusCard ownerAddress={ownerAddress} />
           </Box>
         }

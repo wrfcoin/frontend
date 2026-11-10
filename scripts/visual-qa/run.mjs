@@ -378,7 +378,7 @@ async function runViewport(browser, vp, tall, theme) {
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
     // "Bond your node" is a build switch (default off): these run only when the harness was started with it.
-    for (const [name, query, verdict, mode] of [['nodes-bond-admitted', 'node-1a2b3c4d', /Admitted, waiting/, 'populated'], ['nodes-bond-earning', 'ws-node', /Bonded, earning/, 'populated'], ['nodes-bond-closed', 'node-1a2b3c4d', /Admission is not open\./, 'off']]) {
+    for (const [name, query, verdict, mode] of [['nodes-bond-admitted', 'node-1a2b3c4d', /Admitted, waiting/, 'populated'], ['nodes-bond-earning', 'ws-node', /Bonded, earning/, 'populated'], ['nodes-bond-closed', 'node-1a2b3c4d', /Admission is not open yet\./, 'off']]) {
       if (!want(name)) continue;
       if (process.env.VITE_ENABLE_BOND_GUIDE !== 'true') { if (only.includes(name)) console.log(`SKIP ${name}: start with VITE_ENABLE_BOND_GUIDE=true`); continue; }
       try {
@@ -536,7 +536,24 @@ async function runViewport(browser, vp, tall, theme) {
         await page.evaluate(() => { try { window.localStorage.removeItem('wrfcoin.passkey.credential.v1'); } catch { /* storage blocked */ } });
       } catch (e) { console.log('FAIL connect-station-passkey', suffix, String(e).slice(0, 160)); report.push({ name: 'connect-station-passkey', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
-    if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || want('wallet-send-review') || want('wallet-address-book') || want('wallet-send-allowlist-refused') || want('challenges-signed-in') || want('forecast-new-scored')) {
+    if (want('wallet-remove-locked') && process.env.VITE_ENABLE_PASSKEY_WALLET === 'true' && process.env.VITE_ENABLE_MULTI_WALLET === 'true') {
+      try {
+        // A saved but locked 12-word wallet (fixture record, nothing decryptable) and no station: removable.
+        const vault = JSON.stringify({ v: 1, scheme: 'ed25519-slip10-master-v1', address: `0x${'cd'.repeat(18)}12ef`,
+          kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 600000, salt: 'AA==' }, cipher: { name: 'AES-GCM', iv: 'AA==' }, ct: 'AA==' });
+        await loadRoute(page, '/wallet', errors);
+        await page.evaluate((v) => { try { window.localStorage.setItem('wrfcoin_wallet_vault_v1', v); } catch { /* storage blocked */ } }, vault);
+        await loadRoute(page, '/wallet', errors);
+        await page.getByTestId('remove-wallet-open').click();
+        await page.getByTestId('remove-wallet-keep-words').waitFor({ timeout: 15_000 });
+        await page.waitForTimeout(600);
+        await capture(page, errors, 'wallet-remove-locked', '/wallet (locked 12-word wallet, remove dialog)', suffix);
+        await page.keyboard.press('Escape');
+        await page.evaluate(() => { try { window.localStorage.removeItem('wrfcoin_wallet_vault_v1'); } catch { /* storage blocked */ } });
+      } catch (e) { console.log('FAIL wallet-remove-locked', suffix, String(e).slice(0, 160)); report.push({ name: 'wallet-remove-locked', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
+    const myStationsOn = process.env.VITE_ENABLE_MY_STATIONS === 'true';
+    if (want('wallet-unlocked') || want('wallet-backup-warning') || want('connect-station-unlocked') || (myStationsOn && want('wallet-my-stations')) || want('wallet-send-review') || want('wallet-address-book') || want('wallet-send-allowlist-refused') || want('challenges-signed-in') || want('forecast-new-scored')) {
       try {
         await createWallet(page, errors);
         if (want('forecast-new-scored')) {
@@ -553,6 +570,15 @@ async function runViewport(browser, vp, tall, theme) {
           await installRoutes(page, fx);
         }
         if (want('wallet-unlocked')) { await goClientSide(page, '/wallet'); await page.getByText('Recent activity').first().waitFor({ timeout: 20_000 }).catch(() => undefined); await capture(page, errors, 'wallet-unlocked', '/wallet', suffix); }
+        if (myStationsOn && want('wallet-my-stations')) {
+          await goClientSide(page, '/wallet');
+          const card = page.getByTestId('my-stations');
+          await card.getByTestId('my-stations-row').first().waitFor({ timeout: 20_000 });
+          // The app scrolls inside .page-content: bring the card to the top of the view.
+          await page.evaluate(() => { const el = document.querySelector('.page-content'); const c = document.querySelector('[data-testid="my-stations"]'); if (el && c) el.scrollTop += c.getBoundingClientRect().top - el.getBoundingClientRect().top - 12; });
+          await page.waitForTimeout(400);
+          await capture(page, errors, 'wallet-my-stations', '/wallet (Your stations)', suffix);
+        }
         if (want('challenges-signed-in')) {
           await goClientSide(page, '/challenges');
           await page.getByTestId('challenge-card').first().waitFor({ timeout: 20_000 }).catch(() => undefined);

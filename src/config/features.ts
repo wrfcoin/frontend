@@ -46,6 +46,10 @@ const PASSKEY_STATION_OWNER = import.meta.env?.VITE_ENABLE_PASSKEY_STATION_OWNER
 // forecast and Send, and removing the 12-word wallet from this browser. Exact string "true" only; default
 // OFF. Only meaningful where the passkey wallet is served, so it also needs VITE_ENABLE_PASSKEY_WALLET.
 const MULTI_WALLET = PASSKEY_WALLET && import.meta.env?.VITE_ENABLE_MULTI_WALLET === 'true';
+// "My stations" on /wallet (owner decision 2026-11-10): the signed-in wallet's stations from any browser, read
+// from the backend's GET /api/weather/stations/mine (MY_STATIONS_ENABLED); the 12-word wallet's removal check
+// also asks it. Exact string "true" only; default OFF.
+const MY_STATIONS = import.meta.env?.VITE_ENABLE_MY_STATIONS === 'true';
 
 // Chain-enforced account protections on the 12-word wallet ("require my YubiKey to spend", send allowlist):
 // exact string "true" only; default OFF. Even when on, each control shows only once the node reports its
@@ -107,6 +111,8 @@ export const FEATURES = {
   passkeyStationOwner: PASSKEY_STATION_OWNER,
   /** Header wallet button, single-wallet session, wallet removal. Default FALSE; needs passkeyWallet. */
   multiWallet: MULTI_WALLET,
+  /** "My stations" card on /wallet and the server station check on wallet removal. Default FALSE. */
+  myStations: MY_STATIONS,
   explorer: true,
   pop: true,
   mining: true,

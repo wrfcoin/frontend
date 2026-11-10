@@ -469,6 +469,11 @@ export async function installRoutes(page, fx, options = {}) {
     if ((m = /\/(0x[0-9a-fA-F]{40})\/nonce$/.exec(p))) return json(route, fx.wallet(m[1].toLowerCase()).nonce);
     if (/\/send$/.test(p) && req.method() === 'POST') return json(route, fx.wallet('0x0').send);
     if (p === '/api/weather/stations/mobile') return json(route, fx.wallet('0x0').mobileStation);
+    // "Your stations" (backend GET /stations/mine): synthetic aliases, no coordinates, as the backend answers.
+    if (p === '/api/weather/stations/mine') return json(route, { success: true, truncated: false, stations: [
+      { alias: 'st_0a1b2c3d4e5f', name: 'Back garden', status: 'live', lastReadingAt: new Date(Date.now() - 4 * 60_000).toISOString(), onChain: { state: 'earning' } },
+      { alias: 'st_5f4e3d2c1b0a', name: 'Roof', status: 'registered', lastReadingAt: null, onChain: { state: 'waiting', waitingFor: 'batch' } },
+    ] });
     if ((m = /^\/api\/stations\/([^/]+)\/ownership$/.exec(p))) return json(route, fx.wallet('0x7d29a4c1e0b8f36d5a92c4e7b1f08d3a6c5e0cb2').ownership);
     // Owner-only read: with an owner scenario on, the signed-in fixture wallet owns every fixture station.
     if ((m = /^\/api\/weather\/stations\/([^/]+)\/reward-progress$/.exec(p)) && options.stationOwner === 'me' && fx.lastLoginAddress) {

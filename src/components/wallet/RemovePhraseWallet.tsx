@@ -13,6 +13,10 @@ import { WALLETS_CHANGED_EVENT } from './activeWallet';
 const mono = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
 
 export const REMOVE_WALLET_LABEL = 'Remove from this browser';
+/** Owner rule 2026-11-10: the first thing the dialog says, before any other warning. */
+export const KEEP_WORDS_TITLE = 'Keep your 12 words';
+export const KEEP_WORDS_NOTE =
+  'Write them down and keep them somewhere safe before you remove this wallet. They are the only way to open it again, here or anywhere else.';
 export const REMOVE_WARNINGS = [
   'This deletes the saved copy of your 12 words from this browser. The wallet and its coins stay on the network.',
   'Only your 12 words bring it back. WRFCoin does not have them and cannot recover them.',
@@ -24,6 +28,9 @@ export const REMOVE_CHECK_FAILED =
 /** Always shown: what the station check covers, signed in or not. */
 export const REMOVE_CHECK_CAVEAT =
   'Only stations connected in this browser, and a phone station, were checked. A station connected elsewhere keeps paying this address: keep your 12 words.';
+/** Signed in with "my stations" on: the server was asked for every station this wallet owns. */
+export const REMOVE_CHECK_ALL =
+  'Every station this wallet owns was checked, wherever it was connected, and none was found.';
 export const REMOVE_RECORD_UNREADABLE =
   'This browser\'s record of connected stations could not be read, so stations connected here could not be checked.';
 export const REMOVE_CHANGED = 'The wallet saved in this browser changed. Nothing was removed.';
@@ -47,6 +54,11 @@ interface Props {
   signedIn: boolean;
   /** Owner-only read of this wallet's phone station: resolves true when it has one. Only called when signed in. */
   hasPhoneStation: () => Promise<boolean>;
+  /**
+   * Owner-only read of every station this wallet owns, from any browser ("my stations"): resolves true when it
+   * owns one. Only called when signed in; omitted when the my-stations switch is off.
+   */
+  hasServerStation?: () => Promise<boolean>;
   /** Lock the wallet and drop its session (when signed in), after the saved copy is gone. */
   onRemoved: () => void | Promise<void>;
 }
@@ -60,7 +72,7 @@ interface Props {
  * the vault's cross-tab lock and only if they are still this wallet's. The passkey wallet's record is never
  * touched, and nothing is sent.
  */
-export default function RemovePhraseWallet({ address, signedIn, hasPhoneStation, onRemoved }: Props) {
+export default function RemovePhraseWallet({ address, signedIn, hasPhoneStation, hasServerStation, onRemoved }: Props) {
   const [open, setOpen] = useState(false);
   const [check, setCheck] = useState<Check>('checking');
   const [stationIds, setStationIds] = useState<string[]>([]);
@@ -80,11 +92,13 @@ export default function RemovePhraseWallet({ address, signedIn, hasPhoneStation,
     setRecordUnreadable(Boolean(local.unreadable));
     if (!signedIn) { setCheck('free'); return undefined; }
     setCheck('checking');
-    hasPhoneStation()
-      .then(has => { if (live) setCheck(has ? 'bound' : 'free'); })
+    // Signed in: the wallet's phone station and, with "my stations" on, every station it owns on the server
+    // (connected from any browser). Either read failing refuses, as a station found does.
+    Promise.all([hasPhoneStation(), hasServerStation ? hasServerStation() : Promise.resolve(false)])
+      .then(([phone, server]) => { if (live) setCheck(phone || server ? 'bound' : 'free'); })
       .catch(() => { if (live) setCheck('failed'); });
     return () => { live = false; };
-  }, [open, address, signedIn, hasPhoneStation]);
+  }, [open, address, signedIn, hasPhoneStation, hasServerStation]);
 
   const confirmed = check === 'free' && written && typed.trim().toLowerCase() === addressTail(address);
 
@@ -149,9 +163,14 @@ export default function RemovePhraseWallet({ address, signedIn, hasPhoneStation,
         {check === 'checking' && <Typography role="status">Checking whether this wallet owns a station…</Typography>}
         {check === 'free' && (
           <>
+            <WrfAlert severity="warning" title={KEEP_WORDS_TITLE} sx={{ mb: 1.5 }} data-testid="remove-wallet-keep-words">
+              {KEEP_WORDS_NOTE}
+            </WrfAlert>
             {REMOVE_WARNINGS.map(line => <Typography key={line} sx={{ mb: 1.5 }}>{line}</Typography>)}
             <WrfAlert severity="info" sx={{ mb: 1.5 }} data-testid="remove-wallet-check-caveat">
-              {recordUnreadable ? `${REMOVE_RECORD_UNREADABLE} ` : ''}{REMOVE_CHECK_CAVEAT}
+              {signedIn && hasServerStation
+                ? REMOVE_CHECK_ALL
+                : <>{recordUnreadable ? `${REMOVE_RECORD_UNREADABLE} ` : ''}{REMOVE_CHECK_CAVEAT}</>}
             </WrfAlert>
             <FormControlLabel
               control={<Checkbox checked={written} onChange={e => setWritten(e.target.checked)} inputProps={{ 'data-testid': 'remove-wallet-written' } as React.InputHTMLAttributes<HTMLInputElement>} />}
