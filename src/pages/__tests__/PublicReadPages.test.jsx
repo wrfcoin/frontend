@@ -47,7 +47,8 @@ describe('S4 governance', () => {
     });
     mount(<PublicGovernanceListPage />, '/governance/public', '/governance/public');
     await screen.findByText('Raise the cap');
-    expect(targets()).toEqual(['/api/governance/proposals?limit=20&offset=0']);
+    await waitFor(() => expect(targets().length).toBe(2));
+    expect([...targets()].sort()).toEqual(['/api/governance/advisory/proposals?limit=20&offset=0', '/api/governance/proposals?limit=20&offset=0']);
     expect(targets().every(edgeAdmits)).toBe(true);
     expect(calls.every(c => c.init?.credentials === 'omit' && !c.init?.headers)).toBe(true);
     // no page param, no write surfaces
@@ -64,7 +65,8 @@ describe('S4 governance', () => {
     mockFetch(() => ({ status: 429, headers: { 'retry-after': '30' } }));
     mount(<PublicGovernanceListPage />, '/governance/public', '/governance/public');
     await screen.findAllByText(/Too many requests/);
-    expect(calls.length).toBe(1);
+    // One proposal-list read and one advisory read; neither is retried.
+    await waitFor(() => expect(calls.length).toBe(2));
   });
 
   it('detail: valid id is requested; 404 says not found; invalid id makes no request', async () => {

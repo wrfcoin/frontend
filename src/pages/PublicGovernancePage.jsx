@@ -115,12 +115,97 @@ function ProposalRow({ p }) {
   );
 }
 
+const ADVISORY_STATUS = {
+  active: { label: 'Voting', badge: 'active' },
+  passed: { label: 'Passed (advisory)', badge: 'info' },
+  rejected: { label: 'Rejected', badge: 'error' },
+  failed_quorum: { label: 'Too few votes', badge: 'neutral' },
+};
+
+const count = value => (Number.isSafeInteger(value) && value >= 0 ? value : null);
+
+/** One advisory proposal. Plain text only: React escapes it and the chain refuses control/bidi characters. */
+function AdvisoryRow({ p }) {
+  const status = ADVISORY_STATUS[String(p.status ?? '')] ?? { label: text(p.status), badge: 'neutral' };
+  const yes = count(p.yes_votes);
+  const no = count(p.no_votes);
+  const eligible = count(p.eligible_count);
+  const finalized = count(p.finalized_at_block);
+  const deadline = count(p.voting_deadline);
+  return (
+    <li className="pg-adv-item" data-testid="advisory-proposal">
+      <div className="pg-adv-top">
+        <span className="pg-title">{text(p.title)}</span>
+        <WrfBadge status={status.badge} label={status.label} />
+      </div>
+      <div className="pg-sub">
+        <span>For {yes ?? '—'} · Against {no ?? '—'}</span>
+        {eligible !== null ? <span>· {eligible} wallets could vote</span> : null}
+        {finalized !== null ? <span>· decided at block {finalized}</span>
+          : deadline !== null ? <span>· voting ends at block {deadline}</span> : null}
+      </div>
+      {p.summary ? (
+        <details className="pg-adv-summary">
+          <summary>Read the proposal</summary>
+          <p>{String(p.summary)}</p>
+          <p className="pg-adv-meta">Proposed by <span className="pg-mono">{text(p.proposer)}</span> · {text(p.id)}</p>
+        </details>
+      ) : null}
+    </li>
+  );
+}
+
+/**
+ * Advisory proposals (core4 `advisory_governance`). Shown only once the node reports the feature active or
+ * has proposals, so the page says nothing about it before then. A result counts wallets, not people.
+ */
+function AdvisorySection({ onActive }) {
+  const [result, setResult] = useState(null);
+  useEffect(() => {
+    const controller = new globalThis.AbortController();
+    governanceService
+      .getAdvisoryProposalsPage(0, GOVERNANCE_PAGE_SIZE, controller.signal)
+      .then(r => {
+        setResult(r);
+        if (r?.kind === 'ok' && r.data.featureActive) onActive(true);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [onActive]);
+  if (result?.kind !== 'ok') return null;
+  const { featureActive, proposals, total } = result.data;
+  if (!featureActive && proposals.length === 0) return null;
+  return (
+    <WrfCard
+      component="section"
+      aria-label="Advisory proposals"
+      className="pg-section"
+      data-testid="advisory-proposals"
+      header={<div className="pg-section-head"><h2>Advisory proposals</h2>{total !== null ? <span className="pg-count">{total} total</span> : null}</div>}
+    >
+      <p className="pg-adv-note">
+        Text proposals signed by testnet wallets. A passed proposal is only recorded: nothing it says is carried
+        out. Each wallet that held at least 1 WRF when it was proposed gets one vote, so results count wallets,
+        not people.
+      </p>
+      {proposals.length === 0 ? (
+        <WrfEmptyState title="No advisory proposals yet" description="Proposals are made with the WRFCoin CLI for now." sx={{ background: 'transparent' }} />
+      ) : (
+        <ul className="pg-adv-list">
+          {proposals.map((p, index) => <AdvisoryRow key={String(p.id ?? index)} p={p} />)}
+        </ul>
+      )}
+    </WrfCard>
+  );
+}
+
 export function PublicGovernanceListPage() {
   // Light theme: surface/text/border variables come from the light token set; everything else stays.
   const isDark = useIsDarkTheme();
   const themeVars = { ...TOKEN_VARS, ...publicPageSurfaceVars('pg', isDark) };
   const [offset, setOffset] = useState(0);
   const [state, setState] = useState({ loading: true, result: null });
+  const [advisoryActive, setAdvisoryActive] = useState(false);
   const load = useCallback(() => {
     const controller = new globalThis.AbortController();
     setState({ loading: true, result: null });
@@ -144,9 +229,15 @@ export function PublicGovernanceListPage() {
       <header className="pg-head">
         <div>
           <h1>Governance</h1>
-          <p className="pg-lede">Read-only view of testnet proposals. Submitting proposals and voting aren't available on testnet yet.</p>
+          <p className="pg-lede">
+            {advisoryActive
+              ? 'Read-only view of testnet proposals. Wallets can sign advisory text proposals and vote on them; parameter proposals stay off.'
+              : 'Read-only view of testnet proposals. Submitting proposals and voting aren\'t available on testnet yet.'}
+          </p>
         </div>
       </header>
+
+      <AdvisorySection onActive={setAdvisoryActive} />
 
       <WrfCard
         component="section"
@@ -164,7 +255,9 @@ export function PublicGovernanceListPage() {
             {offset === 0 ? (
               <WrfEmptyState
                 title="No proposals yet"
-                description="Submitting proposals isn't available on testnet yet."
+                description={advisoryActive
+                  ? 'Parameter proposals aren\'t available on testnet. Advisory proposals are listed above.'
+                  : 'Submitting proposals isn\'t available on testnet yet.'}
                 sx={{ background: 'transparent' }}
               />
             ) : (
