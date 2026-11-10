@@ -131,9 +131,19 @@ export function agreementWord(variable: CompareVariable, agreement: Agreement): 
   return agreement === 'higher' ? HIGHER[variable] : LOWER[variable];
 }
 
-/** One plain-language headline for the whole card. */
-export function headline(view: StationCompareView): string {
+/** What a visitor reads instead of a verdict: the values are shown, no judgement about the station is made. */
+export const PUBLIC_HEADLINE = 'The newest reading from this station, next to nearby stations and the National Weather Service.';
+
+/**
+ * One plain-language headline for the whole card. Only the station's owner gets the verdict
+ * ("differs on temperature"); everyone else gets a neutral line.
+ */
+export function headline(view: StationCompareView, isOwner = true): string {
   if (view.status !== 'ok') return view.reason;
+  if (!isOwner) {
+    const any = view.rows.some(r => r.nearby !== null || r.nws !== null);
+    return any ? PUBLIC_HEADLINE : 'Nothing to compare with yet. The reasons are below.';
+  }
   const judged = view.rows.flatMap(r => [r.nearby?.agreement, r.nws?.agreement]).filter(Boolean);
   if (judged.length === 0) return 'Nothing to compare with yet. The reasons are below.';
   const off = view.rows.filter(r => (r.nearby !== null && r.nearby.agreement !== 'close')

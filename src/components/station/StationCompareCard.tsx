@@ -17,6 +17,10 @@ import { useIsDarkTheme } from '../../theme/ThemeProvider';
  * "How does my station compare?" (Epic 8). Shows the station's newest chain reading next to
  * nearby WRFCoin stations (a median, never a named station) and the nearest National Weather
  * Service observation. Every number is the backend's; a missing reference shows its reason.
+ *
+ * The values are public. The verdict on them is not: "yours +3.4°F", the close / warmer / cooler
+ * labels and the "differs on" headline are shown only when `isOwner` is true (the signed-in wallet
+ * owns the station). A visitor sees the same numbers side by side with no judgement of the station.
  */
 
 const text = 'var(--wrf-ds-text-primary, #F8FAFC)';
@@ -43,11 +47,12 @@ function AgreementChip({ row, agreement }: { row: CompareRow; agreement: Agreeme
   );
 }
 
-function Cell({ label, row, reference, extra }: {
+function Cell({ label, row, reference, extra, isOwner }: {
   label: string;
   row: CompareRow;
   reference: { value: number; difference: number; agreement: Agreement } | null;
   extra?: string;
+  isOwner: boolean;
 }) {
   return (
     <Box sx={{ minWidth: 0 }}>
@@ -55,12 +60,14 @@ function Cell({ label, row, reference, extra }: {
       {reference ? (
         <>
           <Typography component="p" sx={{ color: text, fontWeight: 700 }}>{formatValue(row.variable, reference.value)}</Typography>
-          <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-            <Typography variant="body2" sx={{ color: textSecondary }}>
-              yours {formatDifference(row.variable, reference.difference)}
-            </Typography>
-            <AgreementChip row={row} agreement={reference.agreement} />
-          </Stack>
+          {isOwner && (
+            <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+              <Typography variant="body2" sx={{ color: textSecondary }}>
+                yours {formatDifference(row.variable, reference.difference)}
+              </Typography>
+              <AgreementChip row={row} agreement={reference.agreement} />
+            </Stack>
+          )}
           {extra && <Typography variant="caption" sx={{ color: textSecondary }}>{extra}</Typography>}
         </>
       ) : (
@@ -70,7 +77,12 @@ function Cell({ label, row, reference, extra }: {
   );
 }
 
-export default function StationCompareCard({ view, unavailable }: { view: StationCompareView | undefined; unavailable: boolean }) {
+export default function StationCompareCard({ view, unavailable, isOwner = false }: {
+  view: StationCompareView | undefined;
+  unavailable: boolean;
+  /** True only when the signed-in wallet owns this station. Default false: no verdict is shown. */
+  isOwner?: boolean;
+}) {
   return (
     <Box data-testid="station-compare">
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
@@ -87,7 +99,7 @@ export default function StationCompareCard({ view, unavailable }: { view: Statio
         <Alert severity="info">{view.reason}</Alert>
       ) : (
         <>
-          <Typography sx={{ color: text, mb: 0.5 }} data-testid="station-compare-headline">{headline(view)}</Typography>
+          <Typography sx={{ color: text, mb: 0.5 }} data-testid="station-compare-headline">{headline(view, isOwner)}</Typography>
           <Typography variant="body2" sx={{ color: textSecondary, mb: 2 }}>
             Newest reading on chain, {timeOf(view.observedAt)}. Nearby means other WRFCoin stations within {view.nearby.radiusKm} km
             {' '}(their median, shown only when at least 3 report, never any one station). NWS is the nearest National Weather Service observation.
@@ -99,7 +111,7 @@ export default function StationCompareCard({ view, unavailable }: { view: Statio
                 data-testid={`station-compare-row-${row.variable}`}
                 sx={{
                   display: 'grid',
-                  gridTemplateColumns: { xs: '1fr 1fr', sm: '1.1fr 1fr 1fr 1fr' },
+                  gridTemplateColumns: { xs: '1fr 1fr', sm: isOwner ? '1.1fr 1fr 1fr 1fr' : '1.1fr 1fr 1fr' },
                   gap: 1.5,
                   p: 1.5,
                   border: `1px solid ${border}`,
@@ -111,11 +123,12 @@ export default function StationCompareCard({ view, unavailable }: { view: Statio
                   <Typography component="p" sx={{ color: text, fontWeight: 700 }}>
                     {row.mine === null ? '—' : formatValue(row.variable, row.mine)}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: textSecondary }}>your station</Typography>
+                  <Typography variant="caption" sx={{ color: textSecondary }}>{isOwner ? 'your station' : 'this station'}</Typography>
                 </Box>
                 <Cell
                   label={row.nearby ? `Nearby (${row.nearby.stations} stations)` : 'Nearby'}
                   row={row}
+                  isOwner={isOwner}
                   reference={row.nearby ? { value: row.nearby.median, difference: row.nearby.difference, agreement: row.nearby.agreement } : null}
                   extra={row.nearby
                     ? `range ${formatValue(row.variable, row.nearby.lowest)} to ${formatValue(row.variable, row.nearby.highest)}`
@@ -124,14 +137,17 @@ export default function StationCompareCard({ view, unavailable }: { view: Statio
                 <Cell
                   label={view.nws.stationIdentifier ? `NWS ${view.nws.stationIdentifier}` : 'NWS'}
                   row={row}
+                  isOwner={isOwner}
                   reference={row.nws}
                 />
-                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                  <Typography variant="caption" sx={{ color: textSecondary, display: 'block' }}>Counts as close</Typography>
-                  <Typography variant="body2" sx={{ color: textSecondary }}>
-                    within {formatDifference(row.variable, row.closeWithin).replace('+', '')}
-                  </Typography>
-                </Box>
+                {isOwner && (
+                  <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                    <Typography variant="caption" sx={{ color: textSecondary, display: 'block' }}>Counts as close</Typography>
+                    <Typography variant="body2" sx={{ color: textSecondary }}>
+                      within {formatDifference(row.variable, row.closeWithin).replace('+', '')}
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             ))}
           </Stack>
@@ -143,8 +159,10 @@ export default function StationCompareCard({ view, unavailable }: { view: Statio
             </Box>
           )}
           <Typography variant="caption" sx={{ color: textSecondary, display: 'block', mt: 1.5 }}>
-            For your information only: this does not change rewards. A station in a sunny spot, a valley or near a wall can
-            read differently from its neighbours.
+            {isOwner
+              ? 'For your information only: this does not change rewards. The differences and the close, warmer or cooler labels are shown only to you. '
+              : 'This does not change rewards. '}
+            A station in a sunny spot, a valley or near a wall can read differently from its neighbours.
           </Typography>
         </>
       )}
