@@ -58,24 +58,83 @@ test('admitted: one GET to the admission list, no query, and the step is marked'
   expect(screen.getByText('Request admission').closest('li')).toHaveAttribute('aria-current', 'step');
 });
 
-test('bonded and paid: says earning with the chain total', async () => {
+const bond = over => ({ deploymentId: BOND, alias: 'node-1a2b3c4d', earnedTotal: '0', lastPayout: null, ...over });
+
+test('paid: earning with the payout amount; the wallet total is labelled as the wallet\'s, from all sources', async () => {
   mockFetch(200, { admissions });
-  renderCard(bonded([{ deploymentId: BOND, alias: 'node-1a2b3c4d', earnedTotal: '14222222208', lastPayout: { epoch: 11, status: 'PAID', amount: '14222222208' } }]));
+  renderCard(bonded([bond({ earnedTotal: '999900000000', lastPayout: { epoch: 11, status: 'PAID', amount: '14222222208' } })]));
   const verdict = await check('node-1a2b3c4d');
   expect(verdict).toHaveTextContent('Bonded, earning');
-  expect(verdict).toHaveTextContent('142.22222208 WRF');
+  expect(verdict).toHaveTextContent('for epoch 11, is paid: 142.22222208 WRF');
+  expect(verdict).toHaveTextContent('This payout wallet’s total, from all sources: 9,999.00000000 WRF');
+  expect(screen.getByText('Earn').closest('li')).toHaveAttribute('aria-current', 'step');
 });
 
-test('not found anywhere: not admitted yet', async () => {
+test('a wallet that earned elsewhere does not make an unpaid bond "earning"', async () => {
+  mockFetch(200, { admissions });
+  renderCard(bonded([bond({ earnedTotal: '999900000000' })]));
+  const verdict = await check(KEY);
+  expect(verdict).toHaveTextContent('Bonded');
+  expect(verdict).not.toHaveTextContent('earning');
+  expect(verdict).not.toHaveTextContent('9999');
+  expect(verdict).toHaveTextContent('no payout entry in the recent epochs');
+});
+
+test.each([
+  ['PROVISIONAL', 'Bonded, payout not paid yet', 'worked out and not paid yet'],
+  ['OPEN', 'Bonded, epoch still running', 'Epoch 11 is still running'],
+  ['UNISSUED', 'Bonded, nothing issued', 'Nothing was issued for epoch 11'],
+])('%s is said as it is, with no promise of a payout', async (status, title, text) => {
+  mockFetch(200, { admissions });
+  renderCard(bonded([bond({ lastPayout: { epoch: 11, status, amount: '14222222208' } })]));
+  const verdict = await check(KEY);
+  expect(verdict).toHaveTextContent(title);
+  expect(verdict).toHaveTextContent(text);
+  expect(verdict).not.toHaveTextContent(/will be paid|shortly|soon|has been paid|earning/i);
+});
+
+test('a key sharing only the alias\'s 8 characters is not shown someone else\'s bond', async () => {
+  mockFetch(200, { admissions });
+  renderCard(bonded([bond({ lastPayout: { epoch: 11, status: 'PAID', amount: '14222222208' } })]));
+  const verdict = await check('1a2b3c4d'.padEnd(64, 'f'));
+  expect(verdict).toHaveTextContent('Not in the recent admissions');
+  expect(verdict).not.toHaveTextContent('Bonded');
+});
+
+test('not found: says it is not in the recent admissions, not that it was never admitted', async () => {
   mockFetch(200, { admissions: [] });
   renderCard(bonded());
-  expect(await check(KEY)).toHaveTextContent('Not admitted yet');
+  const verdict = await check(KEY);
+  expect(verdict).toHaveTextContent('Not in the recent admissions');
+  expect(verdict).toHaveTextContent('among the last 100');
+  expect(verdict).not.toHaveTextContent(/not admitted/i);
+});
+
+test('the steps name only real commands and say what the operator does', () => {
+  mockFetch(200, { admissions: [] });
+  renderCard(bonded());
+  const card = screen.getByTestId('bond-your-node');
+  for (const command of [
+    'wrfcoin node bond grant-request', '--submit',
+    'wrfcoin node bond deposit --admission-cosign --dry-run', 'wrfcoin node bond sign', '--role server', '--role consumer',
+    'wrfcoin node bond admission-request', '/api/bond-admission',
+    'wrfcoin node bond payout-challenge', 'wrfcoin node bond attach-payout-passkey', 'wrfcoin node bond deposit --approvals-file', '--key-file',
+  ]) expect(card).toHaveTextContent(command);
+  expect(card).toHaveTextContent('another bonded node fetched a snapshot from it and the receipt was submitted in time');
+  const links = [...card.querySelectorAll('a')].map(a => a.getAttribute('href'));
+  expect(links).toEqual(expect.arrayContaining([
+    'https://github.com/wrfcoin/core4/blob/main/docs/operator/windows-node.md#open-your-port-optional',
+    'https://github.com/wrfcoin/core4/blob/main/docs/operator/windows-node.md#the-operator-cli-wrfcoinexe',
+    'https://github.com/wrfcoin/infra/blob/main/testnet/services/bond-admission/BOND_ADMISSION.md#flow',
+  ]));
 });
 
 test('the 404 while admission is off says it is not open; a bonded node is still found', async () => {
   mockFetch(404, { error: { code: 'ADMISSION_DISABLED' } });
   renderCard(bonded([{ deploymentId: BOND, alias: 'node-1a2b3c4d', earnedTotal: '0', lastPayout: null }]));
-  expect(await check('f'.repeat(64))).toHaveTextContent('Admission is not open yet');
+  const closed = await check('f'.repeat(64));
+  expect(closed).toHaveTextContent('Admission is not open.');
+  expect(closed).not.toHaveTextContent('yet');
   expect(await check('node-1a2b3c4d')).toHaveTextContent('Bonded');
 });
 
@@ -84,7 +143,7 @@ test('an unreadable list is Unavailable, never "not admitted"', async () => {
   renderCard(bonded());
   const verdict = await check(KEY);
   expect(verdict).toHaveTextContent('Unavailable');
-  expect(verdict).not.toHaveTextContent('Not admitted');
+  expect(verdict).not.toHaveTextContent(/not in the recent/i);
 });
 
 const snapshot = { chain: { status: 'ok', height: 1 }, producers: { status: 'unavailable' }, bonded: bonded(), attesters: { status: 'unavailable' }, checkedAt: '2026-11-10T10:00:00.000Z' };

@@ -23,6 +23,8 @@
 .nn-bond-step > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .nn-bond-step strong { font-size: 0.9375rem; }
 .nn-bond-step a { color: var(--fc-primary-light); }
+.nn-bond-code { font-family: var(--fc-mono); font-size: 0.75rem; overflow-wrap: anywhere; }
+.nn-bond-aside { display: block; color: var(--fc-text-muted); }
 .nn-bond-step--here { border-color: var(--fc-primary-light); background: var(--fc-bg-secondary); }
 .nn-bond-check { padding: 12px 20px 20px; display: flex; flex-direction: column; gap: 8px; }
 .nn-bond-check label { font-size: 0.875rem; font-weight: 600; }

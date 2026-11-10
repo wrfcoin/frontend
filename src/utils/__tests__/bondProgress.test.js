@@ -44,19 +44,34 @@ test('an Update admission is not a bond request', () => {
   expect(bondProgress(KEY, { admissions: [admission({ action: 'Update' })], bonded: bonded() }).stage).toBe(BOND_STAGE.none);
 });
 
-test('bonded: found through the admission, the alias, or the bond id', () => {
+test('bonded: found through the admission, the alias typed as an alias, or the bond id', () => {
   expect(bondProgress(KEY, { admissions: [admission()], bonded: bonded([node()]) }).stage).toBe(BOND_STAGE.bonded);
-  // The admission scrolled out of the last 100: the generated alias still finds the bond.
-  expect(bondProgress(KEY, { admissions: [], bonded: bonded([node()]) }).stage).toBe(BOND_STAGE.bonded);
   expect(bondProgress(BOND, { admissions: null, bonded: bonded([node()]) }).stage).toBe(BOND_STAGE.bonded);
   expect(bondProgress('node-1a2b3c4d', { admissions: null, bonded: bonded([node()]) }).stage).toBe(BOND_STAGE.bonded);
 });
 
-test('payout states: pending, then earning', () => {
-  const pending = node({ lastPayout: { epoch: 31, status: 'PROVISIONAL', amount: '14222222208' } });
-  expect(bondProgress(KEY, { admissions: [], bonded: bonded([pending]) })).toMatchObject({ stage: BOND_STAGE.pending, lastPayout: { epoch: 31 } });
-  const paid = node({ earnedTotal: '14222222208', lastPayout: { epoch: 31, status: 'PAID', amount: '14222222208' } });
-  expect(bondProgress(KEY, { admissions: [], bonded: bonded([paid]) })).toMatchObject({ stage: BOND_STAGE.earning, earnedTotal: '14222222208' });
-  // Paid earlier, nothing in the recent epochs: still earning, from the chain's paid total.
-  expect(bondProgress(KEY, { admissions: [], bonded: bonded([node({ earnedTotal: '5' })]) }).stage).toBe(BOND_STAGE.earning);
+test('a server key never matches a bond through the 8 characters of an alias', () => {
+  // Another key with the same first 8 characters: that bond is not this node's.
+  const other = '1a2b3c4d'.padEnd(64, 'f');
+  expect(bondProgress(other, { admissions: [admission()], bonded: bonded([node()]) }).stage).toBe(BOND_STAGE.none);
+  // Even the right key, once its admission is out of the last 100, is not guessed from the alias.
+  expect(bondProgress(KEY, { admissions: [], bonded: bonded([node()]) }).stage).toBe(BOND_STAGE.none);
+  expect(bondProgress(KEY, { admissions: null, bonded: bonded([node()]) }).stage).toBe(BOND_STAGE.unknown);
+});
+
+test('the stage follows the latest settlement status; only PAID is earning', () => {
+  const at = (status, over = {}) => bondProgress(BOND, { admissions: [], bonded: bonded([node({ lastPayout: { epoch: 31, status, amount: '14222222208' }, ...over })]) });
+  expect(at('PAID')).toMatchObject({ stage: BOND_STAGE.earning, lastPayout: { epoch: 31, amount: '14222222208' } });
+  expect(at('PROVISIONAL').stage).toBe(BOND_STAGE.provisional);
+  expect(at('OPEN').stage).toBe(BOND_STAGE.open);
+  expect(at('UNISSUED').stage).toBe(BOND_STAGE.unissued);
+  for (const odd of ['UNKNOWN', 'paid', '', 'constructor', 'toString', null, 7]) expect(at(odd).stage).toBe(BOND_STAGE.bonded);
+});
+
+test('the payout wallet total never makes a node "earning"', () => {
+  // The wallet earned from other sources (the total is the account's lifetime figure): still just bonded.
+  const rich = node({ earnedTotal: '999900000000', lastPayout: null });
+  expect(bondProgress(BOND, { admissions: [], bonded: bonded([rich]) })).toMatchObject({ stage: BOND_STAGE.bonded, walletTotal: '999900000000' });
+  const provisional = node({ earnedTotal: '999900000000', lastPayout: { epoch: 31, status: 'PROVISIONAL', amount: '1' } });
+  expect(bondProgress(BOND, { admissions: [], bonded: bonded([provisional]) }).stage).toBe(BOND_STAGE.provisional);
 });

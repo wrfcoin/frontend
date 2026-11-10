@@ -6,7 +6,12 @@
  *   - GET /api/network/nodes `bonded`: `{ status, epoch, nodes: [{ deploymentId, alias, lastPayout,
  *     earnedTotal, ... }] }`, the bonds registered on chain.
  *
- * Nothing is guessed: a list that was not read gives `unknown`, never "not found".
+ * Nothing is guessed: a list that was not read gives `unknown`, never "not found". A node is found only by an
+ * exact match: its admission (server key or bond id), its bond id, or its alias typed as an alias. A server key
+ * is never matched through the 8 characters an alias carries, which another key can share.
+ *
+ * `earnedTotal` in the bonded list is the payout WALLET's lifetime total from every source (the backend reads
+ * the account's earned_balance_total), so it never decides a stage; it is passed on as `walletTotal`.
  */
 
 const HEX64 = /^[0-9a-f]{64}$/;
@@ -18,10 +23,20 @@ export const BOND_STAGE = Object.freeze({
   none: 'none',
   admitted: 'admitted',
   missed: 'missed',
+  /** Registered on chain; no payout entry in the recent epochs (or one with a status this page does not know). */
   bonded: 'bonded',
-  pending: 'pending',
+  /** Latest entry is for an epoch that is still running (settlement OPEN). */
+  open: 'open',
+  /** Latest entry is worked out but not paid (settlement PROVISIONAL). */
+  provisional: 'provisional',
+  /** Latest entry is for an epoch that issued nothing (settlement UNISSUED). */
+  unissued: 'unissued',
+  /** Latest entry is PAID: the only state that says the node was paid as a bonded node. */
   earning: 'earning',
 });
+
+// core4 node settlement statuses (launch_api node_receipts.rs) -> stage. Anything else stays `bonded`.
+const PAYOUT_STAGE = Object.freeze({ PAID: 'earning', PROVISIONAL: 'provisional', OPEN: 'open', UNISSUED: 'unissued' });
 
 /** A server key or bond id (64 hex, optional 0x) or a generated alias `node-<8 hex>`; null when neither. */
 export function parseNodeQuery(input) {
@@ -34,14 +49,6 @@ export function parseNodeQuery(input) {
 /** The alias the admission service expects for a server key. */
 export function generatedAlias(serverKey) {
   return typeof serverKey === 'string' && HEX64.test(serverKey) ? `node-${serverKey.slice(0, 8)}` : null;
-}
-
-function positiveUnits(value) {
-  try {
-    return typeof value === 'string' && /^\d+$/.test(value) && BigInt(value) > 0n;
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -65,15 +72,13 @@ export function bondProgress(input, { admissions = null, bonded = null } = {}) {
     ? bonded.nodes.find(n => n && (
       (admission && n.deploymentId === admission.deploymentId)
       || (query.kind === 'alias' ? n.alias === query.value : n.deploymentId === query.value)
-      || (query.kind === 'hex' && n.alias === generatedAlias(query.value))
     )) ?? null
     : null;
 
   if (node) {
-    const base = { alias: node.alias ?? null, deploymentId: node.deploymentId, lastPayout: node.lastPayout ?? null, earnedTotal: node.earnedTotal ?? null };
-    if (node.lastPayout?.status === 'PAID' || positiveUnits(node.earnedTotal)) return { stage: BOND_STAGE.earning, ...base };
-    if (node.lastPayout) return { stage: BOND_STAGE.pending, ...base };
-    return { stage: BOND_STAGE.bonded, ...base };
+    const base = { alias: node.alias ?? null, deploymentId: node.deploymentId, lastPayout: node.lastPayout ?? null, walletTotal: node.earnedTotal ?? null };
+    const status = node.lastPayout?.status;
+    return { stage: typeof status === 'string' && Object.hasOwn(PAYOUT_STAGE, status) ? PAYOUT_STAGE[status] : BOND_STAGE.bonded, ...base };
   }
   if (admission) {
     const base = { alias: admission.serviceAlias, deploymentId: admission.deploymentId, effectiveEpoch: admission.effectiveEpoch, admittedAt: admission.time };
