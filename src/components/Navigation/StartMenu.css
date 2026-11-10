@@ -579,3 +579,106 @@ body.light-mode .current-location span { color: #475569; }
     font-size: 16px;
   }
 }
+
+/* Wallet button (multi-wallet builds): the active wallet's kind and short address, with a menu. */
+.wallet-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--text-color);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.wallet-chip:hover,
+.wallet-chip[aria-expanded='true'] {
+  background-color: rgba(127, 127, 127, 0.16);
+}
+
+.wallet-chip:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.wallet-chip--active {
+  border-color: var(--primary-color);
+}
+
+.wallet-chip-kind {
+  font-weight: 600;
+}
+
+.wallet-chip-mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+
+.wallet-chip-narrow {
+  display: none;
+}
+
+.wallet-chip-row {
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.wallet-chip-row-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.wallet-chip-row-title {
+  font-weight: 600;
+}
+
+.wallet-chip-row-sub {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.wallet-chip-note {
+  list-style: none;
+  padding: 4px 16px 8px;
+  font-size: 12px;
+  opacity: 0.8;
+  max-width: 280px;
+}
+
+/* 390 px: the button keeps the kind icon and the last four characters of the address; the rest is in its
+   label and menu, and the clock gives up its place so nothing is pushed past the edge. */
+@media screen and (max-width: 480px) {
+  /* A touch target of at least 40 px in both directions (the taskbar is 48 px high). */
+  .wallet-chip {
+    height: 40px;
+    min-width: 40px;
+    justify-content: center;
+    padding: 0 8px;
+    gap: 4px;
+  }
+
+  .wallet-chip-kind,
+  .wallet-chip-wide,
+  .wallet-chip-label {
+    display: none;
+  }
+
+  .wallet-chip-narrow {
+    display: inline;
+  }
+
+  .wallet-chip-mono {
+    font-size: 11px;
+  }
+
+  .taskbar--wallet .time-display {
+    display: none;
+  }
+}

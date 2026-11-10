@@ -15,6 +15,11 @@ import WalletEarningsPanel from '../components/wallet/WalletEarningsPanel';
 import VaultSend from '../components/wallet/VaultSend';
 import RecoveryPhraseBackup from '../components/wallet/RecoveryPhraseBackup';
 import WalletSwitcher from '../components/wallet/WalletSwitcher';
+import RemovePhraseWallet from '../components/wallet/RemovePhraseWallet';
+import { stationRegistrationService } from '../services/apiClient';
+import { clearWalletAuthSession } from '../services/walletAuthService';
+import { getAuthToken } from '../services/authTokenStore';
+import { tokenWallet } from '../services/walletApi';
 import { loadStoredPasskey } from '../services/walletCrypto/passkeySend';
 import { readVault } from '../services/walletVault';
 import { FEATURES } from '../config/features';
@@ -77,7 +82,7 @@ export function useDeviceSignIn(vaultAddress: string | null, unlocked: boolean):
 
 /** Only the first-party signing account (or this device's registered key) can supply this page's address. */
 export default function OwnWalletAddress() {
-  const { account, activeProvider, isConnected, receiveOnly } = useWallet();
+  const { account, activeProvider, isConnected, receiveOnly, disconnectWallet } = useWallet();
   const identity = walletProviderManager.getLoginIdentity();
   const ownsAddress = isConnected && activeProvider === 'custom' && !receiveOnly
     && typeof account === 'string' && identity?.scheme === 'ed25519'
@@ -98,6 +103,27 @@ export default function OwnWalletAddress() {
   const ownsVault = Boolean(ownerAddress && readVault()?.address.toLowerCase() === ownerAddress.toLowerCase());
   // Exact base units the earnings panel last read for this owner; null = unknown (Send then does not gate).
   const [availableUnits, setAvailableUnits] = useState<string | null>(null);
+  // Multi-wallet builds: removing the 12-word wallet from this browser. The saved copy is already gone when
+  // this runs; it locks the wallet (which drops its session) and re-reads the now-empty slot.
+  const [, setVaultRemoved] = useState(0);
+  const hasPhoneStation = useCallback(
+    () => stationRegistrationService.getMobileStationStatus().then(status => status !== null), [],
+  );
+  const vaultRemoved = useCallback(async () => {
+    // Only the removed wallet's own session ends: another wallet signed in here stays signed in.
+    if (ownsAddress) await disconnectWallet().catch(() => {});
+    if (vaultAddress && tokenWallet(getAuthToken()) === vaultAddress) clearWalletAuthSession();
+    setVaultRemoved(n => n + 1);
+  }, [ownsAddress, disconnectWallet, vaultAddress]);
+  const removeWallet = FEATURES.multiWallet && vaultAddress ? (
+    <RemovePhraseWallet
+      key={`remove-${vaultAddress}`}
+      address={vaultAddress}
+      signedIn={ownerAddress?.toLowerCase() === vaultAddress}
+      hasPhoneStation={hasPhoneStation}
+      onRemoved={vaultRemoved}
+    />
+  ) : null;
   const copyAddress = useCallback(async () => {
     if (!ownerAddress) return;
     try {
@@ -146,6 +172,7 @@ export default function OwnWalletAddress() {
               && <VaultSend key={ownerAddress} address={ownerAddress} availableUnits={availableUnits} />}
             {/* The words are a cold backup: never needed to sign in or send, shown only behind a warning. */}
             {ownsVault && <RecoveryPhraseBackup key={`backup-${ownerAddress}`} address={ownerAddress} />}
+            {ownsVault && removeWallet}
           </Box>
         )}
       </Box>
@@ -175,6 +202,7 @@ export default function OwnWalletAddress() {
               </WrfButton>
               {hasVault && <WrfButton variant="outline" onClick={openSetup}>Unlock 12-word wallet</WrfButton>}
               <WrfButton variant="ghost" onClick={openSetup}>Advanced: 12-word wallet</WrfButton>
+              {hasVault && removeWallet}
             </Box>
           ) : (
             <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', justifyContent: 'center', pt: 0, pb: 5, px: 3 }}>

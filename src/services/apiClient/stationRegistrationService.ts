@@ -56,6 +56,8 @@ import { ApiClient } from './client';
 import { ApiError } from '../../utils/apiError';
 import { coarsenCoordinate } from '../../utils/geo';
 import { readJwtSubject } from '../walletJwtSubject';
+import { getAuthToken } from '../authTokenStore';
+import { markStationBound } from '../stationBoundWallets';
 export { readJwtSubject } from '../walletJwtSubject';
 import {
   WalletAuthService,
@@ -549,6 +551,9 @@ export class StationRegistrationService {
     if (!stationId) {
       throw new Error('Station registration response did not include a stationId.');
     }
+    // The owner is the signed-in wallet (the JWT subject). Remember it in this browser so that wallet is not
+    // removed from it later (public data only; see stationBoundWallets).
+    markStationBound(readJwtSubject(getAuthToken()), stationId);
 
     return {
       success: response?.success ?? true,

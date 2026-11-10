@@ -24,6 +24,7 @@ import { WrfButton } from '../DesignSystem/WrfButton';
 import { WrfAlert } from '../DesignSystem/WrfAlert';
 import { WrfBadge } from '../DesignSystem/WrfBadge';
 import { palette } from '../DesignSystem/tokens';
+import { FEATURES } from '../../config/features';
 import AddressBookButton, { ContactPicks, useRecipientGuard } from './AddressBook';
 import { useChainProtections, useNow } from '../../services/walletCrypto/useChainProtections';
 import {
@@ -266,7 +267,7 @@ export default function VaultSend({ address, availableUnits }: { address: string
                   <Typography component="dd" sx={ddSx} data-testid="send-review-contact">{guard.contactName(preview.to)}</Typography>
                 </>
               )}
-              <Typography component="dt" sx={dtSx}>From</Typography>
+              <Typography component="dt" sx={dtSx}>{FEATURES.multiWallet ? 'From 12-word wallet' : 'From'}</Typography>
               <Typography component="dd" sx={{ ...ddSx, fontFamily: mono }}>{preview.from}</Typography>
               <Typography component="dt" sx={dtSx}>Recipient status</Typography>
               <Typography component="dd" sx={ddSx}>{UNKNOWN_RECIPIENT_MESSAGE}</Typography>
@@ -310,7 +311,7 @@ export default function VaultSend({ address, availableUnits }: { address: string
               </WrfAlert>
             )}
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', p: 1.25, borderRadius: '8px', backgroundColor: palette.background.row, fontSize: '0.8125rem' }}>
-              <Typography component="span" sx={{ fontSize: 'inherit', color: palette.text.secondary }}>From</Typography>
+              <Typography component="span" sx={{ fontSize: 'inherit', color: palette.text.secondary }}>{FEATURES.multiWallet ? 'From 12-word wallet' : 'From'}</Typography>
               <Typography component="span" title={address} sx={{ fontSize: 'inherit', fontFamily: mono }}>{mask(address)}</Typography>
               {available !== null && (
                 <>

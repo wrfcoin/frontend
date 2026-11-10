@@ -12,6 +12,8 @@ import { readForecastStatus, readMyForecasts, requestForecastDraft, submitForeca
 import { useForecasterThemeVars, When } from './publicForecastersShared';
 import ForecastPracticeScore, { hasPracticePanel } from './ForecastPracticeScore';
 import { useSignedInWallet } from './friendChallengesShared';
+import { FEATURES } from '../config/features';
+import ForecastWalletNotice, { forecastWalletNoticeReplaces, useForecastWallets } from './ForecastWalletNotice';
 import './PublicForecastersPage.css';
 import './FriendChallengesPage.css';
 import './ForecastNewPage.css';
@@ -176,6 +178,10 @@ export default function ForecastNewPage() {
   const range = VARIABLES[variable];
   const valueOk = value.trim() !== '' && Number.isFinite(numeric) && numeric >= range.min && numeric <= range.max;
   const canSign = Boolean(you) && vaultAddress === you;
+  // Multi-wallet builds name the wallet that signs, and offer to unlock or switch to it.
+  const savedWallets = useForecastWallets(Boolean(FEATURES.multiWallet));
+  const walletNotice = FEATURES.multiWallet && open === 'open';
+  const noticeReplaces = walletNotice && forecastWalletNoticeReplaces(you, canSign, savedWallets);
 
   const submit = async e => {
     e.preventDefault();
@@ -220,7 +226,9 @@ export default function ForecastNewPage() {
       {open === 'closed' ? <WrfAlert severity="info" role="status" className="ch-notice">Website forecasts are not open yet. They switch on when the network is ready; see <Link to="/forecast-check">how forecasts score</Link> in the meantime.</WrfAlert> : null}
       {open === 'error' ? <WrfAlert severity="info" role="status" className="ch-notice">Forecasts are unavailable right now. Try again in a minute.</WrfAlert> : null}
 
-      {open === 'open' && !you ? (
+      {walletNotice ? <ForecastWalletNotice you={you} canSign={canSign} saved={savedWallets} /> : null}
+
+      {open === 'open' && !you && !noticeReplaces ? (
         <WrfCard component="section" aria-label="Sign in" className="fc-section" noPadding>
           <div className="ch-signin">
             <p><strong>Sign in with a 12-word wallet</strong> to make a forecast. Your wallet is your account: no email or name is asked for.</p>
@@ -235,7 +243,7 @@ export default function ForecastNewPage() {
 
       {open === 'open' && you ? (
         <>
-          {!canSign ? (
+          {!canSign && !noticeReplaces ? (
             <WrfAlert severity="info" role="status" className="ch-notice">
               Forecasts are signed with your 12-word wallet on this device. This browser has no 12-word wallet for the signed-in address. <Link to="/onboarding">Set one up</Link> or sign in with it on the <Link to="/wallet">Wallet page</Link>. Passkeys can't sign a forecast yet.
             </WrfAlert>
