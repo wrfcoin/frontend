@@ -70,6 +70,8 @@ import StationDerivedCard from '../station/StationDerivedCard';
 import ApiError from '../../utils/apiError';
 import { useStationOwner } from '../../hooks/api/useStationOwnerQueries';
 import { StationChainRegistrationCard } from './StationChainRegistration';
+import { useStationCompareHistory } from '../../hooks/api/useStationCompareHistory';
+import StationCompareHistoryCard from '../station/StationCompareHistoryCard';
 import { formatBaseUnitsToWrf } from '../../services/apiClient/number';
 import { buildStationReportEarningsChartData } from './stationReportPrecision';
 import { FEATURES } from '../../config/features';
@@ -221,6 +223,8 @@ const StationReportPage: React.FC = () => {
   // (backend or edge), so the section is not shown at all.
   const compareQuery = useStationCompare(knownStationId);
   const compareOff = compareQuery.error instanceof ApiError && compareQuery.error.status === 404;
+  // The owner's 30-day comparison (Epic 8). Null for everyone but the wallet that owns the station.
+  const compareHistory = useStationCompareHistory(knownStationId);
   const earningsSummaryQuery = useWeatherEarnings(earningsStationId);
   const earningsHistoryQuery = useWeatherEarningsHistory(earningsStationId);
   // "My first WRF earned" is the owner's moment (frontend#387). The public
@@ -651,6 +655,14 @@ const StationReportPage: React.FC = () => {
         <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, color: palette.text, mb: 3 }}>
           <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
             <StationCompareCard view={compareQuery.data} unavailable={compareQuery.isError} />
+          </CardContent>
+        </Card>
+      )}
+
+      {knownStationId && compareHistory && (
+        <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, color: palette.text, mb: 3 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <StationCompareHistoryCard view={compareHistory} />
           </CardContent>
         </Card>
       )}
