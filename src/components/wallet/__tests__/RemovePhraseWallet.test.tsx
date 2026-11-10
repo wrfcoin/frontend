@@ -13,8 +13,11 @@ await jest.unstable_mockModule('../../../services/walletCrypto/deviceKeyStore', 
 
 const {
   default: RemovePhraseWallet, REMOVE_CHANGED, REMOVE_CHECK_CAVEAT, REMOVE_CHECK_FAILED, REMOVE_FAILED,
-  REMOVE_RECORD_UNREADABLE, REMOVE_STATION_BOUND, REMOVE_WARNINGS, addressTail,
+  REMOVE_DEVICE_KEY_GONE, REMOVE_RECORD_UNREADABLE, REMOVE_STATION_BOUND, REMOVE_UNSUPPORTED, REMOVE_WARNINGS, addressTail,
 } = await import('../RemovePhraseWallet');
+// jsdom's crypto has getRandomValues but no subtle; browsers in a secure context have both.
+const { webcrypto } = await import('node:crypto');
+Object.defineProperty(globalThis.crypto, 'subtle', { value: webcrypto.subtle, configurable: true });
 const { createWebLocksStub, installWebLocks } = await import('../../../services/__fixtures__/webLocksStub.ts');
 // The vault is removed under its cross-tab lock; jsdom has no Web Locks, browsers in a secure context do.
 let uninstallLocks: () => void = () => {};
@@ -130,7 +133,7 @@ describe('RemovePhraseWallet', () => {
     expect(confirmButton()).toBeEnabled();
   });
 
-  it('removal takes the vault lock: without Web Locks nothing is removed', async () => {
+  it('without Web Locks it refuses up front, with the reason, before the device key is touched', async () => {
     uninstallLocks();
     try {
       mount();
@@ -138,7 +141,9 @@ describe('RemovePhraseWallet', () => {
       fireEvent.click(screen.getByTestId('remove-wallet-written'));
       fireEvent.change(screen.getByTestId('remove-wallet-tail'), { target: { value: addressTail(ADDRESS) } });
       await act(async () => { fireEvent.click(confirmButton()); });
-      expect(await screen.findByText(REMOVE_FAILED)).toBeInTheDocument();
+      expect(await screen.findByText(REMOVE_UNSUPPORTED)).toBeInTheDocument();
+      expect(REMOVE_UNSUPPORTED).toContain('Nothing was removed');
+      expect(forgetDeviceKey).not.toHaveBeenCalled();
       expect(localStorage.getItem(VAULT_KEY)).not.toBeNull();
       expect(onRemoved).not.toHaveBeenCalled();
     } finally {
@@ -170,6 +175,32 @@ describe('RemovePhraseWallet', () => {
     expect(localStorage.getItem(VAULT_KEY)).not.toBeNull();
     expect(onRemoved).not.toHaveBeenCalled();
     expect(forgetDeviceKey).not.toHaveBeenCalled();
+  });
+
+  it('if the words cannot be removed after the device key is gone, the message names the device key', async () => {
+    // Another tab replaces the saved wallet between the device-key step and the vault step.
+    forgetDeviceKey.mockImplementationOnce(async () => { saveVaultRecord(`0x${'11'.repeat(20)}`); });
+    mount();
+    await openDialog();
+    fireEvent.click(screen.getByTestId('remove-wallet-written'));
+    fireEvent.change(screen.getByTestId('remove-wallet-tail'), { target: { value: addressTail(ADDRESS) } });
+    await act(async () => { fireEvent.click(confirmButton()); });
+    expect(await screen.findByText(REMOVE_DEVICE_KEY_GONE)).toBeInTheDocument();
+    expect(REMOVE_DEVICE_KEY_GONE).toContain("this wallet's device key on this browser was");
+    expect(localStorage.getItem(VAULT_KEY)).not.toBeNull();
+    expect(onRemoved).not.toHaveBeenCalled();
+  });
+
+  it('a page that fails to refresh after the removal does not report a failed removal', async () => {
+    onRemoved.mockRejectedValueOnce(new Error('refresh failed'));
+    mount();
+    await openDialog();
+    fireEvent.click(screen.getByTestId('remove-wallet-written'));
+    fireEvent.change(screen.getByTestId('remove-wallet-tail'), { target: { value: addressTail(ADDRESS) } });
+    await act(async () => { fireEvent.click(confirmButton()); });
+    await waitFor(() => expect(localStorage.getItem(VAULT_KEY)).toBeNull());
+    expect(screen.queryByText(REMOVE_FAILED)).toBeNull();
+    expect(screen.queryByText(REMOVE_DEVICE_KEY_GONE)).toBeNull();
   });
 
   it('if the device key cannot be forgotten, the words stay', async () => {

@@ -28,6 +28,9 @@ const { default: OwnWalletAddress } = await import('../OwnWalletAddress');
 const { markStationBound } = await import('../../services/stationBoundWallets');
 const { clearAuthToken, getAuthToken, setAuthToken } = await import('../../services/authTokenStore');
 const { createWebLocksStub, installWebLocks } = await import('../../services/__fixtures__/webLocksStub.ts');
+// jsdom's crypto has getRandomValues but no subtle; browsers in a secure context have both.
+const { webcrypto } = await import('node:crypto');
+Object.defineProperty(globalThis.crypto, 'subtle', { value: webcrypto.subtle, configurable: true });
 let uninstallLocks = () => {};
 beforeAll(() => { uninstallLocks = installWebLocks(createWebLocksStub()); });
 afterAll(() => uninstallLocks());

@@ -198,7 +198,11 @@ export class WalletAuthService {
       throw new Error('Wallet login response did not include a valid expiresIn.');
     }
 
-    this.currentAddress = normalizeEvmAddress(address);
+    const next = normalizeEvmAddress(address);
+    // A login that replaces another wallet's session ends that session too: anything still in flight for
+    // the old wallet (its refresh, a silent sign-in) is now stale, exactly as after a sign-out.
+    if (this.currentAddress && this.currentAddress.toLowerCase() !== next.toLowerCase()) this.epoch += 1;
+    this.currentAddress = next;
     this.refreshToken = refreshToken;
     setAuthToken(jwt);
     this.scheduleRefresh(expiresIn);
@@ -421,13 +425,15 @@ export class WalletAuthService {
     // session dropped before the passkey's session exists. After the prompt, so a cancelled prompt changes
     // nothing; if the post below then fails, nobody is signed in (fail-safe), never the old wallet.
     if (await beforeWalletLogin(address)) this.clearSession();
+    // From here on: a sign-out while the post is in flight must win, so its answer is then not stored.
+    const startedAt = this.epoch;
     const login = await this.client.post<LoginResponse>('/auth/wallet-login', {
       scheme: 'passkey',
       address,
       nonce,
       passkey_auth: passkeyAuth,
     });
-    const session = this.storeTokenResponse(address, login);
+    const session = this.storeTokenResponse(address, login, startedAt);
     void applyPendingReferralForWallet(session.address).catch(() => {});
     return session;
   }
@@ -436,6 +442,7 @@ export class WalletAuthService {
     address: string,
     signMessage: WalletSignMessage,
   ): Promise<WalletLoginResponse> {
+    const startedAt = this.epoch;
     const normalizedAddress = normalizeEvmAddress(address);
     const challenge = await this.requestNonce(normalizedAddress);
     // During the serialized rollout the new frontend can still authenticate
@@ -449,7 +456,7 @@ export class WalletAuthService {
       address: normalizedAddress,
       signature,
       nonce: challenge.nonce,
-    });
+    }, startedAt);
   }
 
   async refreshAccessToken(): Promise<WalletLoginResponse> {

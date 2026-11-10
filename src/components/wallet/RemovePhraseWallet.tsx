@@ -25,9 +25,15 @@ export const REMOVE_CHECK_FAILED =
 export const REMOVE_CHECK_CAVEAT =
   'Only stations connected in this browser, and a phone station, were checked. A station connected elsewhere keeps paying this address: keep your 12 words.';
 export const REMOVE_RECORD_UNREADABLE =
-  "This browser's record of connected stations could not be read, so stations connected here could not be checked.";
-export const REMOVE_CHANGED = 'The wallet saved in this browser changed. Its saved words were not removed.';
-export const REMOVE_FAILED = "Could not remove the wallet. This browser's saved words were not removed.";
+  'This browser\'s record of connected stations could not be read, so stations connected here could not be checked.';
+export const REMOVE_CHANGED = 'The wallet saved in this browser changed. Nothing was removed.';
+export const REMOVE_FAILED = 'Could not remove the wallet. Nothing was removed.';
+/** Refused up front: without WebCrypto and Web Locks the saved wallet cannot be changed safely. */
+export const REMOVE_UNSUPPORTED =
+  'This browser cannot change the saved wallet safely here: open the site over https (a secure connection) in a current browser. Nothing was removed.';
+/** Added when the words stayed but this wallet's device key had already been removed. */
+export const REMOVE_DEVICE_KEY_GONE =
+  'The saved words were not removed, but this wallet\'s device key on this browser was. You can set up this device again from the wallet page.';
 
 /** Last four characters of the address, lower-cased: what a person types to confirm. */
 export const addressTail = (address: string): string => address.slice(-4).toLowerCase();
@@ -85,6 +91,7 @@ export default function RemovePhraseWallet({ address, signedIn, hasPhoneStation,
   const remove = useCallback(async () => {
     if (!confirmed) return;
     setBusy(true); setError('');
+    let deviceKeyForgotten = false;
     try {
       // Checked again at the moment of removal: the record may have changed since the dialog opened.
       const saved = readVault();
@@ -92,17 +99,21 @@ export default function RemovePhraseWallet({ address, signedIn, hasPhoneStation,
         setError(REMOVE_CHANGED);
         return;
       }
+      // Refuse before anything is deleted if this browser cannot take the vault's lock.
+      const { removeVaultIfAddress, vaultSupported } = await import('../../services/walletVault');
+      if (!vaultSupported()) { setError(REMOVE_UNSUPPORTED); return; }
       // This wallet's device key first: with the words gone it must not keep signing for the address. If
-      // the words then cannot be removed, the device key is gone and can be set up again; no coins move.
+      // the words then cannot be removed, the message says the device key is gone; no coins move.
       const { forgetDeviceKey } = await import('../../services/walletCrypto/deviceKeyStore');
       await forgetDeviceKey(address.toLowerCase());
-      const { removeVaultIfAddress } = await import('../../services/walletVault');
-      if (!(await removeVaultIfAddress(address))) { setError(REMOVE_CHANGED); return; }
+      deviceKeyForgotten = true;
+      if (!(await removeVaultIfAddress(address))) { setError(REMOVE_DEVICE_KEY_GONE); return; }
       try { window.dispatchEvent(new Event(WALLETS_CHANGED_EVENT)); } catch { /* no window events: nothing to refresh */ }
-      await onRemoved();
+      // The words are gone from here on; a page that fails to refresh must not turn that into an error.
+      try { await onRemoved(); } catch { /* the wallet is removed either way */ }
       close();
     } catch {
-      setError(REMOVE_FAILED);
+      setError(deviceKeyForgotten ? REMOVE_DEVICE_KEY_GONE : REMOVE_FAILED);
     } finally {
       setBusy(false);
     }

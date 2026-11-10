@@ -118,6 +118,60 @@ describe('late answers for the old wallet', () => {
     expect(getAuthToken()).toBe('');
   });
 
+  it('a login that REPLACES another wallet\'s session (no sign-out in between) also ends the old one: its refresh in flight is not stored', async () => {
+    const service = new WalletAuthService('/api');
+    await login(service, state.identity);
+    let answer: (r: Response) => void = () => {};
+    fetchMock().mockImplementationOnce(() => new Promise<Response>(resolve => { answer = resolve; }));
+    const refresh = service.refreshAccessToken();
+    await login(service, PASSKEY_ADDRESS); // replaces the session without clearSession
+    answer(ok({ jwt: jwtFor(state.identity), refreshToken: 'r2', expiresIn: 900 }));
+    await expect(refresh).rejects.toBeInstanceOf(StaleWalletSessionError);
+    expect(getAuthToken()).toBe(jwtFor(PASSKEY_ADDRESS));
+    service.clearSession();
+  });
+
+  it('the same wallet signing in again does not end its own session: its refresh in flight is still stored', async () => {
+    const service = new WalletAuthService('/api');
+    await login(service, state.identity);
+    let answer: (r: Response) => void = () => {};
+    fetchMock().mockImplementationOnce(() => new Promise<Response>(resolve => { answer = resolve; }));
+    const refresh = service.refreshAccessToken();
+    await login(service, state.identity);
+    answer(ok({ jwt: jwtFor(state.identity), refreshToken: 'r2', expiresIn: 900 }));
+    await expect(refresh).resolves.toBeTruthy();
+    service.clearSession();
+  });
+
+  it('sign-out while a passkey login post is in flight wins: nobody ends signed in', async () => {
+    state.active = false;
+    const service = new WalletAuthService('/api');
+    let answer: (r: Response) => void = () => {};
+    fetchMock().mockResolvedValueOnce(ok(nonceData())).mockImplementationOnce(() => new Promise<Response>(resolve => { answer = resolve; }));
+    const pending = service.loginWithPasskey(RECORD, EXPECT, async () => FAKE_AUTH);
+    await new Promise(resolve => setTimeout(resolve, 0)); // the post is now in flight
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    service.clearSession(); // Sign out in the taskbar
+    answer(ok({ jwt: jwtFor(PASSKEY_ADDRESS), refreshToken: 'r', expiresIn: 900 }));
+    await expect(pending).rejects.toBeInstanceOf(StaleWalletSessionError);
+    expect(getAuthToken()).toBe('');
+  });
+
+  it('sign-out while an EVM signer login is in flight wins too', async () => {
+    const service = new WalletAuthService('/api');
+    const evm = '0x' + '22'.repeat(20);
+    let answer: (r: Response) => void = () => {};
+    fetchMock().mockResolvedValueOnce(ok({ nonce: 'n1' })).mockImplementationOnce(() => new Promise<Response>(resolve => { answer = resolve; }));
+    const pending = service.loginWithSigner(evm, async () => '0xsig');
+    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    service.clearSession();
+    answer(ok({ jwt: jwtFor(evm), refreshToken: 'r', expiresIn: 900 }));
+    await expect(pending).rejects.toBeInstanceOf(StaleWalletSessionError);
+    expect(getAuthToken()).toBe('');
+  });
+
   it('flag off: a late answer is stored as before', async () => {
     setEnv(undefined);
     const service = new WalletAuthService('/api');
