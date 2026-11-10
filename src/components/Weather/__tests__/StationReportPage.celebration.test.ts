@@ -193,8 +193,8 @@ describe('FirstEarnCelebration on the station page', () => {
     });
 
     // The signed-in wallet's station page asks the owner-only read once: the on-chain registration
-    // status card (StationChainRegistrationCard) and the owner-only parts (the 30-day comparison) share
-    // that one request. The celebration itself stays off in this build and never asks.
+    // status card (StationChainRegistrationCard) and the owner-only parts (the compare card's verdict and
+    // the 30-day comparison) share that one request. The celebration itself stays off in this build and never asks.
     it('even the owner signed in: no celebration; one ownership request, shared by the owner-only parts', async () => {
       setAuthToken(jwtFor(OWNER));
       installBackend({ owner: OWNER });

@@ -6,7 +6,7 @@ import React from 'react';
 import '@testing-library/jest-dom';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import StationCompareCard from '../StationCompareCard';
-import { formatDifference, headline, normalizeStationCompare } from '../../../utils/stationCompare';
+import { PUBLIC_HEADLINE, formatDifference, headline, normalizeStationCompare } from '../../../utils/stationCompare';
 
 const body = (over: Record<string, unknown> = {}) => ({
   status: 'ok',
@@ -72,8 +72,8 @@ describe('normalizeStationCompare', () => {
 describe('StationCompareCard', () => {
   afterEach(() => cleanup());
 
-  it('shows each variable against nearby and NWS', () => {
-    render(<StationCompareCard view={normalizeStationCompare(body())} unavailable={false} />);
+  it('shows the owner each variable against nearby and NWS, with the differences', () => {
+    render(<StationCompareCard view={normalizeStationCompare(body())} unavailable={false} isOwner />);
     const temp = screen.getByTestId('station-compare-row-temperature_c');
     expect(temp).toHaveTextContent('53.6°F'); // 12 °C
     expect(within(temp).getByText('Nearby (3 stations)')).toBeInTheDocument();
@@ -83,6 +83,37 @@ describe('StationCompareCard', () => {
     expect(within(hum).getAllByText('drier')).toHaveLength(2);
     expect(screen.getByTestId('station-compare-reasons')).toHaveTextContent('not compared');
     expect(screen.getByText(/does not change rewards/)).toBeInTheDocument();
+    expect(screen.getByTestId('station-compare-headline')).toHaveTextContent('Your station differs on humidity.');
+    expect(temp).toHaveTextContent('yours +2.7°F');
+    expect(temp).toHaveTextContent('your station');
+    expect(screen.getByText(/shown only to you/)).toBeInTheDocument();
+  });
+
+  it('shows a visitor the same values with no verdict on the station', () => {
+    render(<StationCompareCard view={normalizeStationCompare(body())} unavailable={false} />);
+    const card = screen.getByTestId('station-compare');
+    const temp = screen.getByTestId('station-compare-row-temperature_c');
+    // The values stay public.
+    expect(temp).toHaveTextContent('53.6°F');
+    expect(temp).toHaveTextContent('50.9°F'); // nearby median, 10.5 °C
+    expect(temp).toHaveTextContent('51.8°F'); // NWS, 11 °C
+    expect(temp).toHaveTextContent('range 50.0°F to 51.8°F');
+    expect(within(temp).getByText('NWS KBFI')).toBeInTheDocument();
+    // The verdict does not.
+    expect(screen.getByTestId('station-compare-headline')).toHaveTextContent(PUBLIC_HEADLINE);
+    expect(card).not.toHaveTextContent(/yours/i);
+    expect(card).not.toHaveTextContent(/differs/i);
+    for (const word of ['close', 'warmer', 'cooler', 'drier', 'more humid']) {
+      expect(within(card).queryByText(word)).toBeNull();
+    }
+    expect(card).not.toHaveTextContent('Counts as close');
+    expect(temp).toHaveTextContent('this station');
+    expect(card).not.toHaveTextContent('shown only to you');
+  });
+
+  it('defaults to the visitor view when ownership is not stated', () => {
+    expect(headline(normalizeStationCompare(body()), false)).toBe(PUBLIC_HEADLINE);
+    expect(headline(normalizeStationCompare(body()))).toBe('Your station differs on humidity.');
   });
 
   it('shows the reason when a reference is missing', () => {

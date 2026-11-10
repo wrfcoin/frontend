@@ -370,6 +370,7 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * (reward-progress answers 200).
  * `options.compareHistory`: 'off' (default: the 404 while STATION_COMPARE_HISTORY_ENABLED is not true), 'ok' or
  * 'waiting' (not enough history yet). Answered only to a request that carries the wallet session token.
+ * `options.compare`: 'off' (default: the 404, card hidden) or 'ok' (the station compare card).
  * `options.observations`: 'mild' (default: dew point only), 'hot' (heat index range) or 'cold' (wind chill range).
  * `options.siteCheck`: 'off' (default: the 404 while STATION_SITE_CHECK_ENABLED is not true) or 'flagged' (the owner's
  * "has this station moved?" hint). Answered only to a request that carries the wallet session token.
@@ -412,6 +413,7 @@ export async function installRoutes(page, fx, options = {}) {
   const websiteForecastMode = options.websiteForecast || 'off';
   const duelsMode = options.duels || 'populated';
   const compareHistoryMode = options.compareHistory || 'off';
+  const compareMode = options.compare || 'off';
   const observationsMode = options.observations || 'mild';
   const siteCheckMode = options.siteCheck || 'off';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
@@ -504,6 +506,17 @@ export async function installRoutes(page, fx, options = {}) {
           { variable: 'temperature_c', pairs: 412, usualDifference: 1.9, typicalGap: 2.1, closePercent: 38, closeWithin: 1.5 },
           { variable: 'humidity_pct', pairs: 409, usualDifference: -4, typicalGap: 5, closePercent: 83, closeWithin: 8 },
         ], note: 'For your information only.', source: 'core4+nws' });
+    }
+    if (/^\/api\/stations\/[^/]+\/compare$/.test(p)) {
+      if (compareMode === 'off') return json(route, { error: { code: 'NOT_FOUND' } }, 404);
+      const nowS = Math.floor(Date.now() / 1000);
+      return json(route, { status: 'ok', observedAt: nowS - 900, nearby: { stations: 4, radiusKm: 100, reason: null },
+        nws: { stationIdentifier: 'KQAX', observedAt: nowS - 1500, reason: null },
+        variables: [
+          { variable: 'temperature_c', mine: 14.2, closeWithin: 1.5, nearby: { stations: 4, median: 12.1, lowest: 11.4, highest: 12.9, difference: 2.1, agreement: 'higher' }, nws: { value: 12.4, difference: 1.8, agreement: 'higher' } },
+          { variable: 'humidity_pct', mine: 62, closeWithin: 8, nearby: { stations: 4, median: 66, lowest: 61, highest: 71, difference: -4, agreement: 'close' }, nws: { value: 68, difference: -6, agreement: 'close' } },
+        ],
+        notCompared: [{ variable: 'pressure_hpa', reason: "Station pressure depends on each station's height above sea level, so it is not compared." }], source: 'core4+nws' });
     }
     if ((m = /^\/api\/stations\/([^/]+)\/(observations|quality|submissions)$/.exec(p))) return json(route, m[2] === 'observations' ? { observations: observationsMode === 'hot' ? fx.OBSERVATIONS.map((o, i) => ({ ...o, temperatureC: 33.4 - i * 0.2, humidityPct: 64 + i })) : observationsMode === 'cold' ? fx.OBSERVATIONS.map((o, i) => ({ ...o, temperatureC: -8.5 - i * 0.2, humidityPct: 78, windSpeedMs: 6.2 })) : fx.OBSERVATIONS, source: 'backend-db', unavailable: [] } : m[2] === 'quality' ? { overall: 0.93, dimensions: [{ name: 'completeness', score: 0.97 }, { name: 'timeliness', score: 0.91 }, { name: 'plausibility', score: 0.9 }], advisory: false, unavailable: [] } : { submissions: fx.SUBMISSIONS, source: 'backend-db', limit: 25, offset: 0 });
     if ((m = /^\/api\/weather\/stations\/([^/]+)$/.exec(p))) { const st = fx.STATIONS.find(x => x.stationId === decodeURIComponent(m[1])); return st ? json(route, { station: st, ...st }) : json(route, { error: 'not found' }, 404); }

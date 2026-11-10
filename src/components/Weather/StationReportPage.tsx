@@ -230,7 +230,8 @@ const StationReportPage: React.FC = () => {
   // read-only build never asks; elsewhere only a backend-confirmed owner sees it.
   const stationOwner = useStationOwner(stationId, !publicProjection);
   const celebrationWallet = publicProjection ? null : stationOwner;
-  // Owner-only parts of this page need to know whether the signed-in wallet owns the station. The same
+  // Owner-only parts of this page (the compare card's verdict, the 30-day comparison, the site check) need
+  // to know whether the signed-in wallet owns the station. The same
   // owner-only backend read as above, here also in the public build: it is asked only when a wallet
   // session exists, so a visitor's page load makes no extra request.
   const compareOwner = useStationOwner(knownStationId, true);
@@ -662,7 +663,7 @@ const StationReportPage: React.FC = () => {
       {knownStationId && !compareOff && (
         <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, color: palette.text, mb: 3 }}>
           <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-            <StationCompareCard view={compareQuery.data} unavailable={compareQuery.isError} />
+            <StationCompareCard view={compareQuery.data} unavailable={compareQuery.isError} isOwner={compareOwner !== null} />
           </CardContent>
         </Card>
       )}

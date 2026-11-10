@@ -496,6 +496,37 @@ async function runViewport(browser, vp, tall, theme) {
       } catch (e) { console.log('FAIL explore-notify-owner', suffix, String(e).slice(0, 160)); report.push({ name: 'explore-notify-owner', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
     let ownerSignedIn = false;
+    // The compare scenarios go first: the visitor capture loads the page in full, which would drop a login made earlier.
+    if (want('station-detail-compare-visitor')) {
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { compare: 'ok' });
+        // st-1: a fixture station with no alias, so its page id is the fixture id.
+        await loadRoute(page, '/weather/station/st-1', errors);
+        await page.getByTestId('station-compare-headline').waitFor({ timeout: 15_000 });
+        await page.getByTestId('station-compare').scrollIntoViewIfNeeded();
+        await page.evaluate(() => window.scrollBy(0, 80));
+        await capture(page, errors, 'station-detail-compare-visitor', '/weather/station/st-1 (compare card, visitor: values only)', suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log('FAIL station-detail-compare-visitor', suffix, String(e).slice(0, 160)); report.push({ name: 'station-detail-compare-visitor', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
+    if (want('station-detail-compare-owner')) {
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { compare: 'ok', stationOwner: 'me' });
+        // The first owner capture signs in; the later ones (30-day comparison, site check) reuse that login.
+        if (!ownerSignedIn) { await createWallet(page, errors); ownerSignedIn = true; } else { await goClientSide(page, '/'); }
+        if (!fx.lastLoginAddress) throw new Error('wallet login did not happen');
+        await goClientSide(page, '/weather/station/st-1');
+        await page.getByTestId('station-compare-headline').filter({ hasText: 'Your station' }).waitFor({ timeout: 15_000 });
+        await page.getByTestId('station-compare').scrollIntoViewIfNeeded();
+        await page.evaluate(() => window.scrollBy(0, 80));
+        await capture(page, errors, 'station-detail-compare-owner', '/weather/station/st-1 (compare card, owner signed in: with differences)', suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log('FAIL station-detail-compare-owner', suffix, String(e).slice(0, 160)); report.push({ name: 'station-detail-compare-owner', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     for (const [name, mode] of [['station-detail-owner-history', 'ok'], ['station-detail-owner-history-waiting', 'waiting']]) {
       if (!want(name)) continue;
       try {

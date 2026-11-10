@@ -112,6 +112,8 @@ export const SCENARIOS = [
   { name: 'station-detail-owner-history', route: '/weather/station/st-1', note: 'signed in as the owner: the 30-day comparison with the nearest NWS station' },
   { name: 'station-detail-owner-history-waiting', route: '/weather/station/st-1', note: 'signed in as the owner: not enough history yet' },
   { name: 'station-detail-owner-site-check', route: '/weather/station/st-1', note: 'signed in as the owner: the private "has this station moved?" hint' },
+  { name: 'station-detail-compare-visitor', route: '/weather/station/st-1', note: 'compare card as a visitor: the values side by side, no verdict' },
+  { name: 'station-detail-compare-owner', route: '/weather/station/st-1', note: 'compare card as the signed-in owner: with differences and close / warmer / cooler labels' },
   { name: 'station-detail-calibration-off', route: '/weather/station/st-0', note: 'the 404 while CALIBRATION_CERTIFICATES_ENABLED is not true: no badge, no section' },
 ];
 
