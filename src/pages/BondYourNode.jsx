@@ -81,7 +81,7 @@ function describe(progress, admissionsState) {
   case BOND_STAGE.none:
     return { tone: 'wait', title: 'Not in the recent admissions', body: 'No admission for this key or alias is among the last 100, and no registered bond has this id or alias. If the node was admitted earlier, check with its alias or bond id.' };
   default:
-    if (admissionsState === 'closed') return { tone: 'wait', title: 'Admission is not open.', body: 'This network is not taking bond requests. A node that is already bonded can be checked with its alias or bond id.' };
+    if (admissionsState === 'closed') return { tone: 'wait', title: 'Admission is not open yet.', body: 'This network is not taking bond requests yet. A node that is already bonded can be checked with its alias or bond id.' };
     if (admissionsState === 'busy') return { tone: 'warn', title: 'Too many requests', body: 'Please wait a moment and check again.' };
     return { tone: 'warn', title: 'Unavailable', body: 'The admission or bonded list could not be read right now, so this page cannot say where the node stands.' };
   }
