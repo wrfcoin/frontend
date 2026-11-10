@@ -10,7 +10,9 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ed25519 } from '@noble/curves/ed25519.js';
 
-globalThis.__VITE_ENV__ = { VITE_WRFCOIN_CHAIN_ID: '888', VITE_ENABLE_ADVISORY_VOTING: 'true' };
+// Object.assign, not `globalThis.__VITE_ENV__ = …`: in a JS file a top-level property assignment on
+// globalThis declares a global with this literal's narrow type for the whole tests type-check.
+Object.assign(globalThis, { __VITE_ENV__: { VITE_WRFCOIN_CHAIN_ID: '888', VITE_ENABLE_ADVISORY_VOTING: 'true' } });
 
 const passkeyMod = await import('../../services/walletCrypto/passkey');
 const { passkeyRecordAddress, bytesToHex, base64urlNoPad } = { ...passkeyMod, base64urlNoPad: b => Buffer.from(b).toString('base64url') };
