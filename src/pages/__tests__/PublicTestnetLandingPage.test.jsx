@@ -117,10 +117,13 @@ describe('PublicTestnetLandingPage', () => {
     const hrefs = screen
       .getAllByRole('link')
       .map(link => link.getAttribute('href'));
-    // The first link is the "Get test coins" line (the faucet lives in /onboarding).
+    // The first link is the forecast call to action in the hero, then the "Get test coins" line (the faucet
+    // lives in /onboarding).
+    expect(screen.getByTestId('landing-forecast-cta')).toHaveTextContent('Try it in two minutes');
     expect(screen.getByRole('link', { name: 'Get test coins' })).toHaveAttribute('href', '/onboarding');
     expect(screen.getByTestId('landing-faucet')).toHaveTextContent('one claim per address every 24 hours');
     expect(hrefs).toEqual([
+      '/forecast/new',
       '/onboarding',
       '/onboarding',
       '/map',
@@ -158,8 +161,9 @@ describe('PublicTestnetLandingPage', () => {
       .getAllByRole('link')
       .map(link => link.getAttribute('href'));
     expect(hrefs).toEqual(['/downloads', '/terms', '/privacy', '/api-terms', '/security']);
-    // No /onboarding route on this build, so no faucet link either.
+    // No /onboarding route on this build, so no faucet link either, and no forecast call to action.
     expect(screen.queryByTestId('landing-faucet')).toBeNull();
+    expect(screen.queryByTestId('landing-forecast-cta')).toBeNull();
 
     await waitFor(() => expect(global.fetch).toHaveBeenCalled());
   });

@@ -73,6 +73,44 @@
   font-weight: 600;
 }
 
+/* ---- Try it: the forecast call to action -------------------------------- */
+.public-testnet__try {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.public-testnet__try-text {
+  flex: 1 1 18rem;
+  margin: 0;
+  color: var(--wrf-text-primary);
+  line-height: 1.5;
+}
+
+/* Dark: dark text on the light accent (about 7:1). Light theme: white on the strong accent (about 6.7:1). */
+.public-testnet__try-button {
+  display: inline-block;
+  padding: 0.7rem 1.25rem;
+  border-radius: 0.6rem;
+  background: var(--wrf-accent);
+  color: #0f172a;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.public-testnet__try-button:hover,
+.public-testnet__try-button:focus-visible {
+  text-decoration: underline;
+}
+
+body.light-mode .public-testnet__try-button {
+  background: var(--wrf-accent-strong);
+  color: #fff;
+}
+
 /* ---- Live chain numbers -------------------------------------------------- */
 .public-testnet__chain {
   display: flex;

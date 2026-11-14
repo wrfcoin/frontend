@@ -102,6 +102,10 @@ export const PASSKEY_PRIMARY_POINTS = [
 ] as const;
 export const PASSKEY_PRIMARY_NOTE =
   'This browser keeps the link to your wallet address. In another browser, open it with "Use an existing passkey" on the passkey wallet page. There is no recovery yet if the passkey is lost: keep test-sized amounts on it.';
+/** Shown when the visitor came from /forecast/new: forecasts need the 12-word wallet, so its section starts open. */
+export const FORECAST_NEEDS_PHRASE =
+  'To make a forecast you need a wallet with 12 recovery words: passkey wallets can\'t sign a forecast yet. '
+  + 'Create or open one below and you come straight back to your forecast.';
 export const PHRASE_ADVANCED_LABEL = 'Advanced: a wallet with a 12-word recovery phrase';
 export const PHRASE_ADVANCED_HINT =
   'For people who want a written backup they control, or who already have 12 words. You will have to keep the words safe yourself.';
@@ -974,7 +978,9 @@ export default function OnboardingPage() {
   // A page that sent the visitor here to unlock the 12-word wallet (e.g. /connect-station) gets them back after.
   const returnTo = unlockReturnPath(useLocation()?.state);
   // The 12-word wallet is Advanced when the passkey wallet is served; open at once if this browser holds one.
-  const [phraseOpen, setPhraseOpen] = useState(() => !FEATURES.passkeyWallet || Boolean(readSavedVaultAddress()));
+  // Forecasts can only be signed by the 12-word wallet, so a visitor sent here from /forecast/new sees it open.
+  const forForecast = returnTo === '/forecast/new';
+  const [phraseOpen, setPhraseOpen] = useState(() => !FEATURES.passkeyWallet || forForecast || Boolean(readSavedVaultAddress()));
   const walletStep = (isPublicBuild() && !webWalletReady) || currentStep === 0;
 
   // --- Auto-advance: if wallet already connected on mount, skip step 0 ---
@@ -1071,9 +1077,13 @@ export default function OnboardingPage() {
       </Stepper>
 
       {/* Before a wallet exists: the passkey wallet first (owner 2026-11-01), then the faucet's terms. */}
+      {walletStep && forForecast && (
+        <WrfAlert severity="info" sx={{ mb: 3 }} data-testid="onboarding-forecast-needs-phrase">{FORECAST_NEEDS_PHRASE}</WrfAlert>
+      )}
+
       {walletStep && (
         <>
-          <PasskeyWalletPrimary />
+          {forForecast ? null : <PasskeyWalletPrimary />}
           <FaucetTermsNotice />
         </>
       )}

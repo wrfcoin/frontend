@@ -190,7 +190,7 @@ await jest.unstable_mockModule('../../components/wallet/WebWalletSetup', () => (
 
 global.fetch = jest.fn() as typeof global.fetch;
 
-const { default: OnboardingPage, FAUCET_TERMS, PASSKEY_PRIMARY_TITLE, PHRASE_ADVANCED_LABEL } = await import('../OnboardingPage');
+const { default: OnboardingPage, FAUCET_TERMS, FORECAST_NEEDS_PHRASE, PASSKEY_PRIMARY_TITLE, PHRASE_ADVANCED_LABEL } = await import('../OnboardingPage');
 const { default: FEATURES } = await import('../../config/features');
 
 // ---------------------------------------------------------------------------
@@ -238,6 +238,36 @@ describe('OnboardingPage', () => {
       renderPage();
       fireEvent.click(screen.getByText('Finish 12-word setup'));
       expect(mockNavigate).toHaveBeenCalledWith('/connect-station');
+    });
+
+    it('sent from /forecast/new with passkeys on: says why, hides the passkey card, opens the 12-word wallet, goes back', () => {
+      const previous = FEATURES.passkeyWallet;
+      try {
+        (FEATURES as { passkeyWallet: boolean }).passkeyWallet = true;
+        mockLocationState = { returnTo: '/forecast/new' };
+        renderPage();
+        expect(screen.getByText(FORECAST_NEEDS_PHRASE)).toBeInTheDocument();
+        expect(screen.queryByTestId('onboarding-passkey-primary')).toBeNull();
+        // The 12-word section is open without touching its toggle: its setup is already rendered.
+        expect(screen.getByRole('button', { name: PHRASE_ADVANCED_LABEL })).toBeInTheDocument();
+        fireEvent.click(screen.getByText('Finish 12-word setup'));
+        expect(mockNavigate).toHaveBeenCalledWith('/forecast/new');
+      } finally {
+        (FEATURES as { passkeyWallet: boolean }).passkeyWallet = previous;
+      }
+    });
+
+    it('not sent from /forecast/new: no forecast notice, passkey card still first', () => {
+      const previous = FEATURES.passkeyWallet;
+      try {
+        (FEATURES as { passkeyWallet: boolean }).passkeyWallet = true;
+        mockLocationState = { returnTo: '/connect-station' };
+        renderPage();
+        expect(screen.queryByText(FORECAST_NEEDS_PHRASE)).toBeNull();
+        expect(screen.getByTestId('onboarding-passkey-primary')).toBeInTheDocument();
+      } finally {
+        (FEATURES as { passkeyWallet: boolean }).passkeyWallet = previous;
+      }
     });
 
     it('a return path outside the allowlist is ignored', () => {

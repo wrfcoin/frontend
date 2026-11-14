@@ -41,6 +41,8 @@ const PublicTestnetLandingPage = () => {
   const policyLinks = entries.filter(e => e.group === 'legal');
   // The faucet lives in the wallet onboarding; only link it where that route is published.
   const faucetPath = mainLinks.some(e => e.path === '/onboarding') ? '/onboarding' : null;
+  // The one thing a visitor can do in a couple of minutes; only offered where the route is published.
+  const forecastPath = mainLinks.some(e => e.path === '/forecast/new') ? '/forecast/new' : null;
 
   return (
     <div className="public-testnet">
@@ -60,6 +62,17 @@ const PublicTestnetLandingPage = () => {
           <p className="public-testnet__warning">
             Testnet WRF has no monetary value, the network may reset, and no mainnet migration is promised.
           </p>
+
+          {forecastPath && (
+            <div className="public-testnet__try" data-testid="landing-forecast-cta">
+              <p className="public-testnet__try-text">
+                <strong>Try it in two minutes:</strong> forecast the temperature or pressure at a real
+                weather station. Your forecast goes on chain and is scored against what the station measures.
+                Free, no email, just a 12-word wallet.
+              </p>
+              <Link to={forecastPath} className="public-testnet__try-button">Make a forecast</Link>
+            </div>
+          )}
         </div>
 
         <section className="public-testnet__section public-testnet__chain" aria-labelledby="chain-now">
