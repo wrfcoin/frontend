@@ -8,6 +8,16 @@ import '@testing-library/jest-dom/jest-globals';
 import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
+// The fixtures are dated 2026-11-14T12:00Z. With the real clock, every hour after that adds arrival delay to the
+// block age, so verdicts and ETAs drifted with the wall clock. Pin only Date to the fixture's receive time; the
+// timers stay real so findBy* polling works. Tests that need fake timers call startWithFakeTimers().
+const FIXTURE_NOW = Date.parse('2026-11-14T12:00:00.000Z');
+const REAL_TIMER_APIS = ['hrtime', 'nextTick', 'performance', 'queueMicrotask', 'requestAnimationFrame', 'cancelAnimationFrame',
+  'requestIdleCallback', 'cancelIdleCallback', 'setImmediate', 'clearImmediate', 'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout'];
+beforeEach(() => {
+  jest.useFakeTimers({ now: FIXTURE_NOW, doNotFake: REAL_TIMER_APIS });
+});
+
 afterEach(() => {
   cleanup();
   jest.useRealTimers();
