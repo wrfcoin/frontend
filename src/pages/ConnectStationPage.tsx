@@ -141,6 +141,9 @@ interface WalletStepProps {
   onAuthenticated: (address: string, kind?: OwnerKind, ownershipSigner?: StationOwnershipSigner) => void;
 }
 
+/** Under the 12-word card when a passkey card is offered too: why this is the one to pick for earning now. */
+export const PHRASE_OWNER_EARNS = 'Recommended: a station owned by your 12-word wallet earns rewards once it is registered on chain.';
+
 /** Which wallet owns the station: the 12-word (ed25519) wallet, or a passkey wallet (Phase 1, not earning yet). */
 export type OwnerKind = 'phrase' | 'passkey';
 
@@ -323,6 +326,9 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
   ) : null;
   // A passkey that can own a station makes the "12-word wallet only" notices below wrong, so they hide.
   const showPhraseOnlyNotice = hasPasskeyWallet && !passkeyCard;
+  // With both kinds in this browser, the 12-word wallet (signed in or saved) comes first: a station it owns earns
+  // now, while a passkey-owned one is connected for good but not earning yet. The passkey card follows it.
+  const phraseFirst = Boolean(passkeyCard && (ownedAddress || savedPhraseAddress));
 
   if (mode === 'choose' && (ownedAddress || publicBuild)) {
     return (
@@ -331,12 +337,21 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
         <Typography variant="body2" color="text.secondary">
           Your wallet is the station owner and receives any rewards that are later recorded.
         </Typography>
-        {passkeyCard}
+        {!phraseFirst && passkeyCard}
         {ownedAddress ? (
-          <WrfCard variant="outlined" headerTitle="Use your signed-in wallet">
+          <WrfCard
+            variant="outlined"
+            headerTitle={passkeyCard ? 'Use your 12-word wallet' : 'Use your signed-in wallet'}
+            data-testid="connect-station-phrase-owner"
+          >
             <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all', mb: 1.5 }}>
               {ownedAddress}
             </Typography>
+            {passkeyCard && (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }} data-testid="connect-station-phrase-earns">
+                {PHRASE_OWNER_EARNS}
+              </Typography>
+            )}
             <WrfButton variant="primary" onClick={() => onAuthenticated(ownedAddress)}>
               Use this wallet
             </WrfButton>
@@ -348,7 +363,7 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
             )}
           </WrfCard>
         ) : savedPhraseAddress ? (
-          <WrfCard variant="outlined" headerTitle="Unlock your 12-word wallet">
+          <WrfCard variant="outlined" headerTitle="Unlock your 12-word wallet" data-testid="connect-station-phrase-unlock">
             <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all', mb: 1 }}>
               {savedPhraseAddress}
             </Typography>
@@ -383,6 +398,7 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
             </WrfButton>
           </WrfAlert>
         )}
+        {phraseFirst && passkeyCard}
       </Box>
     );
   }
@@ -650,12 +666,47 @@ interface StationStepProps {
   verified: boolean;
   setVerified: (v: boolean) => void;
   onContinue: () => void;
+  /**
+   * The devices the verified keys can read. Held by the page so that coming Back from Confirm keeps the
+   * list (and the device picked); when omitted, the step keeps the list itself.
+   */
+  devices?: DetectedDevice[];
+  setDevices?: (devices: DetectedDevice[]) => void;
 }
 
-export function StationStep({ form, setForm, verified, setVerified, onContinue }: StationStepProps) {
+/** Fills name / coords from `next`, replacing values that were blank or came from the previous device. */
+function applyDevice(
+  prev: StationFormData,
+  next: DetectedDevice,
+  previous: DetectedDevice | null,
+): StationFormData {
+  const lat = (d: DetectedDevice | null) =>
+    d?.latitude != null ? toRegistrationCoordinate(Number(d.latitude)) : '';
+  const lon = (d: DetectedDevice | null) =>
+    d?.longitude != null ? toRegistrationCoordinate(Number(d.longitude)) : '';
+  const fromPrevious = (value: string, previousValue: string) => value === '' || value === previousValue;
+  return {
+    ...prev,
+    name: fromPrevious(prev.name, previous?.name || '') ? next.name || '' : prev.name,
+    latitude: fromPrevious(prev.latitude, lat(previous)) ? lat(next) : prev.latitude,
+    longitude: fromPrevious(prev.longitude, lon(previous)) ? lon(next) : prev.longitude,
+    mac: next.mac,
+  };
+}
+
+export function StationStep({
+  form, setForm, verified, setVerified, onContinue, devices: heldDevices, setDevices: setHeldDevices,
+}: StationStepProps) {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
-  const [device, setDevice] = useState<DetectedDevice | null>(null);
+  const [ownDevices, setOwnDevices] = useState<DetectedDevice[]>([]);
+  const devices = heldDevices ?? ownDevices;
+  const setDevices = setHeldDevices ?? setOwnDevices;
+  // With one device it is the device. With several, it is the one picked (none until the owner picks).
+  const multiple = devices.length > 1;
+  const device: DetectedDevice | null = multiple
+    ? devices.find((d) => d.mac !== undefined && d.mac === form.mac) ?? null
+    : devices[0] ?? null;
   const [locating, setLocating] = useState(false);
   // Monotonic token for the latest verify request. Editing a key bumps this so
   // any in-flight verify response for stale credentials is ignored on return.
@@ -671,8 +722,17 @@ export function StationStep({ form, setForm, verified, setVerified, onContinue }
     if (key === 'apiKey' || key === 'appKey') {
       verifySeq.current += 1;
       setVerified(false);
-      setDevice(null);
+      setDevices([]);
+      // The request in flight is now stale and its `finally` will not clear the spinner, so clear it
+      // here; otherwise Verify Keys stays disabled with nothing running.
+      setVerifying(false);
+      setForm((prev) => ({ ...prev, mac: undefined }));
     }
+  };
+
+  const pickDevice = (next: DetectedDevice) => {
+    setError('');
+    setForm((prev) => applyDevice(prev, next, device));
   };
 
   const useMyLocation = useCallback(() => {
@@ -726,15 +786,16 @@ export function StationStep({ form, setForm, verified, setVerified, onContinue }
       }
       if (!result.valid) {
         setVerified(false);
-        setDevice(null);
+        setDevices([]);
         setError(result.message || 'Those keys were not accepted. Double-check them in your Ambient account.');
         return;
       }
-      const detected = result.devices[0] ?? null;
-      setDevice(detected);
+      const found = Array.isArray(result.devices) ? result.devices : [];
+      setDevices(found);
       setVerified(true);
-      // Auto-fill name / coords / mac from the detected device when blank.
-      if (detected) {
+      if (found.length === 1) {
+        // One device: auto-fill name / coords / mac from it when blank (unchanged single-station flow).
+        const detected = found[0];
         setForm((prev) => ({
           ...prev,
           name: prev.name || detected.name || '',
@@ -746,6 +807,9 @@ export function StationStep({ form, setForm, verified, setVerified, onContinue }
             (detected.longitude != null ? toRegistrationCoordinate(Number(detected.longitude)) : ''),
           mac: detected.mac,
         }));
+      } else {
+        // Several devices (or none): nothing is picked for the owner. They choose below.
+        setForm((prev) => ({ ...prev, mac: undefined }));
       }
     } catch (err) {
       // Only surface errors for the still-current request.
@@ -761,7 +825,7 @@ export function StationStep({ form, setForm, verified, setVerified, onContinue }
         setVerifying(false);
       }
     }
-  }, [form.apiKey, form.appKey, setForm, setVerified]);
+  }, [form.apiKey, form.appKey, setForm, setVerified, setDevices]);
 
   const latNum = Number(form.latitude);
   const lonNum = Number(form.longitude);
@@ -775,7 +839,7 @@ export function StationStep({ form, setForm, verified, setVerified, onContinue }
     lonNum >= -180 &&
     lonNum <= 180;
 
-  const canContinue = verified && form.name.trim() !== '' && coordsValid;
+  const canContinue = verified && form.name.trim() !== '' && coordsValid && (!multiple || device !== null);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -819,6 +883,46 @@ export function StationStep({ form, setForm, verified, setVerified, onContinue }
         Verify Keys
       </WrfButton>
 
+      {verified && multiple && (
+        <Box
+          component="fieldset"
+          sx={{ border: 1, borderColor: 'divider', borderRadius: 1, m: 0, p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}
+        >
+          <Typography component="legend" variant="subtitle2" sx={{ px: 0.5 }} data-testid="ambient-device-picker">
+            Your Ambient account has {devices.length} stations. Which one do you want to connect?
+          </Typography>
+          {devices.map((d, i) => {
+            const id = `ambient-device-${i}`;
+            const checked = device === d;
+            return (
+              <Box
+                key={d.mac ?? id}
+                component="label"
+                htmlFor={id}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: d.mac ? 'pointer' : 'not-allowed', minHeight: 44 }}
+              >
+                <input
+                  type="radio"
+                  id={id}
+                  name="ambient-device"
+                  value={d.mac ?? ''}
+                  checked={checked}
+                  disabled={!d.mac}
+                  onChange={() => pickDevice(d)}
+                  aria-label={`${d.name || 'Unnamed station'}${d.mac ? ` (${d.mac})` : ''}`}
+                />
+                <Typography variant="body2" component="span">
+                  <strong>{d.name || 'Unnamed station'}</strong>{' '}
+                  <Typography component="span" variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                    {d.mac ?? 'no MAC reported, cannot be connected'}
+                  </Typography>
+                </Typography>
+              </Box>
+            );
+          })}
+        </Box>
+      )}
+
       {verified && (
         <WrfAlert severity="success" title="Keys verified">
           {device ? (
@@ -835,7 +939,9 @@ export function StationStep({ form, setForm, verified, setVerified, onContinue }
               )}
             </>
           ) : (
-            <Typography variant="body2">Your keys are valid.</Typography>
+            <Typography variant="body2">
+              {multiple ? 'Your keys are valid. Pick a station above.' : 'Your keys are valid.'}
+            </Typography>
           )}
         </WrfAlert>
       )}
@@ -901,6 +1007,11 @@ export function StationStep({ form, setForm, verified, setVerified, onContinue }
           Verify your Ambient keys to continue.
         </Typography>
       )}
+      {verified && multiple && !device && (
+        <Typography variant="caption" color="text.secondary">
+          Pick which station to connect to continue.
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -915,6 +1026,15 @@ interface ConfirmStepProps {
   ownerKind?: OwnerKind;
   /** A brand-new wallet still in memory, able to sign for its station once. */
   ownershipSigner?: StationOwnershipSigner;
+  /** Back to the station details, keeping everything entered. */
+  onBack?: () => void;
+}
+
+/** The backend's refusal for a MAC already bound to another active station (409 MAC_TAKEN). */
+export function isMacTakenError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { status?: unknown; message?: unknown; details?: { error?: unknown } };
+  return e.status === 409 && (e.message === 'MAC_TAKEN' || e.details?.error === 'MAC_TAKEN');
 }
 
 interface RewardProgressPresentation {
@@ -1116,14 +1236,16 @@ function LoadedRewardProgress({
   );
 }
 
-export function ConfirmStep({ address, form, ownerKind = 'phrase', ownershipSigner }: ConfirmStepProps) {
+export function ConfirmStep({ address, form, ownerKind = 'phrase', ownershipSigner, onBack }: ConfirmStepProps) {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [macTaken, setMacTaken] = useState(false);
   const [stationId, setStationId] = useState<string | null>(null);
 
   const submit = useCallback(async () => {
     setError('');
+    setMacTaken(false);
     setSubmitting(true);
     try {
       const result = await stationRegistrationService.registerStation({
@@ -1139,6 +1261,10 @@ export function ConfirmStep({ address, form, ownerKind = 'phrase', ownershipSign
       });
       setStationId(result.stationId);
     } catch (err) {
+      if (isMacTakenError(err)) {
+        setMacTaken(true);
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Registration failed.');
     } finally {
       setSubmitting(false);
@@ -1176,6 +1302,13 @@ export function ConfirmStep({ address, form, ownerKind = 'phrase', ownershipSign
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Typography variant="h6" component="h2">Confirm &amp; register</Typography>
       {error && <WrfAlert severity="error">{error}</WrfAlert>}
+      {macTaken && (
+        <WrfAlert severity="error" title="This station is already connected">
+          The station {form.mac ? <strong>{form.mac}</strong> : null} is already registered on WRFCoin (a station
+          can be connected only once), so it was not registered again. If your Ambient account has another station, go
+          back and pick it.
+        </WrfAlert>
+      )}
       <WrfCard variant="outlined">
         <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: 'auto 1fr', columnGap: 2, rowGap: 1 }}>
           <Typography variant="body2" color="text.secondary">Owner</Typography>
@@ -1202,12 +1335,27 @@ export function ConfirmStep({ address, form, ownerKind = 'phrase', ownershipSign
           )}
           <Typography variant="body2" color="text.secondary">Provider</Typography>
           <Typography variant="body2">Ambient Weather</Typography>
+          {form.mac && (
+            <>
+              <Typography variant="body2" color="text.secondary">Device MAC</Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }} data-testid="confirm-device-mac">
+                {form.mac}
+              </Typography>
+            </>
+          )}
         </Box>
       </WrfCard>
       {ownerKind === 'passkey' && <PasskeyNotEarningYet />}
-      <WrfButton variant="primary" onClick={submit} loading={submitting} disabled={submitting}>
-        Register Station
-      </WrfButton>
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        {onBack && (
+          <WrfButton variant="outline" onClick={onBack} disabled={submitting}>
+            Back to edit details
+          </WrfButton>
+        )}
+        <WrfButton variant="primary" onClick={submit} loading={submitting} disabled={submitting || macTaken}>
+          Register Station
+        </WrfButton>
+      </Box>
     </Box>
   );
 }
@@ -1271,6 +1419,7 @@ export default function ConnectStationPage() {
   // It is dropped on unmount, after ten minutes, and as soon as it is no longer needed.
   const [ownershipSigner, holdOwnershipSigner] = useHeldOwnershipSigner();
   const [verified, setVerified] = useState(false);
+  const [devices, setDevices] = useState<DetectedDevice[]>([]);
   const [form, setForm] = useState<StationFormData>({
     name: '',
     latitude: '',
@@ -1311,11 +1460,21 @@ export default function ConnectStationPage() {
           setForm={setForm}
           verified={verified}
           setVerified={setVerified}
+          devices={devices}
+          setDevices={setDevices}
           onContinue={() => setActiveStep(3)}
         />
       );
     case 3:
-      return <ConfirmStep address={walletAddress} form={form} ownerKind={ownerKind} ownershipSigner={ownershipSigner} />;
+      return (
+        <ConfirmStep
+          address={walletAddress}
+          form={form}
+          ownerKind={ownerKind}
+          ownershipSigner={ownershipSigner}
+          onBack={() => setActiveStep(2)}
+        />
+      );
     default:
       return null;
     }

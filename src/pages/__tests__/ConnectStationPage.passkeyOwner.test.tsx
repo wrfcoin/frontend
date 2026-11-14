@@ -123,6 +123,39 @@ describe('ConnectStationPage with a passkey owner (Phase 1)', () => {
     expect(screen.queryByText(/can't own a weather station yet/)).toBeNull();
   });
 
+  it('signed in with a 12-word wallet too: the 12-word card comes first, is named, and says it earns', () => {
+    owned = OWNED;
+    savePasskey();
+    const { container } = render(<ConnectStationPage />);
+    const text = container.textContent ?? '';
+    expect(screen.getByText('Use your 12-word wallet')).toBeInTheDocument();
+    expect(screen.queryByText('Use your signed-in wallet')).toBeNull();
+    expect(screen.getByText(/earns rewards once it is registered on chain/)).toBeInTheDocument();
+    expect(text.indexOf(OWNED)).toBeGreaterThan(-1);
+    expect(text.indexOf(OWNED)).toBeLessThan(text.indexOf('Use your passkey wallet'));
+  });
+
+  it('passkey and a LOCKED 12-word wallet saved: unlock-the-12-word card comes first, passkey after', () => {
+    savePasskey();
+    localStorage.setItem('wrfcoin_wallet_vault_v1', JSON.stringify({
+      v: 1, scheme: 'ed25519-slip10-master-v1', address: `0x${'cd'.repeat(20)}`,
+      kdf: { name: 'PBKDF2', hash: 'SHA-256', iterations: 600_000, salt: 'AA==' },
+      cipher: { name: 'AES-GCM', iv: 'AA==' }, ct: 'AA==',
+    }));
+    const { container } = render(<ConnectStationPage />);
+    const text = container.textContent ?? '';
+    expect(text.indexOf('Unlock your 12-word wallet')).toBeGreaterThan(-1);
+    expect(text.indexOf('Unlock your 12-word wallet')).toBeLessThan(text.indexOf('Use your passkey wallet'));
+  });
+
+  it('passkey only: the passkey card is the only wallet offered (no 12-word card, no earning line)', () => {
+    savePasskey();
+    render(<ConnectStationPage />);
+    expect(screen.getByText('Use your passkey wallet')).toBeInTheDocument();
+    expect(screen.queryByText('Use your 12-word wallet')).toBeNull();
+    expect(screen.queryByText(/earns rewards once it is registered on chain/)).toBeNull();
+  });
+
   it('flag off: the passkey wallet is not offered and the old notice stays', () => {
     features.passkeyStationOwner = false;
     savePasskey();

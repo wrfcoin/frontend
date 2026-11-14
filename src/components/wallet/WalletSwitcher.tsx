@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useInRouterContext, useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
@@ -10,6 +10,7 @@ import { readVault } from '../../services/walletVault';
 import { loadStoredPasskey } from '../../services/walletCrypto/passkeySend';
 import { passkeyRecordAddress } from '../../services/walletCrypto/passkey';
 import { palette } from '../DesignSystem/tokens';
+import { WALLETS_CHANGED_EVENT } from './activeWallet';
 
 export type WalletKind = 'passkey' | 'phrase';
 
@@ -127,7 +128,17 @@ function RoutedWalletSwitcher(props: SwitcherProps) {
 }
 
 function WalletSwitcherView({ current, unlockedAddress = null, navigate }: SwitcherProps & { navigate?: (path: string) => void }) {
-  const [saved] = useState(readSavedWallets);
+  const [saved, setSaved] = useState(readSavedWallets);
+  // A wallet removed on this page (RemovePhraseWallet), or added or removed in another tab, must not stay listed.
+  useEffect(() => {
+    const changed = () => setSaved(readSavedWallets());
+    window.addEventListener(WALLETS_CHANGED_EVENT, changed);
+    window.addEventListener('storage', changed);
+    return () => {
+      window.removeEventListener(WALLETS_CHANGED_EVENT, changed);
+      window.removeEventListener('storage', changed);
+    };
+  }, []);
   if (!FEATURES.passkeyWallet) return null;
   const phraseUnlocked = Boolean(saved.phrase && unlockedAddress?.toLowerCase() === saved.phrase);
   const hrefOf = (kind: WalletKind) =>
