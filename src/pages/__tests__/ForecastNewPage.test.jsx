@@ -293,3 +293,37 @@ it('keeps the older score cell when practice scores are on but there is no panel
   expect(odd).toHaveTextContent('Baseline to beat: 1.8. Your miss was smaller.');
   expect(odd).not.toHaveTextContent(/function|native code|undefined/);
 });
+
+describe('F6: a failed station read is not "no stations"', () => {
+  function failStationsFirst(status) {
+    api();
+    const real = globalThis.fetch;
+    let failed = 0;
+    globalThis.fetch = jest.fn((url, init) => {
+      if (String(url).replace(/^.*\/api/, '') === '/weather/stations' && failed === 0) {
+        failed += 1;
+        return reply(status, {});
+      }
+      return real(url, init);
+    });
+  }
+
+  it.each([[503, /Couldn't load the stations/], [429, /Too many requests right now/]])('a %s says so and Retry loads the list', async (status, text) => {
+    failStationsFirst(status);
+    setAuthToken(tokenFor(A));
+    renderPage();
+    expect(await screen.findByTestId('forecast-stations-failed')).toHaveTextContent(text);
+    expect(screen.queryByText(/No station is open for forecasts right now/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByRole('option', { name: /Harbor station/ })).toBeInTheDocument();
+    expect(screen.queryByTestId('forecast-stations-failed')).toBeNull();
+  });
+
+  it('a list that loads empty still says no station is open, with no retry', async () => {
+    api({ listed: [] });
+    setAuthToken(tokenFor(A));
+    renderPage();
+    expect(await screen.findByText(/No station is open for forecasts right now/)).toBeInTheDocument();
+    expect(screen.queryByTestId('forecast-stations-failed')).toBeNull();
+  });
+});
