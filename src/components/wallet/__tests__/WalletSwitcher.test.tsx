@@ -6,7 +6,7 @@
 import { jest } from '@jest/globals';
 import React from 'react';
 import '@testing-library/jest-dom';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 const features = { passkeyWallet: true };
@@ -100,5 +100,25 @@ describe('WalletSwitcher', () => {
   it('reads public material only: an unreadable passkey record counts as none', () => {
     localStorage.setItem('wrfcoin.passkey.credential.v1', '{"publicKeyXY":"zz"}');
     expect(readSavedWallets()).toEqual({ passkey: null, phrase: null });
+  });
+
+  it('a 12-word wallet removed on this page (wallets-changed event) is no longer listed', () => {
+    savePasskey(); saveVaultRecord();
+    mount('phrase');
+    expect(screen.getByTestId('wallet-switcher-phrase')).toHaveTextContent('0xcdcd');
+    localStorage.removeItem('wrfcoin_wallet_vault_v1');
+    act(() => { window.dispatchEvent(new Event('wrfcoin:wallets-changed')); });
+    expect(screen.getByTestId('wallet-switcher-phrase')).toHaveTextContent('Add');
+    expect(screen.getByTestId('wallet-switcher-phrase')).toHaveAttribute('href', '/onboarding');
+    expect(screen.getByTestId('wallet-switcher-passkey')).toHaveTextContent(shortAddress(passkeyAddress));
+  });
+
+  it('a wallet added or removed in another tab (storage event) refreshes the tabs', () => {
+    saveVaultRecord();
+    mount('phrase');
+    expect(screen.getByTestId('wallet-switcher-passkey')).toHaveTextContent('Add');
+    savePasskey();
+    act(() => { window.dispatchEvent(new StorageEvent('storage', { key: 'wrfcoin.passkey.credential.v1' })); });
+    expect(screen.getByTestId('wallet-switcher-passkey')).toHaveTextContent(shortAddress(passkeyAddress));
   });
 });
