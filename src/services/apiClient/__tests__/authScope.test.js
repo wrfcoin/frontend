@@ -46,6 +46,8 @@ describe('Bearer scope', () => {
     ['POST', '/weather/stations/verify-key'],
     ['POST', '/stations/verify-key'],
     ['GET', '/weather/stations/st_0123456789ab/reward-progress'],
+    ['GET', '/weather/stations/mine'],
+    ['POST', '/weather/stations/st_0123456789ab/ownership-proof'],
     ['GET', '/stations/st_0123456789ab/earnings'],
     ['GET', '/weather/stations/st_0123456789ab/earnings'],
     ['GET', '/mining/node-stats'],
@@ -99,6 +101,12 @@ describe('Bearer scope', () => {
     ['GET', '/api/stations/a/b/earnings'],
     ['POST', '/api/stations/st_0123456789ab/earnings'],
     ['GET', '/api/mining/node-statsx'],
+    ['POST', '/api/weather/stations/mine'],
+    ['GET', '/api/weather/stations/minex'],
+    ['GET', '/api/weather/stations/mine/extra'],
+    ['GET', '/api/weather/stations/st_0123456789ab/ownership-proof'],
+    ['POST', '/api/weather/stations/a/b/ownership-proof'],
+    ['POST', '/api/stations/st_0123456789ab/ownership-proofx'],
   ])('does not attach the token to %s %s', (method, path) => {
     expect(shouldAttachBearer(method, `https://api.example.com${path}`)).toBe(false);
     expect(shouldAttachBearer(method, path)).toBe(false);
