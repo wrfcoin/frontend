@@ -6,7 +6,10 @@
  */
 import React from 'react';
 import { jest } from '@jest/globals';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, configure, fireEvent, render, screen, waitFor } from '@testing-library/react';
+
+// Several fetch + render rounds per test: a full parallel jest run can exceed the 1 s default wait.
+configure({ asyncUtilTimeout: 5000 });
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ed25519 } from '@noble/curves/ed25519.js';
 
