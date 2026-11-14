@@ -377,6 +377,19 @@ async function runViewport(browser, vp, tall, theme) {
         await installRoutes(page, fx);
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
+    // The network status page is a build switch (default off): these run only when the harness was started with it.
+    for (const [name, mode] of [['status', 'populated'], ['status-stalled', 'stalled'], ['status-off', 'off']]) {
+      if (!want(name)) continue;
+      if (process.env.VITE_ENABLE_STATUS_PAGE !== 'true') { if (only.includes(name)) console.log(`SKIP ${name}: start with VITE_ENABLE_STATUS_PAGE=true`); continue; }
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { networkStatus: mode });
+        await loadRoute(page, '/status', errors);
+        await capture(page, errors, name, `/status (${mode})`, suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     // "Bond your node" is a build switch (default off): these run only when the harness was started with it.
     for (const [name, query, verdict, mode] of [['nodes-bond-admitted', 'node-1a2b3c4d', /Admitted, waiting/, 'populated'], ['nodes-bond-earning', 'ws-node', /Bonded, earning/, 'populated'], ['nodes-bond-closed', 'node-1a2b3c4d', /Admission is not open yet\./, 'off']]) {
       if (!want(name)) continue;

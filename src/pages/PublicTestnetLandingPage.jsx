@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { usePublicTestnetStats } from '../hooks/usePublicTestnetStats';
-import { getPublicNavEntries, isPasskeyWalletEnabled } from '../config/publicNavigation';
+import { getPublicNavEntries, isPasskeyWalletEnabled, isStatusPageEnabled } from '../config/publicNavigation';
 import { isPublicReadonlyEnabled } from '../config/contractSurfacePolicy';
 import './PublicTestnetLandingPage.css';
 
@@ -39,6 +39,8 @@ const PublicTestnetLandingPage = () => {
   );
   const mainLinks = entries.filter(e => e.group === 'main' && e.path !== '/');
   const policyLinks = entries.filter(e => e.group === 'legal');
+  // The network status page (owner decision 2026-11-01), only where its flag is on.
+  const statusPath = isStatusPageEnabled(import.meta.env?.VITE_ENABLE_STATUS_PAGE) ? '/status' : null;
   // The faucet lives in the wallet onboarding; only link it where that route is published.
   const faucetPath = mainLinks.some(e => e.path === '/onboarding') ? '/onboarding' : null;
   // The one thing a visitor can do in a couple of minutes; only offered where the route is published.
@@ -109,6 +111,12 @@ const PublicTestnetLandingPage = () => {
               </div>
             </dl>
           )}
+
+          {statusPath && (
+            <p className="public-testnet__muted" data-testid="landing-status-link">
+              <Link to={statusPath}>Network status</Link>: block pace, producers online and scheduled upgrades.
+            </p>
+          )}
         </section>
       </header>
 
@@ -153,6 +161,7 @@ const PublicTestnetLandingPage = () => {
       )}
 
       <nav className="public-testnet__links" aria-label="Testnet policies">
+        {statusPath && <Link to={statusPath} data-testid="landing-footer-status">Network status</Link>}
         {policyLinks.map(entry => (
           <Link key={entry.path} to={entry.path}>{entry.name}</Link>
         ))}
