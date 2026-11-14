@@ -141,6 +141,9 @@ interface WalletStepProps {
   onAuthenticated: (address: string, kind?: OwnerKind, ownershipSigner?: StationOwnershipSigner) => void;
 }
 
+/** Under the 12-word card when a passkey card is offered too: why this is the one to pick for earning now. */
+export const PHRASE_OWNER_EARNS = 'Recommended: a station owned by your 12-word wallet earns rewards once it is registered on chain.';
+
 /** Which wallet owns the station: the 12-word (ed25519) wallet, or a passkey wallet (Phase 1, not earning yet). */
 export type OwnerKind = 'phrase' | 'passkey';
 
@@ -323,6 +326,9 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
   ) : null;
   // A passkey that can own a station makes the "12-word wallet only" notices below wrong, so they hide.
   const showPhraseOnlyNotice = hasPasskeyWallet && !passkeyCard;
+  // With both kinds in this browser, the 12-word wallet (signed in or saved) comes first: a station it owns earns
+  // now, while a passkey-owned one is connected for good but not earning yet. The passkey card follows it.
+  const phraseFirst = Boolean(passkeyCard && (ownedAddress || savedPhraseAddress));
 
   if (mode === 'choose' && (ownedAddress || publicBuild)) {
     return (
@@ -331,12 +337,21 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
         <Typography variant="body2" color="text.secondary">
           Your wallet is the station owner and receives any rewards that are later recorded.
         </Typography>
-        {passkeyCard}
+        {!phraseFirst && passkeyCard}
         {ownedAddress ? (
-          <WrfCard variant="outlined" headerTitle="Use your signed-in wallet">
+          <WrfCard
+            variant="outlined"
+            headerTitle={passkeyCard ? 'Use your 12-word wallet' : 'Use your signed-in wallet'}
+            data-testid="connect-station-phrase-owner"
+          >
             <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all', mb: 1.5 }}>
               {ownedAddress}
             </Typography>
+            {passkeyCard && (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }} data-testid="connect-station-phrase-earns">
+                {PHRASE_OWNER_EARNS}
+              </Typography>
+            )}
             <WrfButton variant="primary" onClick={() => onAuthenticated(ownedAddress)}>
               Use this wallet
             </WrfButton>
@@ -348,7 +363,7 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
             )}
           </WrfCard>
         ) : savedPhraseAddress ? (
-          <WrfCard variant="outlined" headerTitle="Unlock your 12-word wallet">
+          <WrfCard variant="outlined" headerTitle="Unlock your 12-word wallet" data-testid="connect-station-phrase-unlock">
             <Typography variant="body2" sx={{ fontFamily: 'monospace', wordBreak: 'break-all', mb: 1 }}>
               {savedPhraseAddress}
             </Typography>
@@ -383,6 +398,7 @@ function WalletStep({ onAuthenticated }: WalletStepProps) {
             </WrfButton>
           </WrfAlert>
         )}
+        {phraseFirst && passkeyCard}
       </Box>
     );
   }
