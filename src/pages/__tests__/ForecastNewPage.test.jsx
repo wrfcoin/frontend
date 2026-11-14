@@ -23,7 +23,8 @@ await jest.unstable_mockModule('../../services/walletCrypto/deviceSession', () =
 }));
 const { setAuthToken, clearAuthToken } = await import('../../services/authTokenStore');
 const { forecastCommitId, stationAliasOf } = await import('../../services/walletCrypto/forecastCommit');
-const { default: ForecastNewPage } = await import('../ForecastNewPage');
+const { default: ForecastNewPage, forecastableStations } = await import('../ForecastNewPage');
+const { sha3_256 } = await import('@noble/hashes/sha3.js');
 
 const b64 = obj => globalThis.btoa(JSON.stringify(obj)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
 const tokenFor = address => `${b64({ alg: 'HS256' })}.${b64({ sub: address, address, role: 'wallet' })}.sig`;
@@ -38,13 +39,14 @@ function draft(value = 12.3, station = STATION) {
 }
 const reply = (status, body) => Promise.resolve({ ok: status >= 200 && status < 300, status, headers: { get: () => null }, json: () => Promise.resolve(body) });
 
-function api({ status = 200, draftBody = draft(), mine = [] } = {}) {
+const OTHER = 'st_0123456789ab';
+function api({ status = 200, draftBody = draft(), mine = [], open = [ALIAS], listed = [{ alias: ALIAS, name: 'Harbor station', status: 'live' }] } = {}) {
   const calls = [];
   globalThis.fetch = jest.fn((url, init = {}) => {
     const path = String(url).replace(/^.*\/api/, '');
     calls.push({ path, method: init.method ?? 'GET', body: init.body ? JSON.parse(init.body) : null });
-    if (path === '/forecasts/status') return status === 200 ? reply(200, { enabled: true, leads: [1, 6, 12, 24], variables: ['temperature_c', 'pressure_hpa'] }) : reply(404, { error: 'Not found' });
-    if (path === '/weather/stations') return reply(200, { stations: [{ alias: ALIAS, name: 'Harbor station', status: 'live' }] });
+    if (path === '/forecasts/status') return status === 200 ? reply(200, { enabled: true, leads: [1, 6, 12, 24], variables: ['temperature_c', 'pressure_hpa'], ...(open ? { stations: open } : {}) }) : reply(404, { error: 'Not found' });
+    if (path === '/weather/stations') return reply(200, { stations: listed });
     if (path.startsWith(`/stations/${ALIAS}/observations`)) return reply(200, { observations: [{ timestamp: '2026-11-07T12:00:00.000Z', temperatureC: 12.34, pressureHpa: 1013.2 }] });
     if (path === '/forecasts/mine') return reply(200, { forecasts: mine });
     if (path === '/forecasts/draft') return reply(200, draftBody);
@@ -71,6 +73,35 @@ it('signed out: asks for a 12-word wallet', async () => {
   renderPage();
   expect(await screen.findByText(/Sign in with a 12-word wallet/)).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Create a 12-word wallet' })).toHaveAttribute('href', '/onboarding');
+  // Both links go through wallet setup, which comes back here once the wallet is open and signed in.
+  expect(screen.getByRole('link', { name: 'Open your wallet' })).toHaveAttribute('href', '/onboarding');
+});
+
+it('lists only the stations the server takes forecasts for, and picks an open one first', async () => {
+  api({ listed: [
+    { alias: OTHER, name: 'Hill station', status: 'live' },
+    { alias: ALIAS, name: 'Harbor station', status: 'live' },
+  ] });
+  setAuthToken(tokenFor(A));
+  renderPage();
+  const select = await screen.findByLabelText('Station');
+  await waitFor(() => expect(select).toHaveValue(ALIAS));
+  expect(screen.queryByRole('option', { name: /Hill station/ })).toBeNull();
+});
+
+it('no station open for forecasts: says so instead of listing stations that would be refused', async () => {
+  api({ open: [] });
+  setAuthToken(tokenFor(A));
+  renderPage();
+  expect(await screen.findByText(/No station is open for forecasts right now/)).toBeInTheDocument();
+  expect(screen.getByLabelText('Station')).toBeDisabled();
+});
+
+it('forecastableStations: an older server without a station list keeps the whole public list', () => {
+  const listed = [{ alias: OTHER, status: 'not_reporting' }, { alias: ALIAS, status: 'live' }, { alias: 'nope', status: 'live' }];
+  expect(forecastableStations(listed, undefined).map(s => s.alias)).toEqual([ALIAS, OTHER]);
+  expect(forecastableStations(listed, [OTHER]).map(s => s.alias)).toEqual([OTHER]);
+  expect(forecastableStations(null, [ALIAS])).toEqual([]);
 });
 
 it('signed in without this wallet in the browser: explains, cannot sign', async () => {
@@ -97,6 +128,9 @@ it('suggests the last reading, signs the verified draft and shows the commit', a
   const submit = calls.find(c => c.path === '/forecasts/submit');
   expect(submit.body.commitId).toBe(draft().commitId);
   expect(submit.body.authSignature).toMatch(/^[0-9a-f]{128}$/);
+  // Key binding (forecaster_key_binding): the signing key must derive to the forecaster's own address.
+  const pub = Uint8Array.from(submit.body.authPubkey.match(/../g).map(h => parseInt(h, 16)));
+  expect(`0x${Buffer.from(sha3_256(pub).slice(0, 20)).toString('hex')}`).toBe(A.toLowerCase());
   expect(screen.getByText('Practice score. Nothing is paid for it.')).toBeInTheDocument();
 });
 

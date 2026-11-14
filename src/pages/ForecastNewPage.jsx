@@ -13,6 +13,7 @@ import { useForecasterThemeVars, When } from './publicForecastersShared';
 import ForecastPracticeScore, { hasPracticePanel } from './ForecastPracticeScore';
 import { useSignedInWallet } from './friendChallengesShared';
 import { FEATURES } from '../config/features';
+import { UNLOCK_RETURN_STATE } from './unlockReturn';
 import ForecastWalletNotice, { forecastWalletNoticeReplaces, useForecastWallets } from './ForecastWalletNotice';
 import './PublicForecastersPage.css';
 import './FriendChallengesPage.css';
@@ -47,6 +48,17 @@ const REFUSALS = {
 export const failureLine = code => (typeof code === 'string' && code.startsWith('reveal_')
   ? 'Committed, but the reveal didn\'t reach the chain in time. You can try again.'
   : 'Didn\'t reach the chain; you can try again.');
+/**
+ * The stations the backend takes forecasts for (`stations` in GET /api/forecasts/status), in public-list order.
+ * Listing any other station would let a visitor fill in the form and only then be refused, so they are left out.
+ * A status without a `stations` list (an older backend) keeps the whole public list.
+ */
+export function forecastableStations(publicStations, openAliases) {
+  const list = (Array.isArray(publicStations) ? publicStations : []).filter(s => /^st_[0-9a-f]{12}$/.test(s?.alias ?? ''));
+  const open = Array.isArray(openAliases) ? new Set(openAliases.filter(a => typeof a === 'string')) : null;
+  const shown = open ? list.filter(s => open.has(s.alias)) : list;
+  return [...shown].sort((a, b) => Number(b.status === 'live') - Number(a.status === 'live'));
+}
 const failure = result => {
   if (result.kind === 'refused') return REFUSALS[result.code] ?? result.message ?? 'The server refused this forecast.';
   if (result.kind === 'rate_limited') return 'Too many requests right now. Wait a moment and try again.';
@@ -112,6 +124,7 @@ export default function ForecastNewPage() {
   const you = useSignedInWallet();
   const vaultAddress = readVault()?.address?.toLowerCase() ?? null;
   const [open, setOpen] = useState('loading');
+  const [openAliases, setOpenAliases] = useState(null);
   const [stations, setStations] = useState(null);
   const [alias, setAlias] = useState('');
   const [variable, setVariable] = useState('temperature_c');
@@ -128,7 +141,11 @@ export default function ForecastNewPage() {
 
   useEffect(() => {
     let live = true;
-    readForecastStatus().then(r => { if (live) setOpen(r.kind === 'ok' && r.data?.enabled ? 'open' : r.kind === 'not_found' ? 'closed' : 'error'); });
+    readForecastStatus().then(r => {
+      if (!live) return;
+      setOpenAliases(r.kind === 'ok' && Array.isArray(r.data?.stations) ? r.data.stations : null);
+      setOpen(r.kind === 'ok' && r.data?.enabled ? 'open' : r.kind === 'not_found' ? 'closed' : 'error');
+    });
     return () => { live = false; };
   }, []);
 
@@ -137,13 +154,12 @@ export default function ForecastNewPage() {
     let live = true;
     publicGet('/weather/stations').then(r => {
       if (!live) return;
-      const list = r.kind === 'ok' && Array.isArray(r.data?.stations) ? r.data.stations.filter(s => /^st_[0-9a-f]{12}$/.test(s?.alias ?? '')) : [];
-      list.sort((a, b) => Number(b.status === 'live') - Number(a.status === 'live'));
+      const list = forecastableStations(r.kind === 'ok' ? r.data?.stations : null, openAliases);
       setStations(list);
       if (list[0]) setAlias(prev => prev || list[0].alias);
     });
     return () => { live = false; };
-  }, [open]);
+  }, [open, openAliases]);
 
   useEffect(() => {
     if (!alias) return undefined;
@@ -232,11 +248,11 @@ export default function ForecastNewPage() {
         <WrfCard component="section" aria-label="Sign in" className="fc-section" noPadding>
           <div className="ch-signin">
             <p><strong>Sign in with a 12-word wallet</strong> to make a forecast. Your wallet is your account: no email or name is asked for.</p>
-            <Link className="ch-action" to="/wallet">Open your wallet</Link>
+            <Link className="ch-action" to="/onboarding" state={UNLOCK_RETURN_STATE.forecastNew}>Open your wallet</Link>
           </div>
           <div className="ch-signin ch-signin--code">
-            <p>No wallet yet? Create one with 12 recovery words. Passkey wallets can't sign a forecast yet.</p>
-            <Link className="ch-action ch-action--ghost" to="/onboarding">Create a 12-word wallet</Link>
+            <p>No wallet yet? Create one with 12 recovery words. It is free and takes about a minute, and you come straight back here. Passkey wallets can't sign a forecast yet.</p>
+            <Link className="ch-action ch-action--ghost" to="/onboarding" state={UNLOCK_RETURN_STATE.forecastNew}>Create a 12-word wallet</Link>
           </div>
         </WrfCard>
       ) : null}
@@ -245,7 +261,7 @@ export default function ForecastNewPage() {
         <>
           {!canSign && !noticeReplaces ? (
             <WrfAlert severity="info" role="status" className="ch-notice">
-              Forecasts are signed with your 12-word wallet on this device. This browser has no 12-word wallet for the signed-in address. <Link to="/onboarding">Set one up</Link> or sign in with it on the <Link to="/wallet">Wallet page</Link>. Passkeys can't sign a forecast yet.
+              Forecasts are signed with your 12-word wallet on this device. This browser has no 12-word wallet for the signed-in address. <Link to="/onboarding" state={UNLOCK_RETURN_STATE.forecastNew}>Set one up or open it</Link>. Passkeys can't sign a forecast yet.
             </WrfAlert>
           ) : null}
           <WrfCard component="section" aria-label="New forecast" className="fc-section" header={<div className="fc-section-head"><h2>New forecast</h2></div>} noPadding>
@@ -255,7 +271,7 @@ export default function ForecastNewPage() {
                   {(stations ?? []).map(s => <option key={s.alias} value={s.alias}>{s.name || 'Weather station'} · {s.alias}{s.status === 'live' ? '' : ' (not reporting)'}</option>)}
                 </select>
               </label>
-              {stations && stations.length === 0 ? <p className="fc-note">No stations are listed right now.</p> : null}
+              {stations && stations.length === 0 ? <p className="fc-note">No station is open for forecasts right now. Try again later.</p> : null}
               <div className="ch-fields">
                 <label className="ch-field">What
                   <select value={variable} onChange={e => { setVariable(e.target.value); setEdited(false); }}>
