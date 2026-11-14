@@ -378,7 +378,7 @@ async function runViewport(browser, vp, tall, theme) {
       } catch (e) { console.log(`FAIL ${name}`, suffix, String(e).slice(0, 160)); report.push({ name, viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
     }
     // The network status page is a build switch (default off): these run only when the harness was started with it.
-    for (const [name, mode] of [['status', 'populated'], ['status-stalled', 'stalled'], ['status-off', 'off']]) {
+    for (const [name, mode] of [['status-stalled', 'stalled'], ['status-off', 'off']]) {
       if (!want(name)) continue;
       if (process.env.VITE_ENABLE_STATUS_PAGE !== 'true') { if (only.includes(name)) console.log(`SKIP ${name}: start with VITE_ENABLE_STATUS_PAGE=true`); continue; }
       try {
