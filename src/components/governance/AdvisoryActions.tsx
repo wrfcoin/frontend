@@ -6,7 +6,7 @@
  * Rendered only when the build flag is on AND the node reports advisory_governance active (the caller checks
  * both). Nothing here is carried out on chain beyond recording the text and the votes.
  */
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -61,10 +61,22 @@ interface Signer {
 
 interface AdvisoryContextValue {
   signer: Signer | null;
-  /** Sign `action` with the chosen wallet (asks for the password first for the 12-word wallet). */
-  sign: (action: AdvisoryAction, nonce: bigint) => Promise<AdvisorySubmitted>;
+  /**
+   * Sign `action` with the chosen wallet (asks for the password first for the 12-word wallet). `subject`
+   * names what is signed (the proposal title) in the password prompt.
+   */
+  sign: (action: AdvisoryAction, nonce: bigint, subject?: string) => Promise<AdvisorySubmitted>;
   askPassword: (title: string) => Promise<string>;
+  /** True while any propose or vote on this card is running: one action at a time. */
+  busy: boolean;
+  /**
+   * Runs one whole propose/vote action. Only one runs at a time for the card; a second one while the first
+   * is running is refused (its buttons are disabled anyway).
+   */
+  exclusive: <T>(run: () => Promise<T>) => Promise<T>;
 }
+
+export const ANOTHER_ACTION_RUNNING = 'Finish or cancel the other vote or proposal first.';
 
 const AdvisoryContext = createContext<AdvisoryContextValue | null>(null);
 
@@ -109,21 +121,48 @@ export function AdvisoryActionsProvider({ children, credentials }: { children: R
   const [chosen, setChosen] = useState<WalletKind | null>(choices[0]?.kind ?? null);
   const signer = choices.find(c => c.kind === chosen) ?? null;
   const [pending, setPending] = useState<PasswordAsk | null>(null);
+  const pendingRef = useRef<PasswordAsk | null>(null);
+  const runningRef = useRef(false);
+  const [busy, setBusy] = useState(false);
 
-  const askPassword = useCallback((title: string) => new Promise<string>((resolve, reject) => setPending({ title, resolve, reject })), []);
+  // One password slot. A new ask settles the one it replaces (rejected), so no action is left waiting forever.
+  const askPassword = useCallback((title: string) => new Promise<string>((resolve, reject) => {
+    pendingRef.current?.reject(new Error('Cancelled. Nothing was sent.'));
+    const ask: PasswordAsk = { title, resolve, reject };
+    pendingRef.current = ask;
+    setPending(ask);
+  }), []);
+  const closePassword = useCallback(() => { pendingRef.current = null; setPending(null); }, []);
+  // Leaving the page settles an open prompt too.
+  useEffect(() => () => { pendingRef.current?.reject(new Error('Cancelled. Nothing was sent.')); pendingRef.current = null; }, []);
 
-  const sign = useCallback(async (action: AdvisoryAction, nonce: bigint) => {
+  const exclusive = useCallback(async <T,>(run: () => Promise<T>): Promise<T> => {
+    if (runningRef.current) throw new Error(ANOTHER_ACTION_RUNNING);
+    runningRef.current = true;
+    setBusy(true);
+    try {
+      return await run();
+    } finally {
+      runningRef.current = false;
+      setBusy(false);
+    }
+  }, []);
+
+  const sign = useCallback(async (action: AdvisoryAction, nonce: bigint, subject?: string) => {
     if (!signer) throw new Error('Open a wallet on this device first.');
     if (signer.kind === 'passkey') {
       const record = loadStoredPasskey();
       if (!record) throw new Error('The passkey wallet is not on this device.');
       return submitWithPasskey({ record, action, nonce, credentials });
     }
-    const password = await askPassword(action.kind === 'propose' ? 'Sign the proposal' : `Sign your vote ${action.approve ? 'for' : 'against'}`);
+    const named = subject ? ` “${subject.length > 80 ? `${subject.slice(0, 79)}…` : subject}”` : '';
+    const password = await askPassword(action.kind === 'propose'
+      ? `Sign the proposal${named}`
+      : `Sign your vote ${action.approve ? 'for' : 'against'}${named || ` proposal ${action.proposalId}`}`);
     return submitWithPhrase({ owner: signer.address, password, action, nonce });
   }, [signer, credentials, askPassword]);
 
-  const value = useMemo(() => ({ signer, sign, askPassword }), [signer, sign, askPassword]);
+  const value = useMemo(() => ({ signer, sign, askPassword, busy, exclusive }), [signer, sign, askPassword, busy, exclusive]);
 
   return (
     <AdvisoryContext.Provider value={value}>
@@ -144,6 +183,7 @@ export function AdvisoryActionsProvider({ children, credentials }: { children: R
                 data-testid={`advisory-signer-${c.kind}`}
                 variant={c.kind === chosen ? 'primary' : 'outline'}
                 size="sm"
+                disabled={busy}
                 onClick={() => setChosen(c.kind)}
               >
                 {c.kind === 'passkey' ? 'Passkey wallet' : '12-word wallet'} · {shortAddress(c.address)}
@@ -151,7 +191,7 @@ export function AdvisoryActionsProvider({ children, credentials }: { children: R
             ))}
           </Box>
         )}
-        {pending ? <PasswordPanel ask={pending} onDone={() => setPending(null)} /> : null}
+        {pending ? <PasswordPanel key={pending.title} ask={pending} onDone={closePassword} /> : null}
         {children}
       </Box>
     </AdvisoryContext.Provider>
@@ -186,8 +226,10 @@ export function AdvisoryProposeForm({ onSubmitted }: { onSubmitted?: () => void 
   const submit = async () => {
     setBusy(true); setError(null);
     try {
-      const nonce = await fetchAdvisoryNonce(ctx.signer!.address);
-      const r = await ctx.sign({ kind: 'propose', title, summary }, nonce);
+      const r = await ctx.exclusive(async () => {
+        const nonce = await fetchAdvisoryNonce(ctx.signer!.address);
+        return ctx.sign({ kind: 'propose', title, summary }, nonce, title);
+      });
       setDone(`${PENDING_NOTE}${r.proposalId ? ` Proposal ${r.proposalId}.` : ''}`);
       setOpen(false); setTitle(''); setSummary('');
       onSubmitted?.();
@@ -211,7 +253,7 @@ export function AdvisoryProposeForm({ onSubmitted }: { onSubmitted?: () => void 
       {problem ? <WrfAlert severity="warning">{problem}</WrfAlert> : null}
       {error ? <WrfAlert severity="error" data-testid="advisory-error">{error}</WrfAlert> : null}
       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-        <WrfButton type="submit" variant="primary" size="sm" loading={busy} disabled={busy || !title || !summary || problem !== null}
+        <WrfButton type="submit" variant="primary" size="sm" loading={busy} disabled={busy || ctx.busy || !title || !summary || problem !== null}
           data-testid="advisory-propose-submit">Sign and propose</WrfButton>
         <WrfButton variant="ghost" size="sm" disabled={busy} onClick={() => { setOpen(false); setError(null); }}>Cancel</WrfButton>
       </Box>
@@ -220,7 +262,7 @@ export function AdvisoryProposeForm({ onSubmitted }: { onSubmitted?: () => void 
 }
 
 /** For / against on one active proposal. Checks eligibility first, so a refusal is explained before signing. */
-export function AdvisoryVoteButtons({ proposalId }: { proposalId: string }) {
+export function AdvisoryVoteButtons({ proposalId, title }: { proposalId: string; title?: string }) {
   const ctx = useContext(AdvisoryContext);
   const [busy, setBusy] = useState<'for' | 'against' | null>(null);
   const [note, setNote] = useState<{ severity: 'success' | 'error' | 'info'; text: string } | null>(null);
@@ -229,13 +271,15 @@ export function AdvisoryVoteButtons({ proposalId }: { proposalId: string }) {
   const vote = async (approve: boolean) => {
     setBusy(approve ? 'for' : 'against'); setNote(null);
     try {
-      const e = await fetchAdvisoryEligibility(proposalId, ctx.signer!.address);
-      if (!e.canVote || e.nextNonce === null) {
-        setNote({ severity: 'info', text: e.voted ? `This wallet already voted ${e.voted}.` : (e.reason ? `This wallet can't vote: ${e.reason}.` : 'This wallet can\'t vote on this one.') });
-        return;
-      }
-      await ctx.sign({ kind: 'vote', proposalId, approve }, BigInt(e.nextNonce));
-      setNote({ severity: 'success', text: PENDING_NOTE });
+      const outcome = await ctx.exclusive(async () => {
+        const e = await fetchAdvisoryEligibility(proposalId, ctx.signer!.address);
+        if (!e.canVote || e.nextNonce === null) {
+          return { severity: 'info' as const, text: e.voted ? `This wallet already voted ${e.voted}.` : (e.reason ? `This wallet can't vote: ${e.reason}.` : 'This wallet can\'t vote on this one.') };
+        }
+        await ctx.sign({ kind: 'vote', proposalId, approve }, BigInt(e.nextNonce), title);
+        return { severity: 'success' as const, text: PENDING_NOTE };
+      });
+      setNote(outcome);
     } catch (err) {
       setNote({ severity: 'error', text: describeAdvisoryError(err) });
     } finally {
@@ -246,8 +290,8 @@ export function AdvisoryVoteButtons({ proposalId }: { proposalId: string }) {
   return (
     <Box data-testid="advisory-vote" sx={{ display: 'grid', gap: 1, mt: 1 }}>
       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-        <WrfButton variant="outline" size="sm" loading={busy === 'for'} disabled={busy !== null} onClick={() => void vote(true)} data-testid="advisory-vote-for">Vote for</WrfButton>
-        <WrfButton variant="outline" size="sm" loading={busy === 'against'} disabled={busy !== null} onClick={() => void vote(false)} data-testid="advisory-vote-against">Vote against</WrfButton>
+        <WrfButton variant="outline" size="sm" loading={busy === 'for'} disabled={busy !== null || ctx.busy} onClick={() => void vote(true)} data-testid="advisory-vote-for">Vote for</WrfButton>
+        <WrfButton variant="outline" size="sm" loading={busy === 'against'} disabled={busy !== null || ctx.busy} onClick={() => void vote(false)} data-testid="advisory-vote-against">Vote against</WrfButton>
       </Box>
       {note ? <WrfAlert severity={note.severity} data-testid="advisory-vote-note">{note.text}</WrfAlert> : null}
     </Box>
