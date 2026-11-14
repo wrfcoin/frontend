@@ -24,17 +24,18 @@ The public build includes the pages below. Live values depend on the configured 
 | `/map`, `/weather/station/:stationId` | Station coverage and station details. |
 | `/explore`, `/search` | Block exploration and search; `/explorer` redirects to Explore. |
 | `/leaderboard/contributors`, `/contributor/:key` | API-reported contribution ranking and contributor profiles. |
-| `/governance/public`, `/governance/public/:proposalId` | Read-only proposals and treasury information. |
+| `/governance/public`, `/governance/public/:proposalId` | Testnet proposals. Advisory propose and vote controls appear once the build flag is on and the node reports `advisory_governance` active; otherwise the page is read-only. It shows no treasury. |
 | `/weather/forecast` | Current conditions and forecast display with source/availability labels. |
+| `/forecast/new` | Browser practice forecast, signed with a 12-word wallet when the backend reports forecasts open. Practice score only; nothing is paid. |
 | `/connect-station` | Station connection flow; `/earn` is an alias. |
-| `/downloads` | Software availability, platform notes and verification guidance. Signed downloads are not yet published. |
+| `/downloads` | Software catalog (`public/downloads/manifest.json`): the Android APK, the Windows node preview and source, with checksums and verification guidance. |
 | `/terms`, `/privacy`, `/api-terms`, `/security` | Public policies and reporting information. |
 
 The [route policy](src/config/contractSurfacePolicy.ts) admits the data, onboarding and wallet routes when `VITE_PUBLIC_READONLY_PATHS=true`; the name does not mean the wallet cannot submit a transfer. Home, Downloads and policy pages remain available without that flag. Operator-preview and full-studio modules are not the public product.
 
 ## Planned and experimental
 
-DeFi trading, cross-chain value movement, NFT marketplaces, DAG/sharding dashboards and zero-knowledge wallet features are **not public testnet offerings** today. An NFT marketplace and cross-chain bridges are planned for later. Governance is read-only here. Forecast display does not establish a validated competitive forecasting or payout product.
+DeFi trading, cross-chain value movement, NFT marketplaces, DAG/sharding dashboards and zero-knowledge wallet features are **not public testnet offerings** today. An NFT marketplace and cross-chain bridges are planned for later. Governance voting is advisory only: a passed proposal is recorded, not carried out, and parameter proposals stay off. Forecast display does not establish a validated competitive forecasting or payout product.
 
 ## Run locally
 
