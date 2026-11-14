@@ -178,12 +178,12 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     producers: {
       status: 'ok', windowBlocks: 64, total: 3, online: 2,
       members: [
-        { label: 'n5-node-a', online: true, blocksInWindow: 33, lastHeight: 44830 },
-        { label: 'mango-mini', online: true, blocksInWindow: 31, lastHeight: 44829 },
-        { label: 'producer-standby', online: false, blocksInWindow: 0, lastHeight: null },
+        { label: 'producer 1', online: true, blocksInWindow: 33, lastHeight: 44830 },
+        { label: 'producer 2', online: true, blocksInWindow: 31, lastHeight: 44829 },
+        { label: 'producer 3', online: false, blocksInWindow: 0, lastHeight: null },
       ],
     },
-    nodePay: { status: 'ok', currentEpoch: 21, lastPaidEpoch: 19, epochsScanned: [21, 20, 19, 18, 17, 16, 15, 14] },
+    nodePay: { status: 'ok', currentEpoch: 21, lastPaidEpoch: 19, epochsScanned: [21, 20, 19] },
     upgrades: {
       status: 'ok', activeFeatures: 31, signedNotice: null,
       pending: [
@@ -429,6 +429,7 @@ export async function installRoutes(page, fx, options = {}) {
   const proofCardMode = options.proofCard || 'populated';
   const networkNodesMode = options.networkNodes || 'populated';
   const networkStatusMode = options.networkStatus || 'populated';
+  let networkStatusFirstRead = 0;
   const bondAdmissionsMode = options.bondAdmissions || 'populated';
   const competitionsMode = options.competitions || 'populated';
   const sessionKeysMode = options.sessionKeys || 'off';
@@ -619,6 +620,11 @@ export async function installRoutes(page, fx, options = {}) {
     }
     if (p === '/api/public/network-status') {
       if (networkStatusMode === 'off') return json(route, { error: 'Not found' }, 404);
+      networkStatusFirstRead ||= Date.now();
+      // 'stale': the page-load reads succeed (dev StrictMode reads twice), every refresh after them is a 502
+      // (the page keeps the good one, marked stale).
+      if (networkStatusMode === 'stale' && Date.now() - networkStatusFirstRead > 2_000) return json(route, { success: false, error: { code: 'UPSTREAM_ERROR', message: 'The chain node could not answer.' } }, 502);
+      if (networkStatusMode === 'partial-pay') return json(route, { ...fx.NETWORK_STATUS, nodePay: { status: 'partial', currentEpoch: 21, lastPaidEpoch: null, epochsScanned: [21, 19], epochsUnread: [20] } });
       if (networkStatusMode === 'stalled') {
         const s = fx.NETWORK_STATUS;
         return json(route, { ...s, blocks: { ...s.blocks, lastBlockAt: new Date(Date.now() - 2 * 3600_000).toISOString(), lastBlockAgeSeconds: 7200, lastHour: { produced: 0, expected: 46 }, lastDay: { produced: 980, expected: 1122, atLeast: false }, longestGapSeconds: { value: 7200, overBlocks: 100 } }, nodePay: { status: 'unavailable' } });

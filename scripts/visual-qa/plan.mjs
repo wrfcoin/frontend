@@ -91,6 +91,8 @@ export const SCENARIOS = [
   { name: 'nodes-partial', route: '/nodes', note: 'bonds and attesters unavailable from the node: said, never zero' },
   { name: 'nodes-off', route: '/nodes', note: 'the 404 while NETWORK_NODES_READ_ENABLED is not true' },
   { name: 'status-stalled', route: '/status', note: 'network status (run with VITE_ENABLE_STATUS_PAGE=true): no block for 2 h, node pay unavailable' },
+  { name: 'status-stale', route: '/status', note: 'network status (run with VITE_ENABLE_STATUS_PAGE=true): a refresh failed after a good read: last reading kept, marked stale, no outage claimed' },
+  { name: 'status-partial-pay', route: '/status', note: 'network status (run with VITE_ENABLE_STATUS_PAGE=true): a newer settlement read failed: node pay partly checked' },
   { name: 'status-off', route: '/status', note: 'network status (run with VITE_ENABLE_STATUS_PAGE=true): the 404 while NETWORK_STATUS_READ_ENABLED is not true' },
   { name: 'nodes-bond-admitted', route: '/nodes', note: 'Bond your node (run with VITE_ENABLE_BOND_GUIDE=true): a node admitted, waiting for its bond' },
   { name: 'nodes-bond-earning', route: '/nodes', note: 'Bond your node (run with VITE_ENABLE_BOND_GUIDE=true): a bonded node that has been paid' },

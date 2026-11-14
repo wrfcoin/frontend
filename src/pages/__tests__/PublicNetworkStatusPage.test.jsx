@@ -5,12 +5,15 @@
  */
 import { jest } from '@jest/globals';
 import '@testing-library/jest-dom/jest-globals';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  jest.useRealTimers();
+});
 
-const { default: Page, duration, verdict } = await import('../PublicNetworkStatusPage');
+const { default: Page, duration, verdict, snapshotBlockAge, MAX_ARRIVAL_DELAY_S } = await import('../PublicNetworkStatusPage');
 
 const snapshot = (over = {}) => ({
   network: { status: 'ok', chainId: '888', networkId: 'testnet', syncStatus: 'synced', peerCount: 2 },
@@ -22,12 +25,12 @@ const snapshot = (over = {}) => ({
   producers: {
     status: 'ok', windowBlocks: 64, total: 3, online: 2,
     members: [
-      { label: 'n5-node-a', online: true, blocksInWindow: 40, lastHeight: 25000 },
-      { label: 'mango-mini', online: true, blocksInWindow: 24, lastHeight: 24999 },
-      { label: 'producer-standby', online: false, blocksInWindow: 0, lastHeight: null },
+      { label: 'Producer A', online: true, blocksInWindow: 40, lastHeight: 25000 },
+      { label: 'producer 2', online: true, blocksInWindow: 24, lastHeight: 24999 },
+      { label: 'producer 3', online: false, blocksInWindow: 0, lastHeight: null },
     ],
   },
-  nodePay: { status: 'ok', currentEpoch: 21, lastPaidEpoch: 19, epochsScanned: [21, 20, 19, 18, 17, 16, 15, 14] },
+  nodePay: { status: 'ok', currentEpoch: 21, lastPaidEpoch: 19, epochsScanned: [21, 20, 19] },
   upgrades: { status: 'ok', activeFeatures: 30, signedNotice: null, pending: [{ feature: 'governance_proposals', activationHeight: 27000, blocksRemaining: 2000 }] },
   checkedAt: '2026-11-14T12:00:00.000Z',
   ...over,
@@ -37,6 +40,27 @@ function mockFetch(status, body) {
   globalThis.fetch = jest.fn(async () => ({ ok: status >= 200 && status < 300, status, headers: { get: () => null }, json: async () => body }));
 }
 const renderPage = () => render(<MemoryRouter><Page /></MemoryRouter>);
+
+const RECEIVED = Date.parse('2026-11-14T12:00:00.000Z');
+const ok = body => ({ ok: true, status: 200, headers: { get: () => null }, json: async () => body });
+const status = code => ({ ok: false, status: code, headers: { get: () => null }, json: async () => ({ success: false }) });
+/** fetch answers from a queue of replies (a function reply may throw); the last one repeats. */
+function fetchSequence(...replies) {
+  let i = 0;
+  globalThis.fetch = jest.fn(async () => {
+    const r = replies[Math.min(i, replies.length - 1)];
+    i += 1;
+    return typeof r === 'function' ? r() : r;
+  });
+}
+async function advance(ms) {
+  await act(async () => { await jest.advanceTimersByTimeAsync(ms); });
+}
+async function startWithFakeTimers() {
+  jest.useFakeTimers({ now: RECEIVED, doNotFake: ['queueMicrotask'] });
+  renderPage();
+  await advance(0);
+}
 
 test('shows the verdict, block pace, producers online, peers, node pay and scheduled upgrades', async () => {
   mockFetch(200, snapshot());
@@ -54,7 +78,7 @@ test('shows the verdict, block pace, producers online, peers, node pay and sched
   expect(screen.getByTestId('status-nodepay')).toHaveTextContent('Epoch 19 paidnow epoch 21');
   expect(screen.getByTestId('status-gap')).toHaveTextContent('2 min 34 s');
   const list = screen.getByTestId('status-producer-list');
-  expect(within(list).getByText('producer-standby')).toBeInTheDocument();
+  expect(within(list).getByText('producer 3')).toBeInTheDocument();
   expect(within(list).getByText('Not seen')).toBeInTheDocument();
   const up = screen.getByTestId('status-upgrades');
   expect(up).toHaveTextContent('Governance proposals');
@@ -117,4 +141,84 @@ test('duration and verdict helpers', () => {
   expect(verdict(400, 77).tone).toBe('warn');
   expect(verdict(1200, 77).tone).toBe('bad');
   expect(verdict(NaN, 77).tone).toBe('unknown');
+});
+
+test('success then 502: the last reading is kept, marked stale, and no outage is claimed', async () => {
+  fetchSequence(ok(snapshot()), status(502));
+  await startWithFakeTimers();
+  expect(screen.getByTestId('status-verdict')).toHaveTextContent('Making blocks');
+  await advance(60_000);
+  expect(screen.getByTestId('status-stale')).toHaveTextContent('Could not refresh');
+  expect(screen.getByTestId('status-stale').querySelector('time')).toHaveAttribute('dateTime', '2026-11-14T12:00:00.000Z');
+  expect(screen.getByTestId('status-verdict')).toHaveTextContent('Status unknown right now');
+  // Twenty minutes of failed refreshes later: still no "Not making blocks", and the age is not advanced.
+  await advance(20 * 60_000);
+  expect(screen.getByTestId('status-verdict')).not.toHaveTextContent('Not making blocks');
+  expect(screen.getByTestId('status-verdict')).not.toHaveTextContent('Slower than usual');
+  expect(screen.getByTestId('status-age')).toHaveTextContent('40 s ago');
+  expect(screen.getByTestId('status-age')).toHaveTextContent('at last reading');
+});
+
+test('success then a network failure: stale, not an outage', async () => {
+  fetchSequence(ok(snapshot()), () => { throw new TypeError('Failed to fetch'); });
+  await startWithFakeTimers();
+  await advance(60_000);
+  expect(screen.getByTestId('status-stale')).toBeInTheDocument();
+  await advance(20 * 60_000);
+  expect(screen.getByTestId('status-verdict')).toHaveTextContent('Status unknown right now');
+  expect(screen.getByTestId('status-height')).toHaveTextContent('25,000');
+});
+
+test('success then 404: "Not switched on yet", the old numbers are gone', async () => {
+  fetchSequence(ok(snapshot()), status(404));
+  await startWithFakeTimers();
+  expect(screen.getByTestId('status-verdict')).toBeInTheDocument();
+  await advance(60_000);
+  expect(screen.getByText('Not switched on yet')).toBeInTheDocument();
+  expect(screen.queryByTestId('status-verdict')).not.toBeInTheDocument();
+  expect(screen.queryByTestId('status-tiles')).not.toBeInTheDocument();
+});
+
+test('a later successful refresh clears the stale state', async () => {
+  fetchSequence(ok(snapshot()), status(502), ok(snapshot({ checkedAt: '2026-11-14T12:02:00.000Z' })));
+  await startWithFakeTimers();
+  await advance(60_000);
+  expect(screen.getByTestId('status-stale')).toBeInTheDocument();
+  await advance(60_000);
+  expect(screen.queryByTestId('status-stale')).not.toBeInTheDocument();
+  expect(screen.getByTestId('status-verdict')).toHaveTextContent('Making blocks');
+});
+
+test('block age counts from the snapshot checkedAt, not from when it arrived', async () => {
+  // Built 50 s before it arrived (cached), the block was 200 s old then: 250 s now, past 3 x 77 = 231.
+  const cached = snapshot({ checkedAt: new Date(RECEIVED - 50_000).toISOString(), blocks: { ...snapshot().blocks, lastBlockAgeSeconds: 200 } });
+  fetchSequence(ok(cached));
+  await startWithFakeTimers();
+  expect(screen.getByTestId('status-age')).toHaveTextContent('4 min 10 s ago');
+  expect(screen.getByTestId('status-verdict')).toHaveTextContent('Slower than usual');
+  // The same snapshot again a minute later keeps counting from checkedAt (310 s), it does not restart.
+  await advance(60_000);
+  expect(screen.getByTestId('status-age')).toHaveTextContent('5 min 10 s ago');
+});
+
+test('snapshotBlockAge: bounded arrival delay and lastBlockAt fallback', () => {
+  const d = snapshot();
+  const checked = Date.parse(d.checkedAt);
+  expect(snapshotBlockAge(d, checked + 50_000, checked + 50_000)).toBe(90);
+  expect(snapshotBlockAge(d, checked + 50_000, checked + 60_000)).toBe(100);
+  // A viewer clock behind the server: arrival delay is 0, never negative.
+  expect(snapshotBlockAge(d, checked - 600_000, checked - 600_000)).toBe(40);
+  // A viewer clock far ahead: arrival delay is capped.
+  expect(snapshotBlockAge(d, checked + 86_400_000, checked + 86_400_000)).toBe(40 + MAX_ARRIVAL_DELAY_S);
+  const noAge = snapshot({ blocks: { ...d.blocks, lastBlockAgeSeconds: null } });
+  expect(snapshotBlockAge(noAge, checked, checked)).toBe(40);
+  expect(snapshotBlockAge(snapshot({ blocks: { status: 'unavailable' } }), checked, checked)).toBeNaN();
+});
+
+test('node pay with an unread newer epoch says partly checked, not "none recently"', async () => {
+  mockFetch(200, snapshot({ nodePay: { status: 'partial', currentEpoch: 21, lastPaidEpoch: null, epochsScanned: [21, 19], epochsUnread: [20] } }));
+  renderPage();
+  await screen.findByTestId('status-verdict');
+  expect(screen.getByTestId('status-nodepay')).toHaveTextContent('Partly checkedcould not read epoch 20; now epoch 21');
+  expect(screen.getByTestId('status-nodepay')).not.toHaveTextContent('None recently');
 });

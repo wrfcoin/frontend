@@ -14,11 +14,23 @@ import './PublicNetworkStatusPage.css';
  *
  * Honesty rules as on /nodes: a section the node could not answer says so; a value it did not give is never
  * shown as zero. The page reads again every 60 s (the backend's snapshot interval).
+ *
+ * Freshness: a refresh that fails keeps the last good numbers but marks them stale with the time of that
+ * reading, and the verdict stops claiming anything about the chain right now (lost connectivity is not a
+ * chain outage). A later 404 means the read was switched off: "Not switched on yet". The block age is the
+ * snapshot's own age (lastBlockAgeSeconds as of checkedAt), plus how old the snapshot already was when it
+ * arrived (bounded, see snapshotBlockAge), plus time since it arrived.
  */
 
 const REFRESH_MS = 60_000;
 const TICK_MS = 5_000;
 const UNAVAILABLE = 'Unavailable';
+/**
+ * Clock-skew policy: the viewer's clock is trusted for time since the response arrived; how old the
+ * snapshot was on arrival (receipt - checkedAt) is clamped to [0, MAX_ARRIVAL_DELAY_S] (backend snapshot 60 s
+ * + edge cache 30 s, with margin), so a wrong viewer clock can neither hide nor invent a stall.
+ */
+export const MAX_ARRIVAL_DELAY_S = 300;
 const n = value => (Number.isSafeInteger(value) ? value.toLocaleString('en-US') : '—');
 
 /** "40 s", "2 min 34 s", "12 min", "3 h 5 min", "2 days". */
@@ -45,6 +57,23 @@ export function verdict(ageSeconds, target) {
   return { tone: 'bad', title: 'Not making blocks', body: `No new block for ${duration(ageSeconds)}. Transactions sent now wait until blocks resume.` };
 }
 
+const parseTime = value => (typeof value === 'string' ? Date.parse(value) : NaN);
+
+/** Age in seconds of the newest block at `now`, from the snapshot itself rather than from receipt time. */
+export function snapshotBlockAge(data, receivedAt, now) {
+  const b = data?.blocks?.status === 'ok' ? data.blocks : null;
+  if (!b) return NaN;
+  const checkedAt = parseTime(data.checkedAt);
+  let base = Number.isFinite(b.lastBlockAgeSeconds) ? b.lastBlockAgeSeconds : NaN;
+  if (!Number.isFinite(base)) {
+    const lastBlockAt = parseTime(b.lastBlockAt);
+    if (Number.isFinite(lastBlockAt) && Number.isFinite(checkedAt)) base = Math.max(0, (checkedAt - lastBlockAt) / 1000);
+  }
+  if (!Number.isFinite(base)) return NaN;
+  const arrivalDelay = Number.isFinite(checkedAt) ? Math.min(MAX_ARRIVAL_DELAY_S, Math.max(0, (receivedAt - checkedAt) / 1000)) : 0;
+  return base + arrivalDelay + Math.max(0, (now - receivedAt) / 1000);
+}
+
 function SectionUnavailable({ what }) {
   return <p className="fc-placeholder" role="note">{what} {UNAVAILABLE.toLowerCase()}: the chain node did not answer this part.</p>;
 }
@@ -65,28 +94,36 @@ function pace(produced, expected) {
   return { value: n(produced), sub: `of ~${n(expected)} expected${pct === null ? '' : ` · ${pct}%`}` };
 }
 
-function Summary({ d, age }) {
+function nodePayTile(nodePay) {
+  if (nodePay?.status === 'partial') {
+    const unread = Array.isArray(nodePay.epochsUnread) ? nodePay.epochsUnread : [];
+    return {
+      value: 'Partly checked',
+      sub: `could not read epoch${unread.length === 1 ? '' : 's'} ${unread.map(n).join(', ')}; now epoch ${n(nodePay.currentEpoch)}`,
+    };
+  }
+  if (nodePay?.status !== 'ok') return { value: UNAVAILABLE, sub: null };
+  if (nodePay.lastPaidEpoch === null) return { value: 'None recently', sub: `no paid epoch in the last ${nodePay.epochsScanned.length}; now epoch ${n(nodePay.currentEpoch)}` };
+  return { value: `Epoch ${n(nodePay.lastPaidEpoch)} paid`, sub: `now epoch ${n(nodePay.currentEpoch)}` };
+}
+
+function Summary({ d, age, stale }) {
   const b = d.blocks?.status === 'ok' ? d.blocks : null;
   const p = d.producers?.status === 'ok' ? d.producers : null;
   const net = d.network?.status === 'ok' ? d.network : null;
-  const pay = d.nodePay?.status === 'ok' ? d.nodePay : null;
+  const pay = nodePayTile(d.nodePay);
   const hour = b ? pace(b.lastHour.produced, b.lastHour.expected) : { value: UNAVAILABLE };
   const day = b ? pace(b.lastDay.produced, b.lastDay.expected) : { value: UNAVAILABLE };
   if (b && b.lastDay.atLeast && Number.isSafeInteger(b.lastDay.produced)) day.value = `${n(b.lastDay.produced)}+`;
   return (
     <dl className="ns-tiles" data-testid="status-tiles">
       <Tile testId="status-height" label="Block height" value={b ? n(b.tipHeight) : UNAVAILABLE} sub={net?.chainId ? `chain ${net.chainId}` : null} />
-      <Tile testId="status-age" label="Newest block" value={Number.isFinite(age) ? `${duration(age)} ago` : UNAVAILABLE} sub={b?.lastBlockAt ? <When value={b.lastBlockAt} withTime /> : null} />
+      <Tile testId="status-age" label={stale ? 'Newest block, at last reading' : 'Newest block'} value={Number.isFinite(age) ? `${duration(age)} ago` : UNAVAILABLE} sub={b?.lastBlockAt ? <When value={b.lastBlockAt} withTime /> : null} />
       <Tile testId="status-hour" label="Blocks, last hour" value={hour.value} sub={hour.sub} />
       <Tile testId="status-day" label="Blocks, last 24 hours" value={day.value} sub={day.sub} />
       <Tile testId="status-producers" label="Producers online" value={p ? `${p.online} of ${p.total}` : UNAVAILABLE} sub={p ? `signed a block in the last ${p.windowBlocks}` : null} />
       <Tile testId="status-peers" label="Peers" value={net && Number.isSafeInteger(net.peerCount) ? n(net.peerCount) : UNAVAILABLE} sub={net?.syncStatus ? `node ${net.syncStatus.replace(/_/g, ' ')}` : null} />
-      <Tile
-        testId="status-nodepay"
-        label="Node pay"
-        value={pay ? (pay.lastPaidEpoch === null ? 'None recently' : `Epoch ${n(pay.lastPaidEpoch)} paid`) : UNAVAILABLE}
-        sub={pay ? (pay.lastPaidEpoch === null ? `no paid epoch in the last ${pay.epochsScanned.length}; now epoch ${n(pay.currentEpoch)}` : `now epoch ${n(pay.currentEpoch)}`) : null}
-      />
+      <Tile testId="status-nodepay" label="Node pay" value={pay.value} sub={pay.sub} />
       <Tile testId="status-gap" label="Longest gap" value={b && Number.isSafeInteger(b.longestGapSeconds.value) ? duration(b.longestGapSeconds.value) : UNAVAILABLE} sub={b ? `between the newest ${b.longestGapSeconds.overBlocks} blocks` : null} />
     </dl>
   );
@@ -158,7 +195,8 @@ function Upgrades({ u, target, tip }) {
 
 export default function PublicNetworkStatusPage() {
   const themeVars = useForecasterThemeVars();
-  const [state, setState] = useState({ loading: true, result: null, at: 0 });
+  // `good` is the newest successful reading ({ data, at }); `failure` the kind of a later failed refresh.
+  const [state, setState] = useState({ loading: true, result: null, good: null, failure: null });
   const [now, setNow] = useState(() => Date.now());
   const controllerRef = useRef(null);
 
@@ -166,9 +204,15 @@ export default function PublicNetworkStatusPage() {
     controllerRef.current?.abort();
     const controller = new globalThis.AbortController();
     controllerRef.current = controller;
-    if (!quiet) setState({ loading: true, result: null, at: 0 });
+    if (!quiet) setState(prev => ({ ...prev, loading: true }));
     publicGet(NETWORK_STATUS_PATH, controller.signal)
-      .then(result => setState(prev => (quiet && result.kind !== 'ok' && prev.result?.kind === 'ok' ? prev : { loading: false, result, at: Date.now() })))
+      .then(result => setState(prev => {
+        if (result.kind === 'ok') return { loading: false, result, good: { data: result.data ?? {}, at: Date.now() }, failure: null };
+        // Switched off: nothing old is shown as current.
+        if (result.kind === 'not_found') return { loading: false, result, good: null, failure: null };
+        // Any other failure keeps the last good reading, marked stale.
+        return prev.good ? { loading: false, result, good: prev.good, failure: result.kind } : { loading: false, result, good: null, failure: null };
+      }))
       .catch(() => {});
   }, []);
 
@@ -198,12 +242,12 @@ export default function PublicNetworkStatusPage() {
     </div>
   );
 
-  const { loading, result, at } = state;
-  if (loading || !result) return shell(<p className="fc-count" role="status">Reading the chain…</p>);
+  const { loading, result, good, failure } = state;
+  if (!result || (loading && !good)) return shell(<p className="fc-count" role="status">Reading the chain…</p>);
   if (result.kind === 'not_found') {
     return shell(<WrfEmptyState title="Not switched on yet" description="This server does not publish the network status yet." />);
   }
-  if (result.kind !== 'ok') {
+  if (!good) {
     const busy = result.kind === 'rate_limited';
     return shell(
       <WrfAlert severity={busy ? 'warning' : 'info'} role="alert" className="fc-unavailable" actionLabel="Retry" onAction={() => load()}>
@@ -212,12 +256,24 @@ export default function PublicNetworkStatusPage() {
     );
   }
 
-  const d = result.data ?? {};
+  const d = good.data;
   const b = d.blocks?.status === 'ok' ? d.blocks : null;
-  const age = b && Number.isFinite(b.lastBlockAgeSeconds) ? b.lastBlockAgeSeconds + Math.max(0, (now - at) / 1000) : NaN;
-  const v = verdict(age, b?.targetBlockSeconds);
+  const stale = failure !== null;
+  // Stale: the age is frozen at the last reading's arrival and no claim is made about the chain now.
+  const age = snapshotBlockAge(d, good.at, stale ? good.at : now);
+  const v = stale
+    ? { tone: 'unknown', title: 'Status unknown right now', body: 'This page could not refresh, so it cannot say whether the chain is making blocks now. The numbers below are from the last reading.' }
+    : verdict(age, b?.targetBlockSeconds);
   return shell(
     <>
+      {stale ? (
+        <WrfAlert severity="warning" role="alert" className="fc-unavailable" actionLabel="Retry" onAction={() => load(true)}>
+          <span data-testid="status-stale">
+            {failure === 'rate_limited' ? 'Too many requests right now.' : 'Could not refresh the network status.'} Showing the last reading, checked{' '}
+            {d.checkedAt ? <When value={d.checkedAt} withTime /> : 'at an unknown time'} (received <When value={new Date(good.at).toISOString()} withTime />).
+          </span>
+        </WrfAlert>
+      ) : null}
       <section className={`ns-verdict ns-verdict--${v.tone}`} aria-live="polite" data-testid="status-verdict">
         <span className="ns-dot" aria-hidden="true" />
         <div>
@@ -225,7 +281,7 @@ export default function PublicNetworkStatusPage() {
           <p>{v.body}</p>
         </div>
       </section>
-      <Summary d={d} age={age} />
+      <Summary d={d} age={age} stale={stale} />
       <WrfCard component="section" aria-label="Producers" className="fc-section" header={<div className="fc-section-head"><h2>Producers</h2><span className="fc-count">who signs the blocks</span></div>} noPadding>
         <Producers p={d.producers} />
       </WrfCard>
