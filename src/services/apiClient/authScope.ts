@@ -30,6 +30,12 @@ const AUTHENTICATED_ROUTES: readonly AuthenticatedRoute[] = [
   { method: 'POST', path: /^(?:\/api)?\/(?:weather\/)?stations$/ },
   { method: 'POST', path: /^(?:\/api)?\/(?:weather\/)?stations\/verify-key$/ },
   { method: 'GET', path: new RegExp(`^(?:/api)?/weather/stations/${STATION_ID}/reward-progress$`) },
+  // "Your stations" (backend weather-routes.js GET /stations/mine reads the JWT's wallet; the edge proxies it only
+  // with a Bearer, so without one it 404s and the card says it cannot read the list).
+  { method: 'GET', path: /^(?:\/api)?\/weather\/stations\/mine$/ },
+  // The owner signs for their station (backend POST /stations/:id/ownership-proof needs the wallet session; the edge
+  // proxies it only with a Bearer).
+  { method: 'POST', path: new RegExp(`^(?:/api)?/weather/stations/${STATION_ID}/ownership-proof$`) },
   // Optional token (backend peekWalletSubject): the owner wallet gets the lifetime address total.
   { method: 'GET', path: new RegExp(`^(?:/api)?/(?:weather/)?stations/${STATION_ID}/earnings$`) },
   // Owner only (backend station-owner-insights-routes.ts): how the station has compared over 30 days.

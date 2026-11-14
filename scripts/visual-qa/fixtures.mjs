@@ -475,6 +475,8 @@ export async function installRoutes(page, fx, options = {}) {
     if (/\/send$/.test(p) && req.method() === 'POST') return json(route, fx.wallet('0x0').send);
     if (p === '/api/weather/stations/mobile') return json(route, fx.wallet('0x0').mobileStation);
     // "Your stations" (backend GET /stations/mine): synthetic aliases, no coordinates, as the backend answers.
+    // Like the live edge (@station_mine): proxied only with an `Authorization: Bearer` header, else 404.
+    if (p === '/api/weather/stations/mine' && !/^Bearer \S/.test(req.headers().authorization || '')) return json(route, { error: 'not found' }, 404);
     if (p === '/api/weather/stations/mine') return json(route, { success: true, truncated: false, stations: [
       { alias: 'st_0a1b2c3d4e5f', name: 'Back garden', status: 'live', lastReadingAt: new Date(Date.now() - 4 * 60_000).toISOString(), onChain: { state: 'earning' } },
       { alias: 'st_5f4e3d2c1b0a', name: 'Roof', status: 'registered', lastReadingAt: null, onChain: { state: 'waiting', waitingFor: 'batch' } },
