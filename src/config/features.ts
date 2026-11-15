@@ -38,6 +38,9 @@ const PASSKEY_BOND_PAYOUT = import.meta.env?.VITE_ENABLE_PASSKEY_BOND_PAYOUT ===
 // "Bond your node" on /nodes: the steps to a bonded node and a check of one node's progress (reads the
 // backend's GET /api/bond-admission/recent). Exact string "true" only; default OFF.
 const BOND_GUIDE = import.meta.env?.VITE_ENABLE_BOND_GUIDE === 'true';
+// Network status page /status (owner decision 2026-11-01): reads the backend's GET /api/public/network-status.
+// Exact string "true" only; default OFF (no route, no home-page link).
+const STATUS_PAGE = import.meta.env?.VITE_ENABLE_STATUS_PAGE === 'true';
 // "Use your passkey wallet" on /connect-station (owner decision 2026-11-09, Phase 1): a passkey wallet signs
 // in (backend PASSKEY_LOGIN_ENABLED) and owns the station on the website; it earns once core4's
 // passkey_station_owner is live. Exact string "true" only; default OFF.
@@ -107,6 +110,8 @@ export const FEATURES = {
   passkeyBondPayout: PASSKEY_BOND_PAYOUT,
   /** "Bond your node" steps and progress check on /nodes. Default FALSE. */
   bondGuide: BOND_GUIDE,
+  /** Public network status page /status and its home-page links. Default FALSE. */
+  statusPage: STATUS_PAGE,
   /** Passkey wallet can own a station on /connect-station. Default FALSE; needs backend passkey login. */
   passkeyStationOwner: PASSKEY_STATION_OWNER,
   /** Header wallet button, single-wallet session, wallet removal. Default FALSE; needs passkeyWallet. */

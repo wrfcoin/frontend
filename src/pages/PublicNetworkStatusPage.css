@@ -1,0 +1,48 @@
+/* Network status (/status). Builds on PublicForecastersPage.css; colours are the --fc-* design tokens
+   injected by useForecasterThemeVars, so both themes follow the body theme. */
+.ns-page { max-width: 1040px; }
+
+.ns-verdict { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 16px; padding: 16px 20px; border: 1px solid var(--fc-border); border-left-width: 4px; border-radius: var(--fc-r-lg); background: var(--fc-bg-secondary); }
+.ns-verdict h2 { margin: 0; font-size: 1.125rem; font-weight: 700; }
+.ns-verdict p { margin: 4px 0 0; font-size: 0.875rem; color: var(--fc-text-secondary); }
+.ns-verdict .ns-dot { margin-top: 6px; }
+.ns-verdict--ok { border-left-color: var(--fc-success-light); }
+.ns-verdict--ok .ns-dot { background: var(--fc-success-light); }
+.ns-verdict--warn { border-left-color: var(--fc-warning-light); }
+.ns-verdict--warn .ns-dot { background: var(--fc-warning-light); }
+.ns-verdict--bad { border-left-color: var(--fc-error-light); }
+.ns-verdict--bad .ns-dot { background: var(--fc-error-light); }
+.ns-verdict--unknown .ns-dot { background: var(--fc-text-muted); }
+
+.ns-dot { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 999px; background: var(--fc-text-muted); }
+
+.ns-tiles { margin: 0 0 16px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.ns-tile { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 14px 16px; border: 1px solid var(--fc-border); border-radius: var(--fc-r-lg); background: var(--fc-bg-secondary); }
+.ns-tile dt { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fc-text-muted); }
+.ns-tile dd { margin: 0; font-size: 1.375rem; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.ns-tile-sub { font-size: 0.8125rem; color: var(--fc-text-secondary); }
+
+.ns-producers { list-style: none; margin: 0; padding: 8px 20px; }
+.ns-producer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--fc-border); font-size: 0.9375rem; }
+.ns-producer:last-child { border-bottom: 0; }
+.ns-producer--on .ns-dot { background: var(--fc-success-light); }
+.ns-producer-state { font-size: 0.8125rem; font-weight: 600; }
+.ns-producer--off .ns-producer-state { color: var(--fc-text-muted); }
+.ns-producer-count { margin-left: auto; font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+
+.ns-table td strong { font-weight: 600; }
+
+@media (max-width: 900px) {
+  .ns-tiles { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .ns-tiles { gap: 8px; }
+  .ns-tile { padding: 12px; }
+  .ns-tile dd { font-size: 1.125rem; }
+  .ns-verdict { padding: 14px 16px; }
+  .ns-producers { padding: 4px 16px; }
+  .ns-table { table-layout: auto; width: 100%; }
+  .ns-table th, .ns-table td { padding-left: 8px; padding-right: 8px; white-space: normal; }
+  .ns-table th:first-child, .ns-table td:first-child { padding-left: 16px; }
+  .ns-table th:last-child, .ns-table td:last-child { padding-right: 16px; }
+}

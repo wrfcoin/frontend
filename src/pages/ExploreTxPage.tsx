@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { WrfCard } from '../components/DesignSystem/WrfCard';
 import { WrfSkeleton } from '../components/DesignSystem/WrfSkeleton';
+import { WrfButton } from '../components/DesignSystem/WrfButton';
 import { palette, borderRadiusScale } from '../components/DesignSystem/tokens';
 import {
   lookupPublicTransaction,
@@ -53,10 +54,29 @@ function blockTime(iso: string | null): string {
   return Number.isNaN(date.getTime()) ? 'Not reported' : date.toLocaleString();
 }
 
+/** While a transaction is waiting or not found yet, look again this often, at most this many times. */
+export const TX_POLL_MS = 20_000;
+export const TX_POLL_MAX = 5;
+
+/** A view worth looking at again: not in a block yet, not found yet, or the node was busy / did not answer. */
+function mayChange(view: View): boolean {
+  if (view.kind === 'ok') return view.value.status !== 'included';
+  return view.kind === 'busy' || view.kind === 'unavailable';
+}
+
 export default function ExploreTxPage() {
   const { hash: param = '' } = useParams();
+  // A new hash starts a fresh lookup (and a fresh poll budget).
+  return <ExploreTxView key={param} param={param} />;
+}
+
+function ExploreTxView({ param }: { param: string }) {
   const hash = normalizeTxHash(param);
   const [view, setView] = useState<View>(hash ? { kind: 'loading' } : { kind: 'bad' });
+  // Each bump looks the hash up again; the result already on screen stays until the answer comes.
+  const [attempt, setAttempt] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const autoTries = useRef(0);
 
   useEffect(() => {
     if (!hash) {
@@ -64,13 +84,30 @@ export default function ExploreTxPage() {
       return undefined;
     }
     const controller = new globalThis.AbortController();
-    setView({ kind: 'loading' });
+    if (attempt === 0) setView({ kind: 'loading' });
+    else setRefreshing(true);
     lookupPublicTransaction(hash, controller.signal).then(
-      result => { if (!controller.signal.aborted) setView(result); },
-      error => { if (error?.name !== 'AbortError') setView({ kind: 'unavailable' }); },
+      result => { if (!controller.signal.aborted) { setView(result); setRefreshing(false); } },
+      error => { if (error?.name !== 'AbortError') { setView({ kind: 'unavailable' }); setRefreshing(false); } },
     );
     return () => controller.abort();
-  }, [hash]);
+  }, [hash, attempt]);
+
+  // Bounded polling: a just-sent transaction usually lands within a block or two (about 77 s each).
+  const polling = !refreshing && mayChange(view) && autoTries.current < TX_POLL_MAX;
+  useEffect(() => {
+    if (!polling) return undefined;
+    const timer = setTimeout(() => {
+      autoTries.current += 1;
+      setAttempt(n => n + 1);
+    }, TX_POLL_MS);
+    return () => clearTimeout(timer);
+  }, [polling, view]);
+
+  const refresh = () => {
+    autoTries.current = 0;
+    setAttempt(n => n + 1);
+  };
 
   return (
     <Box sx={{ maxWidth: 880, mx: 'auto', px: { xs: 2, sm: 3 }, py: 3 }} data-testid="explore-tx-page">
@@ -132,6 +169,16 @@ export default function ExploreTxPage() {
             <Message title="Unavailable">The testnet node did not answer. Please try again in a minute.</Message>
           )}
         </Box>
+        {hash && view.kind !== 'loading' && mayChange(view) && (
+          <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+            <WrfButton variant="outline" size="sm" onClick={refresh} loading={refreshing} disabled={refreshing} data-testid="explore-tx-refresh">
+              Refresh
+            </WrfButton>
+            <Typography component="span" data-testid="explore-tx-poll-note" sx={{ fontSize: '0.8125rem', color: palette.text.muted }}>
+              {polling ? 'This page looks again every 20 seconds.' : 'Press Refresh to look again.'}
+            </Typography>
+          </Box>
+        )}
       </WrfCard>
 
       <Typography sx={{ mt: 2, fontSize: '0.8125rem', color: palette.text.muted }}>

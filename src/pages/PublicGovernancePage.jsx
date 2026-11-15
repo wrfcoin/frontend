@@ -146,7 +146,7 @@ function AdvisoryRow({ p, canAct }) {
         {finalized !== null ? <span>· decided at block {finalized}</span>
           : deadline !== null ? <span>· voting ends at block {deadline}</span> : null}
       </div>
-      {canAct && p.status === 'active' && typeof p.id === 'string' ? <AdvisoryVoteButtons proposalId={p.id} /> : null}
+      {canAct && p.status === 'active' && typeof p.id === 'string' ? <AdvisoryVoteButtons proposalId={p.id} title={typeof p.title === 'string' ? p.title : undefined} /> : null}
       {p.summary ? (
         <details className="pg-adv-summary">
           <summary>Read the proposal</summary>
@@ -163,22 +163,43 @@ function AdvisoryRow({ p, canAct }) {
  * has proposals, so the page says nothing about it before then. A result counts wallets, not people.
  */
 function AdvisorySection({ onActive, credentials }) {
+  // The last page that loaded. A later page that fails keeps it on screen with a retry, so the card
+  // never vanishes mid-browse.
   const [result, setResult] = useState(null);
+  const [offset, setOffset] = useState(0);
+  const [loadedOffset, setLoadedOffset] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [pageFailed, setPageFailed] = useState(false);
   const [reload, setReload] = useState(0);
   useEffect(() => {
     const controller = new globalThis.AbortController();
+    setLoading(true);
     governanceService
-      .getAdvisoryProposalsPage(0, GOVERNANCE_PAGE_SIZE, controller.signal)
+      .getAdvisoryProposalsPage(offset, GOVERNANCE_PAGE_SIZE, controller.signal)
       .then(r => {
-        setResult(r);
-        if (r?.kind === 'ok' && r.data.featureActive) onActive(true);
+        if (controller.signal.aborted) return;
+        setLoading(false);
+        if (r?.kind === 'ok') {
+          setResult(r);
+          setLoadedOffset(offset);
+          setPageFailed(false);
+          if (r.data.featureActive) onActive(true);
+        } else {
+          setPageFailed(true);
+          setResult(prev => (prev?.kind === 'ok' ? prev : r));
+        }
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [onActive, reload]);
+  }, [onActive, offset, reload]);
   if (result?.kind !== 'ok') return null;
   const { featureActive, proposals, total } = result.data;
-  if (!featureActive && proposals.length === 0) return null;
+  if (!featureActive && proposals.length === 0 && loadedOffset === 0) return null;
+  const shownOffset = loadedOffset;
+  const hasMore = result.data.hasMore !== null ? result.data.hasMore : proposals.length >= GOVERNANCE_PAGE_SIZE;
+  const paged = shownOffset > 0 || hasMore;
+  const first = shownOffset + 1;
+  const last = shownOffset + proposals.length;
   // Propose/vote: build flag on AND the node reports the feature active at the next block.
   const canAct = featureActive && advisoryVotingBuildEnabled();
   const list = proposals.length === 0 ? (
@@ -192,6 +213,22 @@ function AdvisorySection({ onActive, credentials }) {
       {proposals.map((p, index) => <AdvisoryRow key={String(p.id ?? index)} p={p} canAct={canAct} />)}
     </ul>
   );
+  const pager = paged ? (
+    <div className="pg-foot pg-adv-foot" data-testid="advisory-pager">
+      <span>
+        {pageFailed ? 'Could not load that page. ' : ''}
+        {proposals.length > 0 ? (total !== null ? `Showing ${first}–${last} of ${total} advisory proposals` : `Showing ${first}–${last}`) : ''}
+      </span>
+      <div className="pg-pager">
+        {pageFailed ? <WrfButton variant="outline" size="sm" disabled={loading} onClick={() => setReload(n => n + 1)}>Retry</WrfButton> : null}
+        <WrfButton variant="outline" size="sm" data-testid="advisory-prev" disabled={shownOffset === 0 || loading}
+          onClick={() => setOffset(Math.max(0, shownOffset - GOVERNANCE_PAGE_SIZE))}>Previous</WrfButton>
+        <span className="pg-pager__page">Page {Math.floor(shownOffset / GOVERNANCE_PAGE_SIZE) + 1}</span>
+        <WrfButton variant="outline" size="sm" data-testid="advisory-next" disabled={loading || pageFailed || !hasMore}
+          onClick={() => setOffset(shownOffset + GOVERNANCE_PAGE_SIZE)}>Next</WrfButton>
+      </div>
+    </div>
+  ) : null;
   return (
     <WrfCard
       component="section"
@@ -209,8 +246,9 @@ function AdvisorySection({ onActive, credentials }) {
         <AdvisoryActionsProvider credentials={credentials}>
           <AdvisoryProposeForm onSubmitted={() => setReload(n => n + 1)} />
           {list}
+          {pager}
         </AdvisoryActionsProvider>
-      ) : list}
+      ) : <>{list}{pager}</>}
     </WrfCard>
   );
 }

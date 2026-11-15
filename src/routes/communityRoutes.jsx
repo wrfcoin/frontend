@@ -16,6 +16,7 @@ const PublicForecastersPage = lazy(() => import('../pages/PublicForecastersPage'
 const PublicForecasterPage = lazy(() => import('../pages/PublicForecasterPage'));
 const PublicProofCardPage = lazy(() => import('../pages/PublicProofCardPage'));
 const PublicNetworkNodesPage = lazy(() => import('../pages/PublicNetworkNodesPage'));
+const PublicNetworkStatusPage = lazy(() => import('../pages/PublicNetworkStatusPage'));
 const PublicCompetitionsPage = lazy(() => import('../pages/PublicCompetitionsPage'));
 const PublicForecastCheckPage = lazy(() => import('../pages/PublicForecastCheckPage'));
 const FriendChallengesPage = lazy(() => import('../pages/FriendChallengesPage'));
@@ -78,6 +79,8 @@ export default function communityRoutes({ isFeatureEnabled = () => false } = {})
     <Route path="/proof/:commitId" element={<PageWrapper tabType="community"><PublicProofCardPage /></PageWrapper>} />
     {/* Producers and bonded nodes (owner demo 2026-11-01); /network/* is never public, so the page is /nodes */}
     <Route path="/nodes" element={<PageWrapper tabType="community"><PublicNetworkNodesPage /></PageWrapper>} />
+    {/* Network status (owner decision 2026-11-01): flagged, VITE_ENABLE_STATUS_PAGE; the public route policy decides reachability */}
+    {FEATURES.statusPage && <Route path="/status" element={<PageWrapper tabType="community"><PublicNetworkStatusPage /></PageWrapper>} />}
 
     {/* Forecast check: on-chain forecasts vs station readings and NOAA (demo item 7); the public route policy decides reachability */}
     <Route path="/forecast-check" element={<PageWrapper tabType="community"><PublicForecastCheckPage /></PageWrapper>} />

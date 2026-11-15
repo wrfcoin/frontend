@@ -58,6 +58,11 @@ export function isPasskeyWalletEnabled(value: unknown): boolean {
   return value === 'true';
 }
 
+/** The network status page flag as features.ts reads it (VITE_ENABLE_STATUS_PAGE, exact "true" only). */
+export function isStatusPageEnabled(value: unknown): boolean {
+  return value === 'true';
+}
+
 /**
  * The multi-wallet flag as features.ts reads it: VITE_ENABLE_MULTI_WALLET, exact "true" only, and only where
  * the passkey wallet is served. Here for the same reason as isPasskeyWalletEnabled.
@@ -103,6 +108,7 @@ export const PUBLIC_NON_MENU_PATHS: Readonly<Record<string, string>> = {
   '/proof/:commitId': 'proof card for one station reading, opened from a station page or a shared link, not a destination',
   '/challenges/:code': 'one friend challenge board, opened from a shared invite link, not a destination',
   '/duels/:id': 'one duel, opened from the duel board or a shared link, not a destination',
+  '/status': 'network status, linked from the home page next to the live chain numbers and the policy links (VITE_ENABLE_STATUS_PAGE, default off), not a menu destination',
   '/wallet/passkey': 'flagged preview (VITE_ENABLE_PASSKEY_WALLET, default off): with the flag on it is a menu entry instead',
   '/wallet/passkey/bond-payout': 'node bond payout approval, linked from the passkey wallet (VITE_ENABLE_PASSKEY_BOND_PAYOUT, default off), not a destination',
 };

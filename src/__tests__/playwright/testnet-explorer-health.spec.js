@@ -44,7 +44,7 @@ test.describe('testnet explorer health probe', () => {
     await expect(card.locator('time')).toHaveAttribute('datetime', '2026-05-28T20:26:40.000Z');
     await expect(card.getByTitle(testnetBlock.hash, { exact: true })).toHaveText('01234567…ef0101');
     await expect(card.getByRole('button', { name: 'Copy block hash', exact: true })).toBeVisible();
-    await expect(card.getByRole('link', { name: '/explore#block-101' })).toHaveAttribute('href', '#block-101');
+    await expect(card.getByRole('link', { name: '/explore/block/101' })).toHaveAttribute('href', '/explore/block/101');
     await expect(explorer.getByText('Per-transaction detail is not published on the public site.', { exact: false })).toBeVisible();
     expect(requests.blocks).toBeGreaterThan(0);
     expect(requests.unexpected).toEqual([]);

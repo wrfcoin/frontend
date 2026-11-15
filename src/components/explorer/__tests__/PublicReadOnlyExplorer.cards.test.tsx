@@ -96,11 +96,21 @@ describe('PublicReadOnlyExplorer', () => {
     expect(cards[0].querySelector('time')).toHaveAttribute('datetime', '2026-10-19T00:58:00.000Z');
     // Permalink anchors.
     expect(cards[0]).toHaveAttribute('id', 'block-44812');
-    expect(screen.getByRole('link', { name: '/explore#block-44812' })).toHaveAttribute('href', '#block-44812');
+    // F5: the link is the block's own page, which works after the block leaves the recent list.
+    expect(screen.getByRole('link', { name: '/explore/block/44812' })).toHaveAttribute('href', '/explore/block/44812');
     // Stats row.
     expect(screen.getByText('Latest height')).toBeInTheDocument();
     expect(screen.getByText('44,812')).toBeInTheDocument();
     expect(screen.getByText('Transactions in 2 blocks')).toBeInTheDocument();
+  });
+
+  it('"Copy link to this block" copies the block page URL, not a #block anchor (F5)', async () => {
+    backend({ blocks: [{ height: 77, hash: HASH_A, timestamp: '2026-10-19T00:58:00Z', transactions: 1 }] });
+    const writeText = jest.fn(async (_text: string) => undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    render(<PublicReadOnlyExplorer />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Copy link to this block' }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/explore/block/77`));
   });
 
   it('copies the full hash to the clipboard and confirms', async () => {

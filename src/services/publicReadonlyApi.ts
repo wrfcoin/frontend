@@ -137,6 +137,9 @@ export function proofPagePath(commitId: string, height?: number | string | null)
 // ---- Producers and bonded nodes (owner demo queue 2026-11-01, item 3) --------------------------------------
 // backend network-nodes-routes.ts: GET /api/network/nodes, no query. One cached snapshot read from the node.
 export const NETWORK_NODES_PATH = '/network/nodes';
+// backend public-network-status-routes.ts: GET /api/public/network-status, no query. Aggregate numbers only
+// (block pace, producers online by label, peers, node-pay epoch, scheduled upgrades); 404 while off.
+export const NETWORK_STATUS_PATH = '/public/network-status';
 // backend bond-admission-routes.ts: GET /api/bond-admission/recent, no query. The last 100 bond admissions (public chain
 // fields only); 404 while the backend's BOND_ADMISSION_PROXY_ENABLED is not true.
 export const BOND_ADMISSIONS_RECENT_PATH = '/bond-admission/recent';

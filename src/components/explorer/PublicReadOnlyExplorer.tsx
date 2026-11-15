@@ -164,9 +164,12 @@ export const BlockCard: React.FC<{ block: ExplorerBlock; now?: number }> = ({ bl
   const date = parseBlockDate(block.timestamp);
   const heightLabel = block.height === null ? 'unavailable' : block.height.toLocaleString();
   const anchor = block.height === null ? undefined : `block-${block.height}`;
+  // The block's own page, which looks the block up by height: it still works once the block has left the
+  // recent list (a #block-N anchor on /explore only matched while the card was on screen).
+  const blockPath = block.height === null ? null : `/explore/block/${block.height}`;
   const permalink =
-    anchor && typeof window !== 'undefined'
-      ? `${window.location.origin}/explore#${anchor}`
+    blockPath && typeof window !== 'undefined'
+      ? `${window.location.origin}${blockPath}`
       : null;
   const relative = relativeTime(date, now);
 
@@ -229,8 +232,8 @@ export const BlockCard: React.FC<{ block: ExplorerBlock; now?: number }> = ({ bl
       <Row label="Link">
         {permalink ? (
           <>
-            <Typography component="a" href={`#${anchor}`} sx={{ fontSize: '0.8125rem', color: palette.text.link, textDecoration: 'none' }}>
-              /explore#{anchor}
+            <Typography component="a" href={blockPath ?? undefined} sx={{ fontSize: '0.8125rem', color: palette.text.link, textDecoration: 'none' }}>
+              {blockPath}
             </Typography>
             <CopyButton text={permalink} label="Copy link to this block" icon={<LinkIcon fontSize="small" />} />
           </>

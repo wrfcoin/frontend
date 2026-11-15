@@ -126,6 +126,9 @@ export default function ForecastNewPage() {
   const [open, setOpen] = useState('loading');
   const [openAliases, setOpenAliases] = useState(null);
   const [stations, setStations] = useState(null);
+  // Why the station list could not be read ('rate_limited' | 'error'), or null. A failed read is not "no stations".
+  const [stationsFailed, setStationsFailed] = useState(null);
+  const [stationsReload, setStationsReload] = useState(0);
   const [alias, setAlias] = useState('');
   const [variable, setVariable] = useState('temperature_c');
   const [lead, setLead] = useState(6);
@@ -152,14 +155,20 @@ export default function ForecastNewPage() {
   useEffect(() => {
     if (open !== 'open') return undefined;
     let live = true;
+    setStationsFailed(null);
     publicGet('/weather/stations').then(r => {
       if (!live) return;
-      const list = forecastableStations(r.kind === 'ok' ? r.data?.stations : null, openAliases);
+      if (r.kind !== 'ok') {
+        setStations(null);
+        setStationsFailed(r.kind === 'rate_limited' ? 'rate_limited' : 'error');
+        return;
+      }
+      const list = forecastableStations(r.data?.stations, openAliases);
       setStations(list);
       if (list[0]) setAlias(prev => prev || list[0].alias);
     });
     return () => { live = false; };
-  }, [open, openAliases]);
+  }, [open, openAliases, stationsReload]);
 
   useEffect(() => {
     if (!alias) return undefined;
@@ -271,7 +280,14 @@ export default function ForecastNewPage() {
                   {(stations ?? []).map(s => <option key={s.alias} value={s.alias}>{s.name || 'Weather station'} · {s.alias}{s.status === 'live' ? '' : ' (not reporting)'}</option>)}
                 </select>
               </label>
-              {stations && stations.length === 0 ? <p className="fc-note">No station is open for forecasts right now. Try again later.</p> : null}
+              {stationsFailed ? (
+                <div className="fc-note" role="alert" data-testid="forecast-stations-failed">
+                  {stationsFailed === 'rate_limited'
+                    ? 'Too many requests right now, so the station list could not be loaded. Wait a moment and retry.'
+                    : 'Couldn\'t load the stations. Check your connection and retry.'}{' '}
+                  <button type="button" className="ch-action ch-action--ghost" onClick={() => setStationsReload(n => n + 1)}>Retry</button>
+                </div>
+              ) : stations && stations.length === 0 ? <p className="fc-note">No station is open for forecasts right now. Try again later.</p> : null}
               <div className="ch-fields">
                 <label className="ch-field">What
                   <select value={variable} onChange={e => { setVariable(e.target.value); setEdited(false); }}>

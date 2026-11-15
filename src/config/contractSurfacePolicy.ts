@@ -122,6 +122,10 @@ export const PUBLIC_READONLY_PATHS = new Set([
   //   /nodes                       reads GET /api/network/nodes (no query)
   // Exact entry. The /network prefix stays NEVER_PUBLIC (legacy network dashboards).
   '/nodes',
+  // Owner decision 2026-11-01: the public network status page (Grafana stays private).
+  //   /status                      reads GET /api/public/network-status (no query)
+  // Exact entry. The route itself exists only with VITE_ENABLE_STATUS_PAGE=true.
+  '/status',
   // Owner demo queue 2026-11-01 item 7 (backend PR#72, #1494): forecasts committed on chain scored against
   // station readings and NOAA. Reads GET /api/forecast-verification/summary; the hand-in form POSTs
   // /api/forecast-verification/forecasts (no credential: the record proves itself). Exact entry.
