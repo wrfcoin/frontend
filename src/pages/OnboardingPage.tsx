@@ -582,6 +582,9 @@ interface FundWalletStepProps {
   completeStep: (step: number, data: Record<string, unknown>) => void;
 }
 
+/** Gateway statuses that arrive without a backend code: the claim may still have gone through. */
+const UNCONFIRMED_GATEWAY_STATUSES = new Set([502, 504, 524]);
+
 function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
   const [challengeId, setChallengeId] = useState('');
   const [question, setQuestion] = useState('');
@@ -589,15 +592,18 @@ function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
   const [loading, setLoading] = useState(false);
   const [fetchingChallenge, setFetchingChallenge] = useState(false);
   const [error, setError] = useState('');
+  const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState<{ txHash: string; amount: string } | null>(null);
 
-  const fetchChallenge = useCallback(async () => {
+  const fetchChallenge = useCallback(async (preserveError = false) => {
     setFetchingChallenge(true);
-    setError('');
+    if (!preserveError) setError('');
+    setChallengeId(''); setQuestion(''); setAnswer('');
     try {
       const res = await fetch('/api/onboarding/faucet/challenge', { method: 'POST' });
       if (!res.ok) throw new Error('Failed to fetch challenge');
       const data = await res.json();
+      if (typeof data?.challengeId !== 'string' || !data.challengeId.trim() || typeof data?.question !== 'string' || !data.question.trim()) throw new Error('Invalid challenge');
       setChallengeId(data.challengeId);
       setQuestion(data.question);
     } catch {
@@ -611,10 +617,11 @@ function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
 
   // Fetch challenge on mount (only when there is a faucet to claim from)
   useEffect(() => {
-    if (faucetOpen) fetchChallenge();
+    if (faucetOpen) void fetchChallenge();
   }, [faucetOpen, fetchChallenge]);
 
   const handleClaim = useCallback(async () => {
+    if (!walletAddress || !challengeId || !answer.trim() || loading || fetchingChallenge || pending) return;
     setLoading(true);
     setError('');
 
@@ -625,23 +632,34 @@ function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
         body: JSON.stringify({ walletAddress, challengeId, answer }),
       });
 
-      const data = await res.json();
+      // A proxy error page is not JSON; treat it as "no body" rather than a thrown claim.
+      const data = await res.json().catch(() => null);
 
       if (!res.ok) {
+        // Every claim consumes its question, even on a wrong answer or a cooldown refusal.
+        setChallengeId(''); setQuestion(''); setAnswer('');
+        const code = data?.error?.code;
+        // Unknown outcome: the backend said so, or a gateway timed out without a code. Never offer a re-claim.
+        if (['CLAIM_PENDING', 'FAUCET_UNCONFIRMED'].includes(code) || (!code && UNCONFIRMED_GATEWAY_STATUSES.has(res.status))) {
+          setPending(true);
+          return;
+        }
         // Handle 429 and other errors
-        const message =
-          data?.error?.message || data?.message || 'Failed to claim tokens';
-        setError(message);
+        setError(data?.error?.message || data?.message || 'Failed to claim tokens');
+        if (code === 'CAPTCHA_FAILED') await fetchChallenge(true);
         return;
       }
 
+      if (typeof data?.txHash !== 'string' || !data.txHash || typeof data?.amount !== 'string') throw new Error('Unconfirmed response');
       setSuccess({ txHash: data.txHash, amount: data.amount });
     } catch {
-      setError('Network error. Please try again.');
+      // No answer (network or timeout) or an unusable success body: the faucet may have paid. Same pending outcome.
+      setChallengeId(''); setQuestion(''); setAnswer('');
+      setPending(true);
     } finally {
       setLoading(false);
     }
-  }, [walletAddress, challengeId, answer]);
+  }, [walletAddress, challengeId, answer, loading, fetchingChallenge, pending, fetchChallenge]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -671,7 +689,7 @@ function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
       </Box>
       )}
 
-      {error && <WrfAlert severity="error">{error}</WrfAlert>}
+      {error && !pending && <WrfAlert severity="error">{error}</WrfAlert>}
 
       {!faucetOpen ? (
         <Box data-testid="faucet-unfunded" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -684,6 +702,15 @@ function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
             onClick={() => completeStep(1, { faucetUnavailable: true })}
           >
             Continue without test tokens
+          </WrfButton>
+        </Box>
+      ) : pending ? (
+        <Box data-testid="faucet-pending" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <WrfAlert severity="info" title="Claim awaiting confirmation">
+            Could not confirm the claim. The faucet may already have sent it, so don't request it again. <a href="/wallet">Check your wallet</a> for the balance, or ask testnet support to check the claim.
+          </WrfAlert>
+          <WrfButton variant="primary" onClick={() => completeStep(1, { faucetPending: true })}>
+            Continue
           </WrfButton>
         </Box>
       ) : success ? (
@@ -725,13 +752,13 @@ function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
                 variant="primary"
                 onClick={handleClaim}
                 loading={loading}
-                disabled={loading || !answer.trim()}
+                disabled={loading || fetchingChallenge || !walletAddress || !challengeId || !answer.trim()}
               >
                 Claim Tokens
               </WrfButton>
             </>
           ) : (
-            <WrfButton variant="outline" onClick={fetchChallenge}>
+            <WrfButton variant="outline" onClick={() => void fetchChallenge()} disabled={loading || fetchingChallenge}>
               Retry Loading Challenge
             </WrfButton>
           )}
@@ -839,6 +866,7 @@ function CompleteStep({ completedSteps, completeStep }: CompleteStepProps) {
 
   const tokensClaimed = !!completedSteps[1]?.txHash;
   const faucetUnavailable = !!completedSteps[1]?.faucetUnavailable;
+  const faucetPending = !!completedSteps[1]?.faucetPending;
   const hardwareSkipped = !!completedSteps[2]?.skipped;
   const hardwareConnected = !!completedSteps[2]?.hardwareConnected;
 
@@ -860,7 +888,7 @@ function CompleteStep({ completedSteps, completeStep }: CompleteStepProps) {
           </li>
           <li>
             <Typography variant="body2">
-              Tokens: {tokensClaimed ? 'Claimed' : faucetUnavailable ? 'Faucet not funded yet' : 'Skipped'}
+              Tokens: {tokensClaimed ? 'Claimed' : faucetPending ? 'Claim awaiting confirmation (check your wallet)' : faucetUnavailable ? 'Faucet not funded yet' : 'Skipped'}
             </Typography>
           </li>
           <li>

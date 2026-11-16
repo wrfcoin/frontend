@@ -34,7 +34,7 @@ await jest.unstable_mockModule('../../services/walletCrypto/passkeySend', () => 
 // The payout-notification card has its own tests (NotifyMe.passkey.test.tsx); keep its config read out of this fetch script.
 await jest.unstable_mockModule('../../components/explorer/NotifyMe', () => ({ default: () => null }));
 const { default: PasskeyWalletPage, usePasskeyBalance, SECURITY_KEY_NOTE, SECURITY_KEY_UNSUPPORTED_MESSAGE, UNSUPPORTED_MESSAGE } = await import('../PasskeyWalletPage');
-const { FAUCET_MESSAGES, describeFaucetFailure, shortTxHash } = await import('../../components/wallet/PasskeyFaucetPanel');
+const { FAUCET_MESSAGES, describeFaucetFailure, isUnconfirmedClaim, shortTxHash } = await import('../../components/wallet/PasskeyFaucetPanel');
 const { setAuthToken, clearAuthToken } = await import('../../services/authTokenStore');
 const address = actualPasskey.passkeyRecordAddress(record as any);
 
@@ -126,7 +126,7 @@ describe('passkey wallet: get test coins', () => {
     [{ status: 429, body: { error: { code: 'ALREADY_CLAIMED', message: 'This address has already claimed tokens within the last 24 hours' } } }, FAUCET_MESSAGES.ALREADY_CLAIMED],
     [{ status: 429, body: { error: { code: 'RATE_LIMITED', message: 'Too many claims from this IP address.' } } }, FAUCET_MESSAGES.RATE_LIMITED],
     [{ status: 503, body: { error: { code: 'FAUCET_EMPTY', message: 'Faucet temporarily unavailable' } } }, FAUCET_MESSAGES.FAUCET_EMPTY],
-    ['network' as const, FAUCET_MESSAGES.NETWORK],
+    [{ status: 502, body: { error: { code: 'FAUCET_TRANSFER_FAILED', message: 'rejected' } } }, FAUCET_MESSAGES.OTHER],
     [{ status: 500, body: { error: { code: 'INTERNAL', message: 'stack trace here' } } }, FAUCET_MESSAGES.OTHER],
   ])('a failed claim (%j) says so in plain words and shows no success or new balance', async (failure, message) => {
     replies = [QUESTION, failure];
@@ -151,6 +151,34 @@ describe('passkey wallet: get test coins', () => {
     expect(await screen.findByTestId('passkey-faucet-error')).toHaveTextContent(FAUCET_MESSAGES.CAPTCHA_FAILED);
     expect(await screen.findByText('What is 5 + 1?')).toBeInTheDocument();
     expect(calls.map(c => c.url)).toEqual(['/api/onboarding/faucet/challenge', '/api/onboarding/faucet/claim', '/api/onboarding/faucet/challenge']);
+  });
+
+  it.each([
+    ['CLAIM_PENDING', { status: 409, body: { error: { code: 'CLAIM_PENDING' } } }],
+    ['FAUCET_UNCONFIRMED', { status: 503, body: { error: { code: 'FAUCET_UNCONFIRMED' } } }],
+    ['network failure (status 0)', 'network' as const],
+    ['codeless 502', { status: 502, body: '<html>Bad gateway</html>' }],
+    ['codeless 504', { status: 504, body: {} }],
+    ['codeless 524', { status: 524, body: '<html>A timeout occurred</html>' }],
+  ] as const)('shows the pending outcome and offers no repeated claim for %s', async (_label, failure) => {
+    replies = [QUESTION, failure as Reply];
+    render(<PasskeyWalletPage />);
+    await askQuestion();
+    await answer('7');
+    const pending = await screen.findByTestId('passkey-faucet-pending');
+    expect(pending).toHaveTextContent('Claim awaiting confirmation');
+    expect(pending).toHaveTextContent(FAUCET_MESSAGES.UNCONFIRMED);
+    expect(screen.queryByTestId('passkey-faucet-error')).not.toBeInTheDocument();
+    expect(screen.queryByText('Try again')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('passkey-faucet-start')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('passkey-faucet-claim')).not.toBeInTheDocument();
+    expect(calls).toHaveLength(2);
+  });
+
+  it('does not call every unavailable service empty or invent a short cooldown', () => {
+    expect(describeFaucetFailure({ code: 'FAUCET_UNAVAILABLE', status: 503 })).toBe(FAUCET_MESSAGES.OTHER);
+    expect(describeFaucetFailure({ code: 'FAUCET_WALLET_LOW_BALANCE', status: 503 })).toBe(FAUCET_MESSAGES.FAUCET_EMPTY);
+    expect(FAUCET_MESSAGES.RATE_LIMITED).not.toContain('few minutes');
   });
 
   it('a question that cannot be loaded says so, including rate limiting', async () => {
@@ -180,8 +208,13 @@ describe('passkey wallet: get test coins', () => {
   it('maps codes and statuses without trusting server wording', () => {
     expect(describeFaucetFailure({ code: 'EVM_ADDRESS_REQUIRED', status: 400 })).toBe(FAUCET_MESSAGES.BAD_ADDRESS);
     expect(describeFaucetFailure({ status: 429 })).toBe(FAUCET_MESSAGES.RATE_LIMITED);
-    expect(describeFaucetFailure({ status: 503 })).toBe(FAUCET_MESSAGES.FAUCET_EMPTY);
-    expect(describeFaucetFailure({ status: 0 })).toBe(FAUCET_MESSAGES.NETWORK);
+    expect(describeFaucetFailure({ status: 503 })).toBe(FAUCET_MESSAGES.OTHER);
+    expect(describeFaucetFailure({ status: 0 })).toBe(FAUCET_MESSAGES.UNCONFIRMED);
+    expect(describeFaucetFailure({ status: 502 })).toBe(FAUCET_MESSAGES.UNCONFIRMED);
+    expect(describeFaucetFailure({ code: 'FAUCET_TRANSFER_FAILED', status: 502 })).toBe(FAUCET_MESSAGES.OTHER);
+    expect(isUnconfirmedClaim({ status: 524 })).toBe(true);
+    expect(isUnconfirmedClaim({ status: 500 })).toBe(false);
+    expect(isUnconfirmedClaim({ code: 'RATE_LIMITED', status: 0 })).toBe(false);
     expect(shortTxHash('0x1234')).toBe('0x1234');
   });
 });
