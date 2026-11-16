@@ -31,6 +31,9 @@
 .ns-producer-count { margin-left: auto; font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
 
 .ns-table td strong { font-weight: 600; }
+.ns-feature-note { margin: 12px 20px; }
+.ns-feature-note summary { cursor: pointer; }
+.ns-feature-note li { margin: 6px 0; }
 
 @media (max-width: 900px) {
   .ns-tiles { grid-template-columns: 1fr 1fr; }
