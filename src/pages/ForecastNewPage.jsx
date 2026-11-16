@@ -49,6 +49,17 @@ export const failureLine = code => (typeof code === 'string' && code.startsWith(
   ? 'Committed, but the reveal didn\'t reach the chain in time. You can try again.'
   : 'Didn\'t reach the chain; you can try again.');
 /**
+ * Which leads chain skill pay (core4 feature forecast_late_score_v2) can ever pay: 6 h and 12 h only. 1 h and 24 h
+ * stay practice even after it is switched on. It is not switched on yet, so no label may say a forecast earns now.
+ * Labels only: every lead stays selectable and what gets submitted does not change.
+ */
+export const SKILL_PAY_LEADS = [6, 12];
+export const SKILL_PAY_OFF_NOTE = "Skill pay isn't switched on yet. Today every forecast is practice and builds your record.";
+export function leadPayLabel(hours) {
+  return SKILL_PAY_LEADS.includes(hours) ? 'Can earn WRF once skill pay is on' : 'Practice: not paid';
+}
+
+/**
  * The stations the backend takes forecasts for (`stations` in GET /api/forecasts/status), in public-list order.
  * Listing any other station would let a visitor fill in the form and only then be refused, so they are left out.
  * A status without a `stations` list (an older backend) keeps the whole public list.
@@ -295,9 +306,10 @@ export default function ForecastNewPage() {
                   </select>
                 </label>
                 <label className="ch-field">How far ahead
-                  <select value={lead} onChange={e => setLead(Number(e.target.value))}>
-                    {FORECAST_LEADS.map(h => <option key={h} value={h}>{h} hour{h === 1 ? '' : 's'}</option>)}
+                  <select value={lead} onChange={e => setLead(Number(e.target.value))} aria-describedby="fn-lead-pay">
+                    {FORECAST_LEADS.map(h => <option key={h} value={h}>{h} hour{h === 1 ? '' : 's'} · {leadPayLabel(h)}</option>)}
                   </select>
+                  <span id="fn-lead-pay" className="fn-lead-pay" aria-hidden="true" data-testid="forecast-lead-pay">{leadPayLabel(lead)}</span>
                 </label>
                 <label className="ch-field">Your forecast ({range.unit})
                   <input inputMode="decimal" value={value} onChange={e => { setValue(e.target.value); setEdited(true); }} aria-describedby="fn-suggest" />
@@ -312,6 +324,7 @@ export default function ForecastNewPage() {
               <label className="ch-field">Wallet password
                 <input type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} disabled={!canSign} />
               </label>
+              <p className="fc-note" data-testid="forecast-skill-pay-off">{SKILL_PAY_OFF_NOTE}</p>
               <p className="fc-note">One forecast per station, lead time and day (UTC). Your first one is the one that counts.</p>
               <button type="submit" className="ch-action" disabled={busy || !canSign || !alias || !valueOk || !password}>{busy ? 'Signing and sending…' : 'Sign and submit'}</button>
             </form>
