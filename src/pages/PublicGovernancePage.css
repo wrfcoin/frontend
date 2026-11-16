@@ -68,6 +68,10 @@ body.light-mode .pg-table .pg-id, body.light-mode .pg-table .pg-sub { color: var
 .pg-adv-summary p { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
 .pg-adv-meta { color: var(--pg-text-muted); font-size: 12px; }
 .pg-mono { font-family: var(--pg-mono); overflow-wrap: anywhere; }
+.pg-adv-text { white-space: pre-wrap; }
+.pg-adv-detail-actions { margin-top: 20px; }
 .pg-adv-item .pg-sub { font-size: 0.75rem; color: var(--pg-text-muted); margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .pg-adv-item .pg-title { font-weight: 600; color: var(--pg-text); }
+.pg-adv-item a.pg-title { text-decoration: none; }
+.pg-adv-item a.pg-title:hover { color: var(--pg-primary-light); text-decoration: underline; }
 body.light-mode .pg-adv-item .pg-sub { color: var(--pg-text-secondary); }

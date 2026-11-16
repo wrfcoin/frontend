@@ -65,6 +65,14 @@ export function governanceAdvisoryProposalsPath(limit = GOVERNANCE_PAGE_SIZE, of
   return `/governance/advisory/proposals?limit=${l}&offset=${o}`;
 }
 
+/** Chain-derived advisory proposal id: `adv-` + 16 lowercase hex (backend ADVISORY_ID_RE, edge matcher). */
+export const ADVISORY_PROPOSAL_ID_RE = /^adv-[0-9a-f]{16}$/;
+
+/** One advisory proposal, no query (the edge admits only an empty query here). */
+export function governanceAdvisoryProposalPath(id: string): string | null {
+  return ADVISORY_PROPOSAL_ID_RE.test(id) ? `/governance/advisory/proposals/${id}` : null;
+}
+
 /**
  * Faucet bond-grant audit list (self-serve bond grant spec section 4): the backend forwards the faucet's
  * `GET /faucet/bond-grants` unchanged, `{ grants: [{ ownerAddress, peerId, serverKey, txHash, time, bonded }] }`,

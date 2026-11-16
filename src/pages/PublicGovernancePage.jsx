@@ -8,14 +8,16 @@ import {
   radii, success, successLight, textMuted, textPrimary, textSecondary,
 } from '../components/DesignSystem/tokens';
 import { governanceService } from '../services/governanceService';
-import { GOVERNANCE_PAGE_SIZE } from '../services/publicReadonlyApi';
+import { ADVISORY_PROPOSAL_ID_RE, GOVERNANCE_PAGE_SIZE } from '../services/publicReadonlyApi';
 import './PublicGovernancePage.css';
 import { AdvisoryActionsProvider, AdvisoryProposeForm, AdvisoryVoteButtons } from '../components/governance/AdvisoryActions';
 import { advisoryVotingBuildEnabled } from '../services/walletCrypto/advisoryGovernance';
 
 /**
  * Public read-only governance (S4, rebuilt for launch in #558): proposals list and one proposal.
- * Reads only GET /api/governance/proposals?limit&offset and /proposals/<id>. No votes, delegation or writes.
+ * Reads only GET /api/governance/proposals?limit&offset and /proposals/<id>, plus the advisory list
+ * (/advisory/proposals?limit&offset) and one advisory proposal (/advisory/proposals/adv-<16 hex>).
+ * Advisory votes are signed by the wallet and relayed (AdvisoryActions); nothing else is written.
  * No treasury: the chain has none that holds funds, so this page shows no treasury figures.
  */
 
@@ -137,7 +139,9 @@ function AdvisoryRow({ p, canAct }) {
   return (
     <li className="pg-adv-item" data-testid="advisory-proposal">
       <div className="pg-adv-top">
-        <span className="pg-title">{text(p.title)}</span>
+        {typeof p.id === 'string' && ADVISORY_PROPOSAL_ID_RE.test(p.id) ? (
+          <Link className="pg-title" to={`/governance/public/${p.id}`}>{text(p.title)}</Link>
+        ) : <span className="pg-title">{text(p.title)}</span>}
         <WrfBadge status={status.badge} label={status.label} />
       </div>
       <div className="pg-sub">
@@ -345,7 +349,64 @@ export function PublicGovernanceListPage({ credentials } = {}) {
   );
 }
 
-export function PublicGovernanceProposalPage() {
+/** The node's feature answer, read from the edge-admitted list shape `limit=1&offset=0`; false on any failure. */
+function useAdvisoryFeatureActive(wanted) {
+  const [active, setActive] = useState(false);
+  useEffect(() => {
+    if (!wanted) return undefined;
+    const controller = new globalThis.AbortController();
+    governanceService
+      .getAdvisoryProposalsPage(0, 1, controller.signal)
+      .then(r => { if (!controller.signal.aborted) setActive(r?.kind === 'ok' && r.data.featureActive === true); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [wanted]);
+  return active;
+}
+
+/** One advisory proposal. Vote buttons show under the same rule as the list: build flag on, node reports active. */
+function AdvisoryProposalDetail({ p, credentials }) {
+  const status = ADVISORY_STATUS[String(p.status ?? '')] ?? { label: text(p.status), badge: 'neutral' };
+  const yes = count(p.yes_votes);
+  const no = count(p.no_votes);
+  const eligible = count(p.eligible_count);
+  const created = count(p.created_at_block);
+  const finalized = count(p.finalized_at_block);
+  const deadline = count(p.voting_deadline);
+  const open = p.status === 'active' && typeof p.id === 'string';
+  const featureActive = useAdvisoryFeatureActive(open && advisoryVotingBuildEnabled());
+  const canVote = open && featureActive && advisoryVotingBuildEnabled();
+  return (
+    <WrfCard component="section" aria-label="Advisory proposal" data-testid="advisory-proposal-detail">
+      <h1>{text(p.title)}</h1>
+      <p className="pg-adv-note">
+        An advisory text proposal signed by a testnet wallet. A passed proposal is only recorded: nothing it says
+        is carried out. Each wallet that held at least 1 WRF when it was proposed gets one vote.
+      </p>
+      <dl className="pg-kv">
+        <dt>Status</dt><dd><WrfBadge status={status.badge} label={status.label} /></dd>
+        <dt>Votes</dt><dd>For {yes ?? '—'} · Against {no ?? '—'}</dd>
+        {eligible !== null ? (<><dt>Could vote</dt><dd>{eligible} wallets</dd></>) : null}
+        {created !== null ? (<><dt>Proposed at</dt><dd>block {created}</dd></>) : null}
+        {finalized !== null ? (<><dt>Decided at</dt><dd>block {finalized}</dd></>)
+          : deadline !== null ? (<><dt>Voting ends</dt><dd>at block {deadline}</dd></>) : null}
+        <dt>Proposer</dt><dd className="pg-mono">{text(p.proposer)}</dd>
+        <dt>Id</dt><dd className="pg-mono">{text(p.id)}</dd>
+        {p.summary ? (<><dt>Proposal</dt><dd className="pg-adv-text">{String(p.summary)}</dd></>) : null}
+      </dl>
+      {canVote ? (
+        <div className="pg-adv-detail-actions">
+          <AdvisoryActionsProvider credentials={credentials}>
+            <AdvisoryVoteButtons proposalId={p.id} title={typeof p.title === 'string' ? p.title : undefined} />
+          </AdvisoryActionsProvider>
+        </div>
+      ) : null}
+    </WrfCard>
+  );
+}
+
+/** `credentials` is a test seam for the passkey prompt (navigator.credentials when omitted). */
+export function PublicGovernanceProposalPage({ credentials } = {}) {
   // Light theme: surface/text/border variables come from the light token set; everything else stays.
   const isDark = useIsDarkTheme();
   const themeVars = { ...TOKEN_VARS, ...publicPageSurfaceVars('pg', isDark) };
@@ -354,8 +415,12 @@ export function PublicGovernanceProposalPage() {
   const load = useCallback(() => {
     const controller = new globalThis.AbortController();
     setState({ loading: true, result: null });
-    governanceService
-      .getPublicProposal(String(proposalId ?? ''), controller.signal)
+    const id = String(proposalId ?? '');
+    // Advisory ids (`adv-…`) live on the advisory route; the old route never has them.
+    const read = id.startsWith('adv-')
+      ? governanceService.getAdvisoryProposal(id, controller.signal)
+      : governanceService.getPublicProposal(id, controller.signal);
+    read
       .then(result => setState({ loading: false, result }))
       .catch(() => {});
     return () => controller.abort();
@@ -363,6 +428,7 @@ export function PublicGovernanceProposalPage() {
   useEffect(() => load(), [load]);
   const { loading, result } = state;
   const proposal = result?.kind === 'ok' ? result.data.proposal : null;
+  const advisory = String(proposalId ?? '').startsWith('adv-');
   const notFound = result?.kind === 'not_found' || (result?.kind === 'ok' && !proposal);
 
   return (
@@ -372,6 +438,8 @@ export function PublicGovernanceProposalPage() {
         <WrfEmptyState variant="search" title="Proposal not found." description="There is no proposal with this id on the testnet." />
       ) : result?.kind !== 'ok' ? (
         <Unavailable result={result} what="Proposal" onRetry={load} />
+      ) : advisory ? (
+        <AdvisoryProposalDetail p={proposal} credentials={credentials} />
       ) : (
         <WrfCard component="section" aria-label="Proposal">
           <h1>{text(proposal.title ?? `Proposal ${proposalId}`)}</h1>

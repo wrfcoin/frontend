@@ -41,7 +41,7 @@ jest.unstable_mockModule('../../services/walletCrypto/deviceSession', () => ({
   },
 }));
 
-const { PublicGovernanceListPage } = await import('../PublicGovernancePage');
+const { PublicGovernanceListPage, PublicGovernanceProposalPage } = await import('../PublicGovernancePage');
 const { advisoryActionMessage, advisoryPasskeyChallenge } = await import('../../services/walletCrypto/advisoryGovernance');
 
 const PROPOSAL_ID = 'adv-0123456789abcdef';
@@ -61,6 +61,10 @@ function mockFetch({ featureActive = true, proposals = [ACTIVE] } = {}) {
     calls.push(`${method} ${url.pathname}${url.search}`);
     let body;
     if (url.pathname === '/api/governance/advisory/proposals') body = { success: true, featureActive, total: proposals.length, hasMore: false, proposals };
+    else if (url.pathname.startsWith('/api/governance/advisory/proposals/adv-') && !url.pathname.endsWith('/eligibility')) {
+      const found = proposals.find(p => url.pathname.endsWith(`/${p.id}`)) ?? null;
+      body = { success: true, observedAtHeight: 200, proposal: found, limits: null };
+    }
     else if (url.pathname.endsWith('/nonce')) body = { success: true, address: url.pathname.split('/')[5], nonce: 3 };
     else if (url.pathname.endsWith('/eligibility')) body = { success: true, ...eligibility };
     else if (url.pathname === '/api/governance/advisory/actions') {
@@ -178,4 +182,56 @@ it('a wrong password sends nothing', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Sign and send' }));
   expect(await screen.findByTestId('advisory-vote-note')).toHaveTextContent('Check your wallet password');
   await waitFor(() => expect(posted).toHaveLength(0));
+});
+
+describe('advisory proposal detail page', () => {
+  const mountDetail = (credentials, id = PROPOSAL_ID) => render(
+    <MemoryRouter initialEntries={[`/governance/public/${id}`]}>
+      <Routes><Route path="/governance/public/:proposalId" element={<PublicGovernanceProposalPage credentials={credentials} />} /></Routes>
+    </MemoryRouter>,
+  );
+
+  it('shows the vote buttons, like the list, once the node reports the feature active', async () => {
+    mockFetch();
+    mountDetail(fakeCredentials());
+    await screen.findByTestId('advisory-vote-for');
+    expect(screen.getByTestId('advisory-vote-against')).toBeInTheDocument();
+    expect(screen.getByTestId('advisory-signer-passkey')).toBeInTheDocument();
+    // Only edge-admitted shapes: the detail (no query) and the list at limit=1&offset=0 for featureActive.
+    expect([...calls].sort()).toEqual([
+      `GET /api/governance/advisory/proposals/${PROPOSAL_ID}`,
+      'GET /api/governance/advisory/proposals?limit=1&offset=0',
+    ]);
+    expect(calls.join()).not.toMatch(/\/api\/governance\/proposals\//);
+  });
+
+  it('votes from the detail page through the same relay', async () => {
+    mockFetch();
+    mountDetail(fakeCredentials());
+    fireEvent.click(await screen.findByTestId('advisory-signer-phrase'));
+    fireEvent.click(screen.getByTestId('advisory-vote-for'));
+    await screen.findByTestId('advisory-password');
+    fireEvent.change(screen.getByLabelText('Wallet password'), { target: { value: 'right' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Sign and send' }));
+    await screen.findByText(/Sent\. It counts once it is in a block/);
+    expect(posted).toHaveLength(1);
+    expect(posted[0].action).toEqual({ vote: { proposal_id: PROPOSAL_ID, approve: true } });
+  });
+
+  it('hides the buttons while the node reports the feature inactive', async () => {
+    mockFetch({ featureActive: false });
+    mountDetail(fakeCredentials());
+    await screen.findByTestId('advisory-proposal-detail');
+    await waitFor(() => expect(calls).toContain('GET /api/governance/advisory/proposals?limit=1&offset=0'));
+    expect(screen.queryByTestId('advisory-vote-for')).toBeNull();
+    expect(screen.queryByTestId('advisory-actions')).toBeNull();
+  });
+
+  it('a decided proposal has no buttons and makes no feature read', async () => {
+    mockFetch({ proposals: [{ ...ACTIVE, status: 'passed', finalized_at_block: 1221 }] });
+    mountDetail(fakeCredentials());
+    await screen.findByText('Passed (advisory)');
+    expect(screen.queryByTestId('advisory-vote-for')).toBeNull();
+    expect(calls).toEqual([`GET /api/governance/advisory/proposals/${PROPOSAL_ID}`]);
+  });
 });

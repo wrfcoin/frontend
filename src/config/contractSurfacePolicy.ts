@@ -91,7 +91,8 @@ export const PUBLIC_READONLY_PATHS = new Set([
   '/leaderboard/contributors',
   // Website parity S4-S6 (owner ruling 2026-10-15). Exact entries, never prefixes: descendants of `/governance`,
   // `/forecast`, `/impact` and `/leaderboard` descendants stay operator-preview / full-studio only.
-  //   /governance/public[/:proposalId] reads GET /api/governance/proposals, /proposals/<id>
+  //   /governance/public[/:proposalId] reads GET /api/governance/proposals, /proposals/<id>, and the
+  //                                    advisory list and /advisory/proposals/adv-<16 hex> (no query)
   //   /weather/forecast                reads GET /api/weather/current|forecast/<lat,lon at 0.1 degree>
   //   /contributor/:key                reads GET /api/operators/c_<24 hex>/profile (opaque key only)
   '/governance/public',
