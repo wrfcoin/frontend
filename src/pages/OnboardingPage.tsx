@@ -589,15 +589,18 @@ function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
   const [loading, setLoading] = useState(false);
   const [fetchingChallenge, setFetchingChallenge] = useState(false);
   const [error, setError] = useState('');
+  const [pending, setPending] = useState(false);
   const [success, setSuccess] = useState<{ txHash: string; amount: string } | null>(null);
 
-  const fetchChallenge = useCallback(async () => {
+  const fetchChallenge = useCallback(async (preserveError = false) => {
     setFetchingChallenge(true);
-    setError('');
+    if (!preserveError) setError('');
+    setChallengeId(''); setQuestion(''); setAnswer('');
     try {
       const res = await fetch('/api/onboarding/faucet/challenge', { method: 'POST' });
       if (!res.ok) throw new Error('Failed to fetch challenge');
       const data = await res.json();
+      if (typeof data?.challengeId !== 'string' || !data.challengeId.trim() || typeof data?.question !== 'string' || !data.question.trim()) throw new Error('Invalid challenge');
       setChallengeId(data.challengeId);
       setQuestion(data.question);
     } catch {
@@ -611,10 +614,11 @@ function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
 
   // Fetch challenge on mount (only when there is a faucet to claim from)
   useEffect(() => {
-    if (faucetOpen) fetchChallenge();
+    if (faucetOpen) void fetchChallenge();
   }, [faucetOpen, fetchChallenge]);
 
   const handleClaim = useCallback(async () => {
+    if (!walletAddress || !challengeId || !answer.trim() || loading || fetchingChallenge || pending) return;
     setLoading(true);
     setError('');
 
@@ -632,16 +636,22 @@ function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
         const message =
           data?.error?.message || data?.message || 'Failed to claim tokens';
         setError(message);
+        // Every claim consumes its question, even on a wrong answer or a cooldown refusal.
+        setChallengeId(''); setQuestion(''); setAnswer('');
+        if (['CLAIM_PENDING', 'FAUCET_UNCONFIRMED'].includes(data?.error?.code)) setPending(true);
+        else if (data?.error?.code === 'CAPTCHA_FAILED') await fetchChallenge(true);
         return;
       }
 
+      if (typeof data?.txHash !== 'string' || !data.txHash || typeof data?.amount !== 'string') throw new Error('Unconfirmed response');
       setSuccess({ txHash: data.txHash, amount: data.amount });
     } catch {
-      setError('Network error. Please try again.');
+      setChallengeId(''); setQuestion(''); setAnswer('');
+      setError('Could not confirm the claim. Check your wallet balance before trying again.');
     } finally {
       setLoading(false);
     }
-  }, [walletAddress, challengeId, answer]);
+  }, [walletAddress, challengeId, answer, loading, fetchingChallenge, pending, fetchChallenge]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -686,6 +696,10 @@ function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
             Continue without test tokens
           </WrfButton>
         </Box>
+      ) : pending ? (
+        <WrfAlert severity="info" title="Claim awaiting confirmation">
+          The faucet may already have sent this claim. Do not request it again. <a href="/wallet">Check your wallet</a> for the balance, or ask testnet support to check the claim.
+        </WrfAlert>
       ) : success ? (
         <>
           <WrfAlert severity="success" title="Tokens Claimed!">
@@ -725,13 +739,13 @@ function FundWalletStep({ walletAddress, completeStep }: FundWalletStepProps) {
                 variant="primary"
                 onClick={handleClaim}
                 loading={loading}
-                disabled={loading || !answer.trim()}
+                disabled={loading || fetchingChallenge || !walletAddress || !challengeId || !answer.trim()}
               >
                 Claim Tokens
               </WrfButton>
             </>
           ) : (
-            <WrfButton variant="outline" onClick={fetchChallenge}>
+            <WrfButton variant="outline" onClick={() => void fetchChallenge()} disabled={loading || fetchingChallenge}>
               Retry Loading Challenge
             </WrfButton>
           )}

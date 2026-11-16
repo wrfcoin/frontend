@@ -20,13 +20,14 @@ function isFaucetOpen(): boolean {
 
 export const FAUCET_MESSAGES = {
   ALREADY_CLAIMED: 'This address already received test coins in the last 24 hours. Try again tomorrow.',
-  RATE_LIMITED: 'Too many requests from your network right now. Wait a few minutes, then try again.',
+  RATE_LIMITED: 'The faucet request limit has been reached. Wait before trying again; daily limits can take up to 24 hours to reset.',
   FAUCET_EMPTY: 'The faucet is out of test coins right now. Try again later.',
   CAPTCHA_FAILED: 'That answer was not right, or the question expired. Here is a new question.',
   BAD_ADDRESS: 'The faucet cannot pay this address.',
   NETWORK: 'The faucet could not be reached. Check your connection, then try again.',
   QUESTION_FAILED: 'The question could not be loaded. Try again in a moment.',
-  OTHER: 'The faucet could not send test coins right now. Try again later.',
+  OTHER: 'The faucet is unavailable right now. Try again later.',
+  UNCONFIRMED: 'The faucet could not confirm whether coins were sent. Check your wallet balance before trying again; do not repeat a pending claim.',
 } as const;
 
 /** Plain-language text for a failed claim. Never shows the server's own wording. */
@@ -34,7 +35,10 @@ export function describeFaucetFailure(result: Pick<FaucetClaimResult, 'code' | '
   switch (result.code) {
   case 'ALREADY_CLAIMED': return FAUCET_MESSAGES.ALREADY_CLAIMED;
   case 'RATE_LIMITED': return FAUCET_MESSAGES.RATE_LIMITED;
-  case 'FAUCET_EMPTY': return FAUCET_MESSAGES.FAUCET_EMPTY;
+  case 'FAUCET_EMPTY':
+  case 'FAUCET_WALLET_LOW_BALANCE': return FAUCET_MESSAGES.FAUCET_EMPTY;
+  case 'CLAIM_PENDING':
+  case 'FAUCET_UNCONFIRMED': return FAUCET_MESSAGES.UNCONFIRMED;
   case 'CAPTCHA_FAILED': return FAUCET_MESSAGES.CAPTCHA_FAILED;
   case 'INVALID_ADDRESS':
   case 'EVM_ADDRESS_REQUIRED': return FAUCET_MESSAGES.BAD_ADDRESS;
@@ -42,7 +46,7 @@ export function describeFaucetFailure(result: Pick<FaucetClaimResult, 'code' | '
   }
   if (!result.status) return FAUCET_MESSAGES.NETWORK;
   if (result.status === 429) return FAUCET_MESSAGES.RATE_LIMITED;
-  if (result.status === 503) return FAUCET_MESSAGES.FAUCET_EMPTY;
+  if (result.status === 503) return FAUCET_MESSAGES.OTHER;
   return FAUCET_MESSAGES.OTHER;
 }
 
@@ -56,6 +60,7 @@ type Phase =
   | { kind: 'loading-question' }
   | { kind: 'question'; challengeId: string; question: string }
   | { kind: 'claiming'; challengeId: string; question: string }
+  | { kind: 'pending' }
   | { kind: 'done'; amount: string | null; txHash: string | null };
 
 export interface PasskeyFaucetPanelProps {
@@ -104,7 +109,8 @@ export function PasskeyFaucetPanel({ address, onClaimed }: PasskeyFaucetPanelPro
     }
     setError(describeFaucetFailure(result));
     // The server spends the question on every claim, right or wrong: a wrong answer gets a fresh one.
-    if (result.code === 'CAPTCHA_FAILED') void loadQuestion();
+    if (result.code === 'CLAIM_PENDING' || result.code === 'FAUCET_UNCONFIRMED') setPhase({ kind: 'pending' });
+    else if (result.code === 'CAPTCHA_FAILED') void loadQuestion();
     else setPhase({ kind: 'idle' });
   }, [phase, address, answer, onClaimed, loadQuestion]);
 
@@ -159,6 +165,8 @@ export function PasskeyFaucetPanel({ address, onClaimed }: PasskeyFaucetPanelPro
           </Box>
         </Box>
       )}
+
+      {phase.kind === 'pending' && <Typography variant="body2">Check your wallet balance for coins. If the outcome remains unclear, ask testnet support to check the claim.</Typography>}
 
       {phase.kind === 'done' && (
         <WrfAlert severity="success" role="status" data-testid="passkey-faucet-success">

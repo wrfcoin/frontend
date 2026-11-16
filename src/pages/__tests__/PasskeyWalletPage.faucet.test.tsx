@@ -153,6 +153,23 @@ describe('passkey wallet: get test coins', () => {
     expect(calls.map(c => c.url)).toEqual(['/api/onboarding/faucet/challenge', '/api/onboarding/faucet/claim', '/api/onboarding/faucet/challenge']);
   });
 
+  it.each(['CLAIM_PENDING', 'FAUCET_UNCONFIRMED'])('does not offer a repeated claim for %s', async (code) => {
+    replies = [QUESTION, { status: code === 'CLAIM_PENDING' ? 409 : 503, body: { error: { code } } }];
+    render(<PasskeyWalletPage />);
+    await askQuestion();
+    await answer('7');
+    expect(await screen.findByTestId('passkey-faucet-error')).toHaveTextContent(FAUCET_MESSAGES.UNCONFIRMED);
+    expect(screen.queryByTestId('passkey-faucet-start')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('passkey-faucet-claim')).not.toBeInTheDocument();
+    expect(calls).toHaveLength(2);
+  });
+
+  it('does not call every unavailable service empty or invent a short cooldown', () => {
+    expect(describeFaucetFailure({ code: 'FAUCET_UNAVAILABLE', status: 503 })).toBe(FAUCET_MESSAGES.OTHER);
+    expect(describeFaucetFailure({ code: 'FAUCET_WALLET_LOW_BALANCE', status: 503 })).toBe(FAUCET_MESSAGES.FAUCET_EMPTY);
+    expect(FAUCET_MESSAGES.RATE_LIMITED).not.toContain('few minutes');
+  });
+
   it('a question that cannot be loaded says so, including rate limiting', async () => {
     replies = [{ status: 429, body: { error: { code: 'RATE_LIMITED', message: 'Too many captcha requests' } } }];
     render(<PasskeyWalletPage />);
@@ -180,7 +197,7 @@ describe('passkey wallet: get test coins', () => {
   it('maps codes and statuses without trusting server wording', () => {
     expect(describeFaucetFailure({ code: 'EVM_ADDRESS_REQUIRED', status: 400 })).toBe(FAUCET_MESSAGES.BAD_ADDRESS);
     expect(describeFaucetFailure({ status: 429 })).toBe(FAUCET_MESSAGES.RATE_LIMITED);
-    expect(describeFaucetFailure({ status: 503 })).toBe(FAUCET_MESSAGES.FAUCET_EMPTY);
+    expect(describeFaucetFailure({ status: 503 })).toBe(FAUCET_MESSAGES.OTHER);
     expect(describeFaucetFailure({ status: 0 })).toBe(FAUCET_MESSAGES.NETWORK);
     expect(shortTxHash('0x1234')).toBe('0x1234');
   });

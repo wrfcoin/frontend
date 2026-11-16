@@ -518,6 +518,70 @@ describe('OnboardingPage', () => {
     }
   });
 
+  describe('spent faucet question recovery', () => {
+    let previousEnv: unknown;
+    beforeEach(() => {
+      previousEnv = (globalThis as any).__VITE_ENV__;
+      (globalThis as any).__VITE_ENV__ = { ...(previousEnv as any ?? {}), VITE_FAUCET_OPEN: 'true' };
+      localStorage.setItem('wrfcoin_onboarding', JSON.stringify({ currentStep: 1,
+        completedSteps: { '0': { walletAddress: '0x' + 'a'.repeat(40) } }, walletAddress: '0x' + 'a'.repeat(40) }));
+    });
+    afterEach(() => { (globalThis as any).__VITE_ENV__ = previousEnv; });
+    const question = (id: string, text: string) => ({ ok: true, json: async () => ({ challengeId: id, question: text }) });
+    const submit = async () => {
+      fireEvent.change(await screen.findByPlaceholderText('Enter the answer'), { target: { value: '4' } });
+      fireEvent.click(screen.getByText('Claim Tokens'));
+    };
+
+    it.each(['Incorrect captcha answer', 'Challenge not found or expired'])('replaces a consumed challenge after %s', async message => {
+      const fetchMock = global.fetch as ReturnType<typeof jest.fn>;
+      fetchMock.mockResolvedValueOnce(question('first', 'What is 2 + 2?'))
+        .mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ error: { code: 'CAPTCHA_FAILED', message } }) })
+        .mockResolvedValueOnce(question('second', 'What is 1 + 3?'))
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ txHash: 'ab'.repeat(32), amount: '100' }) });
+      renderPage(); await submit();
+      expect(await screen.findByText('What is 1 + 3?')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText('Enter the answer')).toHaveValue('');
+      await submit();
+      expect(await screen.findByText('Tokens Claimed!')).toBeInTheDocument();
+      expect(JSON.parse((fetchMock.mock.calls[3][1] as { body: string }).body).challengeId).toBe('second');
+    });
+
+    it('a failed replacement leaves a reachable retry, never the consumed question', async () => {
+      const fetchMock = global.fetch as ReturnType<typeof jest.fn>;
+      fetchMock.mockResolvedValueOnce(question('first', 'What is 2 + 2?'))
+        .mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ error: { code: 'CAPTCHA_FAILED' } }) })
+        .mockRejectedValueOnce(new Error('offline'));
+      renderPage(); await submit();
+      expect(await screen.findByText('Retry Loading Challenge')).toBeEnabled();
+      expect(screen.queryByText('What is 2 + 2?')).not.toBeInTheDocument();
+      fetchMock.mockResolvedValueOnce(question('third', 'What is 3 + 3?'));
+      fireEvent.click(screen.getByText('Retry Loading Challenge'));
+      expect(await screen.findByText('What is 3 + 3?')).toBeInTheDocument();
+    });
+
+    it('an uncertain claim is not automatically replayed, and pending has no retry button', async () => {
+      const fetchMock = global.fetch as ReturnType<typeof jest.fn>;
+      fetchMock.mockResolvedValueOnce(question('first', 'What is 2 + 2?'))
+        .mockResolvedValueOnce({ ok: false, status: 409, json: async () => ({ error: { code: 'CLAIM_PENDING', message: 'Awaiting confirmation' } }) });
+      renderPage(); await submit();
+      expect(await screen.findByText('Claim awaiting confirmation')).toBeInTheDocument();
+      expect(screen.queryByText('Claim Tokens')).not.toBeInTheDocument();
+      expect(screen.queryByText('Retry Loading Challenge')).not.toBeInTheDocument();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('a network failure discards the question without submitting or fetching again', async () => {
+      const fetchMock = global.fetch as ReturnType<typeof jest.fn>;
+      fetchMock.mockResolvedValueOnce(question('first', 'What is 2 + 2?')).mockRejectedValueOnce(new Error('offline'));
+      renderPage(); await submit();
+      expect(await screen.findByText(/Could not confirm the claim/)).toBeInTheDocument();
+      expect(screen.getByText('Retry Loading Challenge')).toBeEnabled();
+      expect(screen.queryByText('What is 2 + 2?')).not.toBeInTheDocument();
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it('faucet off by default: an honest unfunded notice, no challenge request, no claim', async () => {
     localStorage.setItem(
       'wrfcoin_onboarding',
