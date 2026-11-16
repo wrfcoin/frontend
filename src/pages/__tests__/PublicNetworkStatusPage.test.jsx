@@ -36,8 +36,8 @@ const snapshot = (over = {}) => ({
     status: 'ok', windowBlocks: 64, total: 3, online: 2,
     members: [
       { label: 'Producer A', online: true, blocksInWindow: 40, lastHeight: 25000 },
-      { label: 'producer 2', online: true, blocksInWindow: 24, lastHeight: 24999 },
-      { label: 'producer 3', online: false, blocksInWindow: 0, lastHeight: null },
+      { label: 'Producer B', online: true, blocksInWindow: 24, lastHeight: 24999 },
+      { label: 'Producer C', online: false, blocksInWindow: 0, lastHeight: null },
     ],
   },
   nodePay: { status: 'ok', currentEpoch: 21, lastPaidEpoch: 19, epochsScanned: [21, 20, 19] },
@@ -88,8 +88,8 @@ test('shows the verdict, block pace, producers online, peers, node pay and sched
   expect(screen.getByTestId('status-nodepay')).toHaveTextContent('Epoch 19 paidnow epoch 21');
   expect(screen.getByTestId('status-gap')).toHaveTextContent('2 min 34 s');
   const list = screen.getByTestId('status-producer-list');
-  expect(within(list).getByText('producer 3')).toBeInTheDocument();
-  expect(within(list).getByText('Not seen')).toBeInTheDocument();
+  expect(within(list).getByText('Producer C')).toBeInTheDocument();
+  expect(within(list).getByText('Not seen in window')).toBeInTheDocument();
   const up = screen.getByTestId('status-upgrades');
   expect(up).toHaveTextContent('Governance proposals');
   expect(up).toHaveTextContent('27,000');
@@ -229,6 +229,34 @@ test('node pay with an unread newer epoch says partly checked, not "none recentl
   mockFetch(200, snapshot({ nodePay: { status: 'partial', currentEpoch: 21, lastPaidEpoch: null, epochsScanned: [21, 19], epochsUnread: [20] } }));
   renderPage();
   await screen.findByTestId('status-verdict');
-  expect(screen.getByTestId('status-nodepay')).toHaveTextContent('Partly checkedcould not read epoch 20; now epoch 21');
+  expect(screen.getByTestId('status-nodepay')).toHaveTextContent('History incompleterecords unavailable or pruned for epoch 20; now epoch 21');
   expect(screen.getByTestId('status-nodepay')).not.toHaveTextContent('None recently');
+});
+
+
+test('shows active and scheduled capabilities without claiming fleet-wide or service readiness', async () => {
+  mockFetch(200, snapshot({ upgrades: { status: 'ok', activeFeatures: 1, evaluatedHeight: 25001, scheduleComplete: true,
+    signedNotice: null, active: [{ feature: 'passkey_p256_auth', activationHeight: 3400, supported: true }],
+    pending: [{ feature: 'advisory_governance', activationHeight: 27000, blocksRemaining: 2000, supported: false }] } }));
+  renderPage();
+  await screen.findByTestId('status-verdict');
+  expect(screen.getByTestId('status-upgrades')).toHaveTextContent('Upgrade needed');
+  expect(screen.getByTestId('status-active-features')).toHaveTextContent('Passkey p256 auth');
+  expect(screen.getByTestId('status-active-features')).toHaveTextContent('3,400');
+  expect(screen.getByText(/Schedule evaluated for block 25,001/)).toBeInTheDocument();
+  expect(screen.getByText(/not by every node/)).toBeInTheDocument();
+  expect(screen.getByText(/activation does not automatically enable/)).toBeInTheDocument();
+  expect(screen.queryByText(/complete feature schedule could not/)).not.toBeInTheDocument();
+  expect(screen.getByTestId('status-producers')).toHaveTextContent('Recently produced');
+  expect(screen.getByText(/does not measure whether a host is online/)).toBeInTheDocument();
+});
+
+test('legacy or incomplete schedule never claims nothing is scheduled or assumes support', async () => {
+  mockFetch(200, snapshot({ upgrades: { status: 'ok', activeFeatures: 17, signedNotice: null, pending: [] } }));
+  renderPage();
+  await screen.findByTestId('status-verdict');
+  expect(screen.getByTestId('status-upgrades-none')).toHaveTextContent('No pending upgrades reported');
+  expect(screen.getByText(/complete feature schedule could not/)).toBeInTheDocument();
+  expect(screen.getByTestId('status-active-features')).toHaveTextContent('not available from this server version');
+  expect(screen.queryByText(/Nothing scheduled/)).not.toBeInTheDocument();
 });
