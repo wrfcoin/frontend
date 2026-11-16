@@ -178,9 +178,9 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
     producers: {
       status: 'ok', windowBlocks: 64, total: 3, online: 2,
       members: [
-        { label: 'producer 1', online: true, blocksInWindow: 33, lastHeight: 44830 },
-        { label: 'producer 2', online: true, blocksInWindow: 31, lastHeight: 44829 },
-        { label: 'producer 3', online: false, blocksInWindow: 0, lastHeight: null },
+        { label: 'Producer A', online: true, blocksInWindow: 33, lastHeight: 44830 },
+        { label: 'Producer B', online: true, blocksInWindow: 31, lastHeight: 44829 },
+        { label: 'Producer C', online: false, blocksInWindow: 0, lastHeight: null },
       ],
     },
     nodePay: { status: 'ok', currentEpoch: 21, lastPaidEpoch: 19, epochsScanned: [21, 20, 19] },

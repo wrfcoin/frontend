@@ -36,8 +36,8 @@ const snapshot = (over = {}) => ({
     status: 'ok', windowBlocks: 64, total: 3, online: 2,
     members: [
       { label: 'Producer A', online: true, blocksInWindow: 40, lastHeight: 25000 },
-      { label: 'producer 2', online: true, blocksInWindow: 24, lastHeight: 24999 },
-      { label: 'producer 3', online: false, blocksInWindow: 0, lastHeight: null },
+      { label: 'Producer B', online: true, blocksInWindow: 24, lastHeight: 24999 },
+      { label: 'Producer C', online: false, blocksInWindow: 0, lastHeight: null },
     ],
   },
   nodePay: { status: 'ok', currentEpoch: 21, lastPaidEpoch: 19, epochsScanned: [21, 20, 19] },
@@ -88,7 +88,7 @@ test('shows the verdict, block pace, producers online, peers, node pay and sched
   expect(screen.getByTestId('status-nodepay')).toHaveTextContent('Epoch 19 paidnow epoch 21');
   expect(screen.getByTestId('status-gap')).toHaveTextContent('2 min 34 s');
   const list = screen.getByTestId('status-producer-list');
-  expect(within(list).getByText('producer 3')).toBeInTheDocument();
+  expect(within(list).getByText('Producer C')).toBeInTheDocument();
   expect(within(list).getByText('Not seen in window')).toBeInTheDocument();
   const up = screen.getByTestId('status-upgrades');
   expect(up).toHaveTextContent('Governance proposals');
