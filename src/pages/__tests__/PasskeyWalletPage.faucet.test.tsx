@@ -7,7 +7,7 @@
 import React from 'react';
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import '@testing-library/jest-dom/jest-globals';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
 
 const record = { credentialId: new Uint8Array(16).fill(7), publicKeyXY: new Uint8Array(64).fill(9), rpId: 'localhost' };
 let stored: typeof record | null = record;
@@ -33,7 +33,7 @@ await jest.unstable_mockModule('../../services/walletCrypto/passkeySend', () => 
 }));
 // The payout-notification card has its own tests (NotifyMe.passkey.test.tsx); keep its config read out of this fetch script.
 await jest.unstable_mockModule('../../components/explorer/NotifyMe', () => ({ default: () => null }));
-const { default: PasskeyWalletPage, SECURITY_KEY_NOTE, SECURITY_KEY_UNSUPPORTED_MESSAGE, UNSUPPORTED_MESSAGE } = await import('../PasskeyWalletPage');
+const { default: PasskeyWalletPage, usePasskeyBalance, SECURITY_KEY_NOTE, SECURITY_KEY_UNSUPPORTED_MESSAGE, UNSUPPORTED_MESSAGE } = await import('../PasskeyWalletPage');
 const { FAUCET_MESSAGES, describeFaucetFailure, shortTxHash } = await import('../../components/wallet/PasskeyFaucetPanel');
 const { setAuthToken, clearAuthToken } = await import('../../services/authTokenStore');
 const address = actualPasskey.passkeyRecordAddress(record as any);
@@ -118,7 +118,7 @@ describe('passkey wallet: get test coins', () => {
     await answer('7');
     await screen.findByTestId('passkey-faucet-success');
     await waitFor(() => expect(getBalance).toHaveBeenCalledTimes(2));
-    await act(async () => { jest.advanceTimersByTime(15_000); });
+    await act(async () => { jest.advanceTimersByTime(30_000); });
     await waitFor(() => expect(getBalance).toHaveBeenCalledTimes(3));
   });
 
@@ -183,6 +183,69 @@ describe('passkey wallet: get test coins', () => {
     expect(describeFaucetFailure({ status: 503 })).toBe(FAUCET_MESSAGES.FAUCET_EMPTY);
     expect(describeFaucetFailure({ status: 0 })).toBe(FAUCET_MESSAGES.NETWORK);
     expect(shortTxHash('0x1234')).toBe('0x1234');
+  });
+});
+
+describe('passkey wallet: balance freshness', () => {
+  it('discovers a claim included after 77 seconds without reopening the page', async () => {
+    jest.useFakeTimers({ doNotFake: ['queueMicrotask', 'nextTick', 'setImmediate'] });
+    const start = Date.now();
+    getBalance.mockImplementation(async () => Date.now() - start >= 77_000
+      ? { units: '10000000000', height: 4211 } : { units: '0', height: 4209 });
+    replies = [QUESTION, { status: 200, body: { txHash: 'ab'.repeat(32), amount: '100' } }];
+    render(<PasskeyWalletPage />);
+    await askQuestion(); await answer('7');
+    await screen.findByTestId('passkey-faucet-success');
+    fireEvent.change(screen.getByLabelText('Recipient address'), { target: { value: '0x' + 'a'.repeat(40) } });
+    fireEvent.change(screen.getByLabelText('Amount (WRF)'), { target: { value: '1' } });
+    expect(screen.getByRole('button', { name: 'Send with passkey' })).toBeDisabled();
+    await act(async () => { await jest.advanceTimersByTimeAsync(90_000); });
+    expect(screen.getByText('100.00000000 WRF')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send with passkey' })).toBeEnabled();
+    expect(calls).toHaveLength(2); // no extra claim submissions
+  });
+
+  it('manual refresh discovers incoming funds and failed refresh is unavailable, not zero', async () => {
+    render(<PasskeyWalletPage />);
+    await screen.findByText('0.00000000 WRF');
+    getBalance.mockResolvedValueOnce({ units: '200000000', height: 4212 });
+    fireEvent.click(screen.getByTestId('passkey-balance-refresh'));
+    expect(await screen.findByText('2.00000000 WRF')).toBeInTheDocument();
+    getBalance.mockRejectedValueOnce(new Error('unavailable'));
+    fireEvent.click(screen.getByTestId('passkey-balance-refresh'));
+    expect(await screen.findByText('Unavailable')).toBeInTheDocument();
+    expect(screen.queryByText('2.00000000 WRF')).not.toBeInTheDocument();
+  });
+
+  it('pauses periodic reads in hidden tabs and clears the timer on unmount', async () => {
+    jest.useFakeTimers({ doNotFake: ['queueMicrotask', 'nextTick', 'setImmediate'] });
+    const hidden = jest.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    try {
+      const { unmount } = renderHook(() => usePasskeyBalance(address));
+      await act(async () => { await jest.advanceTimersByTimeAsync(90_000); });
+      expect(getBalance).toHaveBeenCalledTimes(1);
+      hidden.mockReturnValue('visible');
+      await act(async () => { await jest.advanceTimersByTimeAsync(30_000); });
+      expect(getBalance).toHaveBeenCalledTimes(2);
+      unmount();
+      await act(async () => { await jest.advanceTimersByTimeAsync(60_000); });
+      expect(getBalance).toHaveBeenCalledTimes(2);
+    } finally { hidden.mockRestore(); }
+  });
+
+  it('does not overlap slow periodic reads or apply an old wallet response', async () => {
+    jest.useFakeTimers({ doNotFake: ['queueMicrotask', 'nextTick', 'setImmediate'] });
+    let resolveOld!: (value: { units: string; height: number }) => void;
+    getBalance.mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve; }))
+      .mockResolvedValue({ units: '200000000', height: 4212 });
+    const { result, rerender } = renderHook(({ account }) => usePasskeyBalance(account), { initialProps: { account: address } });
+    await act(async () => { await jest.advanceTimersByTimeAsync(90_000); });
+    expect(getBalance).toHaveBeenCalledTimes(1);
+    rerender({ account: '0x' + 'b'.repeat(40) });
+    await act(async () => { await jest.advanceTimersByTimeAsync(0); });
+    expect(result.current).toEqual({ kind: 'ready', units: '200000000', height: 4212 });
+    await act(async () => resolveOld({ units: '900000000', height: 4209 }));
+    expect(result.current).toEqual({ kind: 'ready', units: '200000000', height: 4212 });
   });
 });
 
