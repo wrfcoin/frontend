@@ -98,8 +98,8 @@ function nodePayTile(nodePay) {
   if (nodePay?.status === 'partial') {
     const unread = Array.isArray(nodePay.epochsUnread) ? nodePay.epochsUnread : [];
     return {
-      value: 'Partly checked',
-      sub: `could not read epoch${unread.length === 1 ? '' : 's'} ${unread.map(n).join(', ')}; now epoch ${n(nodePay.currentEpoch)}`,
+      value: 'History incomplete',
+      sub: `records unavailable or pruned for epoch${unread.length === 1 ? '' : 's'} ${unread.map(n).join(', ')}; now epoch ${n(nodePay.currentEpoch)}`,
     };
   }
   if (nodePay?.status !== 'ok') return { value: UNAVAILABLE, sub: null };
@@ -121,7 +121,7 @@ function Summary({ d, age, stale }) {
       <Tile testId="status-age" label={stale ? 'Newest block, at last reading' : 'Newest block'} value={Number.isFinite(age) ? `${duration(age)} ago` : UNAVAILABLE} sub={b?.lastBlockAt ? <When value={b.lastBlockAt} withTime /> : null} />
       <Tile testId="status-hour" label="Blocks, last hour" value={hour.value} sub={hour.sub} />
       <Tile testId="status-day" label="Blocks, last 24 hours" value={day.value} sub={day.sub} />
-      <Tile testId="status-producers" label="Producers online" value={p ? `${p.online} of ${p.total}` : UNAVAILABLE} sub={p ? `signed a block in the last ${p.windowBlocks}` : null} />
+      <Tile testId="status-producers" label="Recently produced" value={p ? `${p.online} of ${p.total}` : UNAVAILABLE} sub={p ? `signed a block in the last ${p.windowBlocks}` : null} />
       <Tile testId="status-peers" label="Peers" value={net && Number.isSafeInteger(net.peerCount) ? n(net.peerCount) : UNAVAILABLE} sub={net?.syncStatus ? `node ${net.syncStatus.replace(/_/g, ' ')}` : null} />
       <Tile testId="status-nodepay" label="Node pay" value={pay.value} sub={pay.sub} />
       <Tile testId="status-gap" label="Longest gap" value={b && Number.isSafeInteger(b.longestGapSeconds.value) ? duration(b.longestGapSeconds.value) : UNAVAILABLE} sub={b ? `between the newest ${b.longestGapSeconds.overBlocks} blocks` : null} />
@@ -139,56 +139,68 @@ function Producers({ p }) {
           <li key={m.label} className={`ns-producer ns-producer--${m.online ? 'on' : 'off'}`}>
             <span className="ns-dot" aria-hidden="true" />
             <strong>{m.label}</strong>
-            <span className="ns-producer-state">{m.online ? 'Online' : 'Not seen'}</span>
+            <span className="ns-producer-state">{m.online ? 'Produced recently' : 'Not seen in window'}</span>
             <span className="fc-muted ns-producer-count">{m.blocksInWindow} of {p.windowBlocks} blocks</span>
           </li>
         ))}
       </ul>
       <div className="fc-foot">
-        <span>Online means the producer signed at least one of the newest {p.windowBlocks} blocks.</span>
+        <span>Activity means the producer signed at least one of the newest {p.windowBlocks} blocks. It does not measure whether a host is online.</span>
         <Link to="/nodes">Producers and bonded nodes</Link>
       </div>
     </>
   );
 }
 
-function Upgrades({ u, target, tip }) {
+function Upgrades({ u, target }) {
   if (u?.status !== 'ok') return <SectionUnavailable what="The upgrade schedule" />;
   const notice = u.signedNotice;
-  if (u.pending.length === 0 && !notice) {
-    return <p className="fc-placeholder" data-testid="status-upgrades-none">Nothing scheduled. {n(u.activeFeatures)} features are active.</p>;
-  }
+  const pending = Array.isArray(u.pending) ? u.pending : [];
+  const active = Array.isArray(u.active) ? u.active : null;
+  const support = value => value === true ? 'Supported' : value === false ? 'Upgrade needed' : 'Not reported';
   const eta = blocks => (Number.isSafeInteger(blocks) && Number.isFinite(target) ? `~${duration(blocks * target)}` : '—');
   return (
     <>
-      <table className="fc-table ns-table" data-testid="status-upgrades">
-        <thead>
-          <tr>
-            <th>Feature</th>
-            <th className="fc-num">At block</th>
-            <th className="fc-num">In about</th>
-          </tr>
-        </thead>
-        <tbody>
-          {u.pending.map(f => (
-            <tr key={`${f.feature}-${f.activationHeight}`}>
-              <td><strong>{featureName(f.feature)}</strong></td>
-              <td className="fc-num">{n(f.activationHeight)}</td>
-              <td className="fc-num">{eta(f.blocksRemaining)}</td>
+      <p className="fc-note ns-feature-note">Chain rules and app availability are separate: activation does not automatically enable a website service or update your app or node. <Link to="/downloads">Check available downloads</Link>.</p>
+      {u.scheduleComplete !== true ? <p className="ns-feature-note" role="note">The complete feature schedule could not be confirmed by this reading.</p> : null}
+      {pending.length === 0 && !notice ? <p className="fc-placeholder" data-testid="status-upgrades-none">No pending upgrades reported.</p> : (
+        <table className="fc-table ns-table" data-testid="status-upgrades">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th className="fc-num">At block</th>
+              <th className="fc-num">In about</th>
+              <th>Observed node support</th>
             </tr>
-          ))}
-          {notice ? (
-            <tr data-testid="status-upgrade-notice">
-              <td><strong>Node upgrade required</strong><div className="fc-sub">signed upgrade notice</div></td>
-              <td className="fc-num">{n(notice.activationHeight)}</td>
-              <td className="fc-num">{eta(notice.blocksRemaining)}</td>
-            </tr>
-          ) : null}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {pending.map(f => (
+              <tr key={`${f.feature}-${f.activationHeight}`}>
+                <td><strong>{featureName(f.feature)}</strong></td>
+                <td className="fc-num">{n(f.activationHeight)}</td>
+                <td className="fc-num">{eta(f.blocksRemaining)}</td>
+                <td>{support(f.supported)}</td>
+              </tr>
+            ))}
+            {notice ? (
+              <tr data-testid="status-upgrade-notice">
+                <td><strong>Node upgrade required</strong><div className="fc-sub">signed upgrade notice</div></td>
+                <td className="fc-num">{n(notice.activationHeight)}</td>
+                <td className="fc-num">{eta(notice.blocksRemaining)}</td>
+                <td>See upgrade notice</td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>)}
       <div className="fc-foot">
-        <span>{n(u.activeFeatures)} features active{Number.isSafeInteger(tip) ? ` at block ${n(tip)}` : ''}. Times assume a block every {target} seconds.</span>
+        <span>Schedule evaluated for {Number.isSafeInteger(u.evaluatedHeight) ? `block ${n(u.evaluatedHeight)}` : 'the next block'}. Times assume a block every {target} seconds.</span>
       </div>
+      <details className="fc-note ns-feature-note" data-testid="status-active-features">
+        <summary>{n(u.activeFeatures)} {u.activeFeatures === 1 ? 'feature' : 'features'} active for that block</summary>
+        {active ? <ul>{active.map(f => <li key={`${f.feature}-${f.activationHeight}`}><strong>{featureName(f.feature)}</strong> — from block {n(f.activationHeight)} · {support(f.supported)}</li>)}</ul>
+          : <p>Feature details are not available from this server version.</p>}
+      </details>
+      <p className="fc-note ns-feature-note">Support is reported by the one node serving this page, not by every node on the network. Check your own node before a scheduled upgrade.</p>
     </>
   );
 }
@@ -285,8 +297,8 @@ export default function PublicNetworkStatusPage() {
       <WrfCard component="section" aria-label="Producers" className="fc-section" header={<div className="fc-section-head"><h2>Producers</h2><span className="fc-count">who signs the blocks</span></div>} noPadding>
         <Producers p={d.producers} />
       </WrfCard>
-      <WrfCard component="section" aria-label="Scheduled upgrades" className="fc-section" header={<div className="fc-section-head"><h2>Scheduled upgrades</h2><span className="fc-count">features the chain turns on at a set block</span></div>} noPadding>
-        <Upgrades u={d.upgrades} target={b?.targetBlockSeconds ?? 77} tip={b?.tipHeight} />
+      <WrfCard component="section" aria-label="Features and upgrades" className="fc-section" header={<div className="fc-section-head"><h2>Features and upgrades</h2><span className="fc-count">features the chain turns on at a set block</span></div>} noPadding>
+        <Upgrades u={d.upgrades} target={b?.targetBlockSeconds ?? 77} />
       </WrfCard>
       <p className="fc-note">
         {d.network?.networkId ? `${d.network.networkId} · ` : ''}Checked <When value={d.checkedAt} withTime />. Numbers come from one chain node;

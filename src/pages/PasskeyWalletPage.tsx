@@ -42,18 +42,29 @@ export function addressTail(address: string): string {
  * the route being switched off (404), is "unavailable" and never replaced by a number. Each read (a new
  * address or `refreshKey`) clears the previous number first, so an old balance is never shown as current.
  */
+export const PASSKEY_BALANCE_REFRESH_MS = 30_000;
+
 export function usePasskeyBalance(address: string | null, refreshKey = 0): PasskeyBalanceView {
   const [view, setView] = useState<PasskeyBalanceView>({ kind: 'loading' });
   const latest = useRef(0);
   useEffect(() => {
     if (!address) return undefined;
     const mine = ++latest.current;
-    setView({ kind: 'loading' });
-    Promise.resolve()
-      .then(() => getPasskeyPublicBalance(address))
-      .then(read => { if (latest.current === mine) setView({ kind: 'ready', units: read.units, height: read.height }); })
-      .catch(() => { if (latest.current === mine) setView({ kind: 'unavailable' }); });
-    return () => { latest.current += 1; };
+    let inFlight = false;
+    const read = () => {
+      if (inFlight || latest.current !== mine) return;
+      inFlight = true;
+      setView({ kind: 'loading' });
+      Promise.resolve()
+        .then(() => getPasskeyPublicBalance(address))
+        .then(value => { if (latest.current === mine) setView({ kind: 'ready', units: value.units, height: value.height }); })
+        .catch(() => { if (latest.current === mine) setView({ kind: 'unavailable' }); })
+        .finally(() => { inFlight = false; });
+    };
+    read();
+    // Two reads per minute while visible; never overlap reads or keep a hidden tab polling.
+    const timer = setInterval(() => { if (document.visibilityState === 'visible') read(); }, PASSKEY_BALANCE_REFRESH_MS);
+    return () => { latest.current += 1; clearInterval(timer); };
   }, [address, refreshKey]);
   return view;
 }
@@ -77,8 +88,6 @@ export function passkeySiteSentence(rpId: string): string {
     : `The passkey is tied to this site ("${rpId}"): another address, such as www versus the bare domain, is a different account.`;
 }
 
-/** After a faucet claim, read the balance again once the next blocks have had time to include it. */
-const FAUCET_SETTLE_MS = 15_000;
 /** Said next to the buttons, because the two look alike and only one of them keeps your address. */
 export const CREATE_OR_EXISTING_NOTE = '"Create" makes a new wallet with a different address, even if you already have a passkey. "Use an existing passkey" opens the wallet you already have.';
 
@@ -150,12 +159,8 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
     setTo(''); setAmount(''); setSent(null); setError(null); setOpened(true);
   }, []);
 
-  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (settleTimer.current) clearTimeout(settleTimer.current); }, []);
   const faucetClaimed = useCallback(() => {
     setBalanceRead(n => n + 1);
-    if (settleTimer.current) clearTimeout(settleTimer.current);
-    settleTimer.current = setTimeout(() => setBalanceRead(n => n + 1), FAUCET_SETTLE_MS);
   }, []);
 
   const send = useCallback(async () => {
@@ -256,6 +261,12 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
                 The balance could not be read right now. Nothing is guessed: the chain checks the amount when you send.
               </Typography>
             )}
+            <WrfButton variant="outline" size="sm" onClick={() => setBalanceRead(n => n + 1)} disabled={locked || balance.kind === 'loading'} data-testid="passkey-balance-refresh">
+              Refresh balance
+            </WrfButton>
+            <Typography variant="caption" component="p" sx={{ color: palette.text.secondary, mt: 0.5 }}>
+              Checks every 30 seconds while this page is visible. A transfer changes the balance after it is included in a block.
+            </Typography>
             <Typography variant="caption" component="p" sx={{ color: palette.text.secondary, m: 0 }} data-testid="passkey-activation">
               Passkey sending is live on this testnet.{' '}
               {chain.blockHeight !== null ? `Current block: ${chain.blockHeight.toLocaleString('en-US')}.` : 'Current block: unavailable.'}
