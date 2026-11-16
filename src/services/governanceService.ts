@@ -6,6 +6,7 @@ import {
   governanceProposalPath,
   governanceProposalsPath,
   governanceAdvisoryProposalsPath,
+  governanceAdvisoryProposalPath,
   publicGet,
   type PublicReadResult,
 } from './publicReadonlyApi';
@@ -213,6 +214,23 @@ class GovernanceService {
     const total = Number.isSafeInteger(result.data?.total) && (result.data!.total as number) >= 0 ? (result.data!.total as number) : null;
     const hasMore = typeof result.data?.hasMore === 'boolean' ? result.data.hasMore : null;
     return { kind: 'ok', data: { featureActive: result.data?.featureActive === true, proposals, total, hasMore } };
+  }
+
+  /**
+   * One advisory proposal by its chain id (`adv-<16 hex>`). An id of any other shape is never requested.
+   * The backend answers `{ success, observedAtHeight, proposal, limits }`; a missing proposal reads as null.
+   */
+  async getAdvisoryProposal(
+    id: string,
+    signal?: globalThis.AbortSignal,
+  ): Promise<PublicReadResult<{ proposal: Record<string, unknown> | null; observedAtHeight: number | null }>> {
+    const path = governanceAdvisoryProposalPath(id);
+    if (!path) return { kind: 'not_found' };
+    const result = await publicGet<{ proposal?: Record<string, unknown> | null; observedAtHeight?: unknown }>(path, signal);
+    if (result.kind !== 'ok') return result;
+    const proposal = result.data?.proposal && typeof result.data.proposal === 'object' ? result.data.proposal : null;
+    const height = result.data?.observedAtHeight;
+    return { kind: 'ok', data: { proposal, observedAtHeight: Number.isSafeInteger(height) ? (height as number) : null } };
   }
 
   async getPublicProposal(

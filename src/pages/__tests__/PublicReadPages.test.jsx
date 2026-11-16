@@ -83,6 +83,91 @@ describe('S4 governance', () => {
   });
 });
 
+describe('S4 governance: advisory proposal detail', () => {
+  const ADV_ID = 'adv-a75dae543f5f9e16';
+  const ADV = {
+    id: ADV_ID, kind: 'advisory', proposer: '0x' + 'cd'.repeat(20), title: 'Welcome new station owners',
+    summary: 'First line.\nSecond line.', created_at_block: 27010, voting_deadline: 27130, status: 'active',
+    yes_votes: 3, no_votes: 1, eligible_count: 14,
+  };
+
+  it('reads the advisory route (edge-admitted, no query) and shows the proposal', async () => {
+    mockFetch(path => (path === `/api/governance/advisory/proposals/${ADV_ID}`
+      ? { body: { success: true, observedAtHeight: 27020, proposal: ADV, limits: null } } : { status: 404 }));
+    mount(<PublicGovernanceProposalPage />, '/governance/public/:proposalId', `/governance/public/${ADV_ID}`);
+    await screen.findByRole('heading', { name: 'Welcome new station owners' });
+    // Build flag off here: one read, never the old /proposals/<id> route.
+    expect(targets()).toEqual([`/api/governance/advisory/proposals/${ADV_ID}`]);
+    expect(targets().every(edgeAdmits)).toBe(true);
+    expect(calls.every(c => c.init?.credentials === 'omit' && !c.init?.headers)).toBe(true);
+    const card = screen.getByTestId('advisory-proposal-detail');
+    expect(card).toHaveTextContent('Voting');
+    expect(card).toHaveTextContent('For 3 · Against 1');
+    expect(card).toHaveTextContent('14 wallets');
+    expect(card).toHaveTextContent('at block 27130');
+    expect(card).toHaveTextContent(ADV_ID);
+    expect(card.textContent).toContain('First line.\nSecond line.');
+    expect(screen.queryByText('Proposal not found.')).toBeNull();
+    expect(screen.queryByTestId('advisory-vote-for')).toBeNull();
+  });
+
+  it('a decided proposal shows its result and block', async () => {
+    mockFetch(() => ({ body: { success: true, proposal: { ...ADV, status: 'passed', finalized_at_block: 27131 } } }));
+    mount(<PublicGovernanceProposalPage />, '/governance/public/:proposalId', `/governance/public/${ADV_ID}`);
+    const card = await screen.findByTestId('advisory-proposal-detail');
+    expect(card).toHaveTextContent('Passed (advisory)');
+    expect(card).toHaveTextContent('block 27131');
+    expect(card).not.toHaveTextContent('Voting ends');
+  });
+
+  it('404, or a null proposal, says not found', async () => {
+    mockFetch(() => ({ status: 404, body: { success: false } }));
+    mount(<PublicGovernanceProposalPage />, '/governance/public/:proposalId', `/governance/public/${ADV_ID}`);
+    await screen.findByText('Proposal not found.');
+    expect(targets()).toEqual([`/api/governance/advisory/proposals/${ADV_ID}`]);
+    cleanup();
+    mockFetch(() => ({ body: { success: true, proposal: null } }));
+    mount(<PublicGovernanceProposalPage />, '/governance/public/:proposalId', `/governance/public/${ADV_ID}`);
+    await screen.findByText('Proposal not found.');
+  });
+
+  it('a malformed adv- id is not found without any request (the edge would refuse it)', async () => {
+    for (const bad of ['adv-A75DAE543F5F9E16', 'adv-123', 'adv-a75dae543f5f9e16x']) {
+      mockFetch(() => ({ status: 200 }));
+      mount(<PublicGovernanceProposalPage />, '/governance/public/:proposalId', `/governance/public/${bad}`);
+      await screen.findByText('Proposal not found.');
+      expect(calls).toEqual([]);
+      cleanup();
+    }
+  });
+
+  it('a server error shows a retry that reads again; 429 says too many requests', async () => {
+    let fail = true;
+    mockFetch(() => (fail ? { status: 502 } : { body: { success: true, proposal: ADV } }));
+    mount(<PublicGovernanceProposalPage />, '/governance/public/:proposalId', `/governance/public/${ADV_ID}`);
+    await screen.findByText('Proposal unavailable right now.');
+    expect(screen.queryByText('Proposal not found.')).toBeNull();
+    fail = false;
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    await screen.findByRole('heading', { name: 'Welcome new station owners' });
+    expect(targets()).toEqual([`/api/governance/advisory/proposals/${ADV_ID}`, `/api/governance/advisory/proposals/${ADV_ID}`]);
+    cleanup();
+    mockFetch(() => ({ status: 429, headers: { 'retry-after': '30' } }));
+    mount(<PublicGovernanceProposalPage />, '/governance/public/:proposalId', `/governance/public/${ADV_ID}`);
+    await screen.findByText(/Too many requests/);
+    expect(calls.length).toBe(1);
+  });
+
+  it('the list links each advisory proposal to its detail page', async () => {
+    mockFetch(path => (path === '/api/governance/advisory/proposals'
+      ? { body: { success: true, featureActive: true, total: 1, hasMore: false, proposals: [ADV] } }
+      : { body: { success: true, proposals: [] } }));
+    mount(<PublicGovernanceListPage />, '/governance/public', '/governance/public');
+    const link = await screen.findByRole('link', { name: 'Welcome new station owners' });
+    expect(link).toHaveAttribute('href', `/governance/public/${ADV_ID}`);
+  });
+});
+
 describe('S5 forecast', () => {
   const body = path => {
     if (path.includes('/weather/current/')) return { body: { status: 'success', current: { data: { temperature: 21, temperatureUnit: 'C', conditions: 'Clear' } } } };
