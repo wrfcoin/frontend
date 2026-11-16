@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-16T17:52:41Z",
+  "generated": "2026-11-16T23:27:31Z",
   "release": null,
   "artifacts": [
     {
@@ -44,11 +44,11 @@
       "id": "node-windows-x86_64",
       "kind": "file",
       "repo": "wrfcoin/core4",
-      "url": "https://github.com/wrfcoin/core4/releases/download/v888-windows-preview-8/wrfcoin-node-0.8.0-g8cf95be9-windows-x86_64-setup.exe",
-      "size": 12990198,
-      "sha256": "956f3a0650e29c9640498e3bddf740a75619ec344ffd8fb2d6992768d9182b4f",
-      "tag": "v888-windows-preview-8",
-      "commit": "8cf95be96ba986779fcb4f4df88a64da94cffca7",
+      "url": "https://github.com/wrfcoin/core4/releases/download/v888-windows-preview-9/wrfcoin-node-0.9.0-gefc9cc52-windows-x86_64-setup.exe",
+      "size": 13046600,
+      "sha256": "cab1c572da5cdb753fd593b5c220f8ada96dd005761fce7da38af140023275bc",
+      "tag": "v888-windows-preview-9",
+      "commit": "efc9cc5276618a5ac1c19467321ec245ec07f903",
       "signedBy": null,
       "published": true
     }
