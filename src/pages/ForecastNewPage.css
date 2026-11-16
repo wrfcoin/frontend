@@ -2,6 +2,7 @@
    are the --fc-* tokens from useForecasterThemeVars, so both themes follow the body theme. */
 .fn-page .ch-form .fc-note { margin: 0; }
 .fn-suggest { font-size: 0.8125rem; }
+.fn-lead-pay { font-size: 0.75rem; font-weight: 400; color: var(--fc-text-muted); }
 .fn-mono { font-family: var(--fc-mono); font-size: 0.8125rem; overflow-wrap: anywhere; }
 .fn-fail { margin: 0 20px 12px; font-size: 0.8125rem; color: var(--fc-error-light, #d32f2f); }
 .ch-form .fn-fail { margin: 0; }

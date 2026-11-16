@@ -23,7 +23,7 @@ await jest.unstable_mockModule('../../services/walletCrypto/deviceSession', () =
 }));
 const { setAuthToken, clearAuthToken } = await import('../../services/authTokenStore');
 const { forecastCommitId, stationAliasOf } = await import('../../services/walletCrypto/forecastCommit');
-const { default: ForecastNewPage, forecastableStations } = await import('../ForecastNewPage');
+const { default: ForecastNewPage, forecastableStations, leadPayLabel } = await import('../ForecastNewPage');
 const { sha3_256 } = await import('@noble/hashes/sha3.js');
 
 const b64 = obj => globalThis.btoa(JSON.stringify(obj)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
@@ -102,6 +102,49 @@ it('forecastableStations: an older server without a station list keeps the whole
   expect(forecastableStations(listed, undefined).map(s => s.alias)).toEqual([ALIAS, OTHER]);
   expect(forecastableStations(listed, [OTHER]).map(s => s.alias)).toEqual([OTHER]);
   expect(forecastableStations(null, [ALIAS])).toEqual([]);
+});
+
+it('lead labels: 6 h and 12 h can earn once skill pay is on, 1 h and 24 h are practice; every lead stays', async () => {
+  api();
+  setAuthToken(tokenFor(A));
+  renderPage();
+  await screen.findByLabelText('Station');
+  const select = screen.getByRole('combobox', { name: 'How far ahead' });
+  const options = [...select.querySelectorAll('option')];
+  expect(options.map(o => [o.value, o.textContent])).toEqual([
+    ['1', '1 hour · Practice: not paid'],
+    ['6', '6 hours · Can earn WRF once skill pay is on'],
+    ['12', '12 hours · Can earn WRF once skill pay is on'],
+    ['24', '24 hours · Practice: not paid'],
+  ]);
+  expect(select).toHaveValue('6');
+  expect(screen.getByTestId('forecast-lead-pay')).toHaveTextContent('Can earn WRF once skill pay is on');
+  expect(select).toHaveAccessibleDescription('Can earn WRF once skill pay is on');
+  fireEvent.change(select, { target: { value: '24' } });
+  expect(screen.getByTestId('forecast-lead-pay')).toHaveTextContent('Practice: not paid');
+  fireEvent.change(select, { target: { value: '1' } });
+  expect(screen.getByTestId('forecast-lead-pay')).toHaveTextContent('Practice: not paid');
+  expect(screen.getByTestId('forecast-skill-pay-off')).toHaveTextContent("Skill pay isn't switched on yet. Today every forecast is practice and builds your record.");
+  // Honest: nothing on the form says a forecast earns today.
+  const form = screen.getByRole('form', { name: 'New forecast' });
+  expect(form.textContent).not.toMatch(/\bearns?\b(?! WRF once)|paid now|earning now/i);
+});
+
+it('leadPayLabel: only 6 h and 12 h can earn', () => {
+  expect([1, 6, 12, 24].map(leadPayLabel)).toEqual(['Practice: not paid', 'Can earn WRF once skill pay is on', 'Can earn WRF once skill pay is on', 'Practice: not paid']);
+});
+
+it('a practice lead submits unchanged: 24 h goes to the draft as 24', async () => {
+  const calls = api({ draftBody: { ...draft(), leadHours: 24 } });
+  setAuthToken(tokenFor(A));
+  renderPage();
+  const input = await screen.findByLabelText(/Your forecast/);
+  await waitFor(() => expect(input).toHaveValue('12.3'));
+  fireEvent.change(screen.getByLabelText(/^How far ahead/), { target: { value: '24' } });
+  fireEvent.change(screen.getByLabelText('Wallet password'), { target: { value: 'pw' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Sign and submit' }));
+  await waitFor(() => expect(calls.some(c => c.path === '/forecasts/draft')).toBe(true));
+  expect(calls.find(c => c.path === '/forecasts/draft').body).toEqual({ stationAlias: ALIAS, variable: 'temperature_c', leadHours: 24, value: 12.3 });
 });
 
 it('signed in without this wallet in the browser: explains, cannot sign', async () => {
