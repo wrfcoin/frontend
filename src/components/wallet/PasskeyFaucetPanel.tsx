@@ -27,8 +27,22 @@ export const FAUCET_MESSAGES = {
   NETWORK: 'The faucet could not be reached. Check your connection, then try again.',
   QUESTION_FAILED: 'The question could not be loaded. Try again in a moment.',
   OTHER: 'The faucet is unavailable right now. Try again later.',
-  UNCONFIRMED: 'The faucet could not confirm whether coins were sent. Check your wallet balance before trying again; do not repeat a pending claim.',
+  UNCONFIRMED: 'Could not confirm whether the faucet sent coins. Check the balance above; do not request again.',
 } as const;
+
+/** Gateway statuses that arrive without a backend code: the claim may still have gone through. */
+const UNCONFIRMED_GATEWAY_STATUSES = new Set([502, 504, 524]);
+
+/**
+ * True when a failed claim's outcome is unknown: the backend said so (CLAIM_PENDING, FAUCET_UNCONFIRMED), the
+ * request never got an answer (client timeout or network, status 0), or a proxy timed out without a code.
+ * Re-claiming in these cases could pay twice, so the panel offers no retry.
+ */
+export function isUnconfirmedClaim(result: Pick<FaucetClaimResult, 'code' | 'status'>): boolean {
+  if (result.code === 'CLAIM_PENDING' || result.code === 'FAUCET_UNCONFIRMED') return true;
+  if (result.code) return false;
+  return !result.status || UNCONFIRMED_GATEWAY_STATUSES.has(result.status);
+}
 
 /** Plain-language text for a failed claim. Never shows the server's own wording. */
 export function describeFaucetFailure(result: Pick<FaucetClaimResult, 'code' | 'status'>): string {
@@ -44,7 +58,7 @@ export function describeFaucetFailure(result: Pick<FaucetClaimResult, 'code' | '
   case 'EVM_ADDRESS_REQUIRED': return FAUCET_MESSAGES.BAD_ADDRESS;
   default: break;
   }
-  if (!result.status) return FAUCET_MESSAGES.NETWORK;
+  if (isUnconfirmedClaim(result)) return FAUCET_MESSAGES.UNCONFIRMED;
   if (result.status === 429) return FAUCET_MESSAGES.RATE_LIMITED;
   if (result.status === 503) return FAUCET_MESSAGES.OTHER;
   return FAUCET_MESSAGES.OTHER;
@@ -107,10 +121,11 @@ export function PasskeyFaucetPanel({ address, onClaimed }: PasskeyFaucetPanelPro
       onClaimed();
       return;
     }
+    // Unknown outcome: no error box and no way to claim again, only the pending notice below.
+    if (isUnconfirmedClaim(result)) { setPhase({ kind: 'pending' }); return; }
     setError(describeFaucetFailure(result));
     // The server spends the question on every claim, right or wrong: a wrong answer gets a fresh one.
-    if (result.code === 'CLAIM_PENDING' || result.code === 'FAUCET_UNCONFIRMED') setPhase({ kind: 'pending' });
-    else if (result.code === 'CAPTCHA_FAILED') void loadQuestion();
+    if (result.code === 'CAPTCHA_FAILED') void loadQuestion();
     else setPhase({ kind: 'idle' });
   }, [phase, address, answer, onClaimed, loadQuestion]);
 
@@ -166,7 +181,11 @@ export function PasskeyFaucetPanel({ address, onClaimed }: PasskeyFaucetPanelPro
         </Box>
       )}
 
-      {phase.kind === 'pending' && <Typography variant="body2">Check your wallet balance for coins. If the outcome remains unclear, ask testnet support to check the claim.</Typography>}
+      {phase.kind === 'pending' && (
+        <WrfAlert severity="info" role="status" title="Claim awaiting confirmation" data-testid="passkey-faucet-pending">
+          {FAUCET_MESSAGES.UNCONFIRMED} The balance updates once the chain includes the claim. If it stays unclear, ask testnet support to check the claim.
+        </WrfAlert>
+      )}
 
       {phase.kind === 'done' && (
         <WrfAlert severity="success" role="status" data-testid="passkey-faucet-success">
