@@ -266,7 +266,7 @@ it('ships a manifest whose verifiable published files are the Windows node insta
   // A plain file name: no '+' (some clients send it as a space or %2B), so every link spelling reaches the file.
   expect(apk.url.split('/').pop()).toMatch(/^[A-Za-z0-9._-]+$/);
   for (const id of ['node-source', 'cli-source']) {
-    expect(SHIPPED.artifacts.find(a => a.id === id)).toMatchObject({ kind: 'git', repo: 'wrfcoin/core4', url: 'https://github.com/wrfcoin/core4', tag: 'v888-h3000', commit: 'de9d0d268e1a914109444c1d49b2dcfffe896d80' });
+    expect(SHIPPED.artifacts.find(a => a.id === id)).toMatchObject({ kind: 'git', repo: 'wrfcoin/core4', url: 'https://github.com/wrfcoin/core4', tag: null, commit: '8cf95be96ba986779fcb4f4df88a64da94cffca7' });
   }
   const parsed = parseManifest(SHIPPED);
   // Source rows are published as a tag + commit (frontend#37); only the installer is a file with a hash.
@@ -321,9 +321,9 @@ it('renders the Windows download from the manifest: link, size, SHA-256 next to 
   expect(screen.getByRole('link', { name: 'Download APK' })).toHaveAttribute('href', APK_SHIPPED_URL);
   expect(screen.getByTestId('release-android-apk')).toHaveTextContent(APK_SHIPPED_SHA);
   expect(screen.getByTestId('release-android-apk')).toHaveTextContent(APK_SIGNED_BY);
-  // The source rows name the v888-h3000 commit (frontend#37).
-  expect(screen.getByTestId('release-node-source')).toHaveTextContent('Source commitde9d0d268e…');
-  expect(screen.getByTestId('release-cli-source')).toHaveTextContent('Source commitde9d0d268e…');
+  // The source rows name the reviewed public commit for the current feature schedule.
+  expect(screen.getByTestId('release-node-source')).toHaveTextContent('Source commit8cf95be96b…');
+  expect(screen.getByTestId('release-cli-source')).toHaveTextContent('Source commit8cf95be96b…');
   // The Windows filter still shows the sync node.
   fireEvent.click(screen.getByRole('button', { name: 'Windows' }));
   await waitFor(() => expect(screen.getAllByRole('article').map(a => a.getAttribute('aria-label'))).toContain('Sync node'));
