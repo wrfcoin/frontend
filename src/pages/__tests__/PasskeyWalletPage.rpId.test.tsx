@@ -25,7 +25,7 @@ await jest.unstable_mockModule('../../services/walletCrypto/passkey', () => ({
   signPasskeyTransfer: (r: Rec, f: unknown) => signPasskeyTransfer(r, f),
 }));
 await jest.unstable_mockModule('../../hooks/usePublicTestnetStats', () => ({ default: () => ({ blockHeight: 4210 }) }));
-await jest.unstable_mockModule('../../config/network', () => ({ WRFCOIN_CHAIN_ID: 777 }));
+await jest.unstable_mockModule('../../config/network', () => ({ WRFCOIN_CHAIN_ID: 777, explorerTxUrl: (h: string) => `/explore/tx/${h}` }));
 await jest.unstable_mockModule('../../components/wallet/PasskeyFaucetPanel', () => ({ PasskeyFaucetPanel: () => null }));
 await jest.unstable_mockModule('../../services/walletCrypto/passkeySend', () => ({
   clearStoredPasskey: jest.fn(),

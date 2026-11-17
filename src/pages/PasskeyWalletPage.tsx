@@ -11,7 +11,7 @@ import { palette } from '../components/DesignSystem/tokens';
 import { AddressQr } from '../components/wallet/WalletEarningsPanel';
 import { formatBaseUnitsToWrf } from '../services/apiClient/number';
 import usePublicTestnetStats from '../hooks/usePublicTestnetStats';
-import { WRFCOIN_CHAIN_ID } from '../config/network';
+import { WRFCOIN_CHAIN_ID, explorerTxUrl } from '../config/network';
 import FEATURES from '../config/features';
 import { registerPasskey, signPasskeyTransfer, passkeyRecordAddress, passkeyRpId, isWrfcoinPasskeyRpId, type PasskeyAuthenticatorChoice, type PasskeyCredentialRecord } from '../services/walletCrypto/passkey';
 import { wrfToBaseUnits } from '../services/walletCrypto/transferPayload';
@@ -350,7 +350,20 @@ export default function PasskeyWalletPage({ hostname = window.location.hostname 
       </WrfModal>
 
       {error && <WrfAlert severity="error" sx={{ mt: 2 }}>{error}</WrfAlert>}
-      {sent && <WrfAlert severity="success" sx={{ mt: 2 }}>Submitted. Reference: <span style={{ fontFamily: mono, wordBreak: 'break-all' }}>{sent}</span></WrfAlert>}
+      {sent && <SentReference hash={sent} />}
     </Box>
+  );
+}
+
+/** After a send: the reference opens the site's transaction page, which says "Waiting" until the next block. */
+export function SentReference({ hash }: { hash: string }) {
+  const url = explorerTxUrl(hash);
+  const ref = <span style={{ fontFamily: mono, wordBreak: 'break-all' }}>{hash}</span>;
+  return (
+    <WrfAlert severity="success" sx={{ mt: 2 }} data-testid="passkey-sent">
+      Submitted. Reference:{' '}
+      {url ? <a href={url} target="_blank" rel="noreferrer" data-testid="passkey-sent-link">{ref}</a> : ref}
+      {url ? <> It can take about a minute to show in a block.</> : null}
+    </WrfAlert>
   );
 }
