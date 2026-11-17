@@ -76,6 +76,7 @@
     "/api/stations/:stationId/observations",
     "/api/stations/:stationId/ownership",
     "/api/stations/:stationId/quality",
+    "/api/stations/:stationId/reward-trail",
     "/api/stations/:stationId/submissions"
   ]
 }

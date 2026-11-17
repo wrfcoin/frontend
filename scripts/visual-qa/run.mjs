@@ -525,6 +525,18 @@ async function runViewport(browser, vp, tall, theme) {
     }
     let ownerSignedIn = false;
     // The compare scenarios go first: the visitor capture loads the page in full, which would drop a login made earlier.
+    if (want('station-detail-reward-trail')) {
+      try {
+        await page.unroute(() => true);
+        await installRoutes(page, fx, { rewardTrail: 'ok' });
+        await loadRoute(page, '/weather/station/st-1', errors);
+        await page.getByTestId('station-reward-trail').getByText('In the owner’s wallet.').waitFor({ timeout: 15_000 });
+        await page.getByTestId('station-reward-trail').evaluate(el => el.scrollIntoView({ block: 'start' }));
+        await capture(page, errors, 'station-detail-reward-trail', '/weather/station/st-1 (reading trail)', suffix);
+        await page.unroute(() => true);
+        await installRoutes(page, fx);
+      } catch (e) { console.log('FAIL station-detail-reward-trail', suffix, String(e).slice(0, 160)); report.push({ name: 'station-detail-reward-trail', viewport: suffix, problems: ['scenario failed: ' + String(e).slice(0, 120)], pageErrors: [] }); }
+    }
     if (want('station-detail-compare-visitor')) {
       try {
         await page.unroute(() => true);
