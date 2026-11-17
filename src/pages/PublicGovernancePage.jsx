@@ -150,7 +150,7 @@ function AdvisoryRow({ p, canAct }) {
         {finalized !== null ? <span>· decided at block {finalized}</span>
           : deadline !== null ? <span>· voting ends at block {deadline}</span> : null}
       </div>
-      {canAct && p.status === 'active' && typeof p.id === 'string' ? <AdvisoryVoteButtons proposalId={p.id} title={typeof p.title === 'string' ? p.title : undefined} /> : null}
+      {canAct && p.status === 'active' && typeof p.id === 'string' ? <AdvisoryVoteButtons proposalId={p.id} title={typeof p.title === 'string' ? p.title : undefined} createdAtBlock={count(p.created_at_block)} /> : null}
       {p.summary ? (
         <details className="pg-adv-summary">
           <summary>Read the proposal</summary>
@@ -397,7 +397,7 @@ function AdvisoryProposalDetail({ p, credentials }) {
       {canVote ? (
         <div className="pg-adv-detail-actions">
           <AdvisoryActionsProvider credentials={credentials}>
-            <AdvisoryVoteButtons proposalId={p.id} title={typeof p.title === 'string' ? p.title : undefined} />
+            <AdvisoryVoteButtons proposalId={p.id} title={typeof p.title === 'string' ? p.title : undefined} createdAtBlock={count(p.created_at_block)} />
           </AdvisoryActionsProvider>
         </div>
       ) : null}

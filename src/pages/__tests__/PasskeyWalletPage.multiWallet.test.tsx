@@ -18,7 +18,7 @@ await jest.unstable_mockModule('../../services/walletCrypto/passkeyBalance', () 
   getPasskeyPublicBalance: async () => ({ units: '100000000', height: 4209 }),
 }));
 await jest.unstable_mockModule('../../hooks/usePublicTestnetStats', () => ({ default: () => ({ blockHeight: 4210 }) }));
-await jest.unstable_mockModule('../../config/network', () => ({ WRFCOIN_CHAIN_ID: 777 }));
+await jest.unstable_mockModule('../../config/network', () => ({ WRFCOIN_CHAIN_ID: 777, explorerTxUrl: (h: string) => `/explore/tx/${h}` }));
 await jest.unstable_mockModule('../../services/walletCrypto/passkeySend', () => ({
   clearStoredPasskey: () => clearStoredPasskey(),
   getPasskeyNonce: async () => '0',

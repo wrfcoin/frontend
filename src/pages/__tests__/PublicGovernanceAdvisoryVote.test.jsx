@@ -167,7 +167,10 @@ it('explains an ineligible wallet and signs nothing', async () => {
   const credentials = fakeCredentials();
   mount(credentials);
   fireEvent.click(await screen.findByTestId('advisory-vote-for'));
-  expect(await screen.findByTestId('advisory-vote-note')).toHaveTextContent('held under 1 WRF');
+  expect(await screen.findByTestId('advisory-vote-note')).toHaveTextContent(
+    'This wallet can\'t vote on this proposal: it held less than 1 WRF when the proposal was created (block 100). '
+    + 'It can vote on proposals created from now on, while it holds 1 WRF or more.',
+  );
   expect(credentials.get).not.toHaveBeenCalled();
   expect(posted).toHaveLength(0);
 });

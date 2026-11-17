@@ -27,6 +27,7 @@ import {
   submitWithPasskey,
   submitWithPhrase,
   type AdvisoryAction,
+  type AdvisoryEligibility,
   type AdvisorySubmitted,
 } from '../../services/walletCrypto/advisoryGovernance';
 
@@ -37,6 +38,24 @@ export const DEPOSIT_NOTE =
   'Proposing holds 1 WRF from this wallet. It comes back when the vote is decided, and stays held if fewer than 3 wallets vote.';
 export const PENDING_NOTE = 'Sent. It counts once it is in a block (about a minute). Refresh to see it.';
 
+/** core4 advisory governance: only wallets that held at least 1 WRF spendable when a proposal was created vote on it. */
+const SNAPSHOT_REASON = /held under 1 WRF/i;
+
+export function notEligibleText(createdAtBlock?: number | null): string {
+  const when = typeof createdAtBlock === 'number' && Number.isSafeInteger(createdAtBlock) && createdAtBlock >= 0
+    ? `when the proposal was created (block ${createdAtBlock})` : 'when the proposal was created';
+  return `This wallet can't vote on this proposal: it held less than 1 WRF ${when}. `
+    + 'It can vote on proposals created from now on, while it holds 1 WRF or more.';
+}
+
+/** Why the eligibility read says this wallet can't vote, in plain words. Unknown reasons are passed on as-is. */
+export function cantVoteText(e: Pick<AdvisoryEligibility, 'voted' | 'votingOpen' | 'eligible' | 'reason'>, createdAtBlock?: number | null): string {
+  if (e.voted) return `This wallet already voted ${e.voted}.`;
+  if (!e.votingOpen) return 'Voting on this proposal has closed.';
+  if (!e.eligible || (e.reason && SNAPSHOT_REASON.test(e.reason))) return notEligibleText(createdAtBlock);
+  return e.reason ? `This wallet can't vote: ${e.reason}.` : 'This wallet can\'t vote on this one.';
+}
+
 /** Relay and node refusals in words; anything else gets a short generic line. */
 export function describeAdvisoryError(e: unknown): string {
   // ApiError carries the envelope's { code, message } as `details` and the message as `message`.
@@ -46,6 +65,7 @@ export function describeAdvisoryError(e: unknown): string {
   const code = err.details?.code;
   const nodeMessage = typeof err.message === 'string' && err.message ? err.message : null;
   if (code === 'FEATURE_NOT_ACTIVE') return 'Advisory voting is not on in the network yet.';
+  if (nodeMessage && SNAPSHOT_REASON.test(nodeMessage)) return notEligibleText();
   if (typeof code === 'string' && /ADVISORY|REFUSED|MEMPOOL/.test(code) && nodeMessage) {
     return `The network refused it: ${nodeMessage.replace(/^.*SP_ADVISORY_GOVERNANCE_REFUSED:\s*/, '').slice(0, 160)}`;
   }
@@ -262,7 +282,7 @@ export function AdvisoryProposeForm({ onSubmitted }: { onSubmitted?: () => void 
 }
 
 /** For / against on one active proposal. Checks eligibility first, so a refusal is explained before signing. */
-export function AdvisoryVoteButtons({ proposalId, title }: { proposalId: string; title?: string }) {
+export function AdvisoryVoteButtons({ proposalId, title, createdAtBlock }: { proposalId: string; title?: string; createdAtBlock?: number | null }) {
   const ctx = useContext(AdvisoryContext);
   const [busy, setBusy] = useState<'for' | 'against' | null>(null);
   const [note, setNote] = useState<{ severity: 'success' | 'error' | 'info'; text: string } | null>(null);
@@ -274,7 +294,7 @@ export function AdvisoryVoteButtons({ proposalId, title }: { proposalId: string;
       const outcome = await ctx.exclusive(async () => {
         const e = await fetchAdvisoryEligibility(proposalId, ctx.signer!.address);
         if (!e.canVote || e.nextNonce === null) {
-          return { severity: 'info' as const, text: e.voted ? `This wallet already voted ${e.voted}.` : (e.reason ? `This wallet can't vote: ${e.reason}.` : 'This wallet can\'t vote on this one.') };
+          return { severity: 'info' as const, text: cantVoteText(e, createdAtBlock) };
         }
         await ctx.sign({ kind: 'vote', proposalId, approve }, BigInt(e.nextNonce), title);
         return { severity: 'success' as const, text: PENDING_NOTE };

@@ -126,6 +126,10 @@ const client = new ApiClient({ baseUrl: '/api' });
 
 export interface AdvisoryEligibility {
   canVote: boolean;
+  /** Voting is still open at the next block. */
+  votingOpen: boolean;
+  /** The wallet held at least 1 WRF spendable when the proposal was created (the chain's snapshot). */
+  eligible: boolean;
   reason: string | null;
   voted: 'for' | 'against' | null;
   nextNonce: number | null;
@@ -151,6 +155,8 @@ export async function fetchAdvisoryEligibility(proposalId: string, address: stri
   );
   return {
     canVote: r?.canVote === true,
+    votingOpen: r?.votingOpen === true,
+    eligible: r?.eligible === true,
     reason: typeof r?.reason === 'string' ? r.reason : null,
     voted: r?.voted === 'for' || r?.voted === 'against' ? r.voted : null,
     nextNonce: Number.isSafeInteger(r?.nextNonce) ? (r.nextNonce as number) : null,
