@@ -50,6 +50,7 @@ import {
   useStationCalibration,
   useStationCompare,
   useStationQuality,
+  useStationRewardTrail,
   useSubmissionLog,
   useWeatherStations,
 } from '../../hooks/api/useWeatherQueries';
@@ -66,6 +67,7 @@ import FirstEarnCelebration from './FirstEarnCelebration';
 import StationOwnershipCard from '../station/StationOwnershipCard';
 import StationCalibrationCard, { CalibrationBadge } from '../station/StationCalibrationCard';
 import StationCompareCard from '../station/StationCompareCard';
+import StationRewardTrailCard from '../station/StationRewardTrailCard';
 import StationDerivedCard from '../station/StationDerivedCard';
 import ApiError from '../../utils/apiError';
 import { useStationOwner } from '../../hooks/api/useStationOwnerQueries';
@@ -209,10 +211,12 @@ const StationReportPage: React.FC = () => {
   // unknown or mistyped id costs one list read, not a burst against the
   // public edge's 30/min station-read limiter.
   const knownStationId = station ? stationId : undefined;
-  // The public edge never admits /api/stations/<id>/earnings (infra#983), and
-  // backend station-detail-routes.ts answers it `unavailable` anyway, so the
-  // public build does not ask.
+  // The public build never asks for per-station earnings (the WRF amounts and totals below).
   const earningsStationId = publicProjection ? undefined : knownStationId;
+  // Reading trail: per-reading stages from GET /api/stations/<alias>/reward-trail, in every build. That read
+  // carries stages and heights only, no amounts. A 404 means it is not live here (backend or edge): hidden.
+  const rewardTrailQuery = useStationRewardTrail(knownStationId);
+  const rewardTrailOff = rewardTrailQuery.error instanceof ApiError && rewardTrailQuery.error.status === 404;
   const observationsQuery = useLatestObservations(knownStationId);
   const qualityQuery = useStationQuality(knownStationId);
   const submissionsQuery = useSubmissionLog(knownStationId);
@@ -664,6 +668,14 @@ const StationReportPage: React.FC = () => {
         <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, color: palette.text, mb: 3 }}>
           <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
             <StationCompareCard view={compareQuery.data} unavailable={compareQuery.isError} isOwner={compareOwner !== null} />
+          </CardContent>
+        </Card>
+      )}
+
+      {knownStationId && !rewardTrailOff && (
+        <Card sx={{ bgcolor: palette.card, border: `1px solid ${palette.border}`, borderRadius: 3, color: palette.text, mb: 3 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+            <StationRewardTrailCard view={rewardTrailQuery.data} unavailable={rewardTrailQuery.isError} />
           </CardContent>
         </Card>
       )}

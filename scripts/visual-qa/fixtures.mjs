@@ -397,6 +397,9 @@ export function buildFixtures({ origin, host, now = Date.now() }) {
  * `options.compareHistory`: 'off' (default: the 404 while STATION_COMPARE_HISTORY_ENABLED is not true), 'ok' or
  * 'waiting' (not enough history yet). Answered only to a request that carries the wallet session token.
  * `options.compare`: 'off' (default: the 404, card hidden) or 'ok' (the station compare card).
+ * `options.rewardTrail`: 'off' (default: the 404 before the backend and edge serve it, card hidden) or 'ok' (the
+ * reading trail: one reading in the wallet, one settled with the wallet move unknown, one waiting for attesters,
+ * one not eligible, one whose pay block is out of the node's search window).
  * `options.observations`: 'mild' (default: dew point only), 'hot' (heat index range) or 'cold' (wind chill range).
  * `options.siteCheck`: 'off' (default: the 404 while STATION_SITE_CHECK_ENABLED is not true) or 'flagged' (the owner's
  * "has this station moved?" hint). Answered only to a request that carries the wallet session token.
@@ -442,6 +445,7 @@ export async function installRoutes(page, fx, options = {}) {
   const duelsMode = options.duels || 'populated';
   const compareHistoryMode = options.compareHistory || 'off';
   const compareMode = options.compare || 'off';
+  const rewardTrailMode = options.rewardTrail || 'off';
   const observationsMode = options.observations || 'mild';
   const siteCheckMode = options.siteCheck || 'off';
   await page.route(url => url.pathname.startsWith('/api/') || url.pathname === '/downloads/manifest.json', async route => {
@@ -536,6 +540,21 @@ export async function installRoutes(page, fx, options = {}) {
           { variable: 'temperature_c', pairs: 412, usualDifference: 1.9, typicalGap: 2.1, closePercent: 38, closeWithin: 1.5 },
           { variable: 'humidity_pct', pairs: 409, usualDifference: -4, typicalGap: 5, closePercent: 83, closeWithin: 8 },
         ], note: 'For your information only.', source: 'core4+nws' });
+    }
+    if (/^\/api\/stations\/[^/]+\/reward-trail$/.test(p)) {
+      if (rewardTrailMode === 'off') return json(route, { error: { code: 'NOT_FOUND' } }, 404);
+      const H = n => n.toString(16).padStart(64, 'a');
+      const done = { state: 'done' };
+      const notReached = { state: 'not_reached' };
+      const row = (n, h, stage, unknown, eligible, settled, inWallet) => ({ commitId: H(n), readingHeight: h,
+        trail: { stage, unknown, submitted: done, accepted: { state: 'done', height: h }, eligible, settled, inWallet } });
+      return json(route, { readings: [
+        row(5, 27412, 'accepted', false, { state: 'pending', reason: 'no_reward_record' }, notReached, notReached),
+        row(4, 27405, 'in_wallet', false, done, { state: 'done', height: 27407 }, done),
+        row(3, 27398, 'settled', true, done, { state: 'done', height: 27400 }, { state: 'unknown', reason: 'account_credit_short' }),
+        row(2, 27391, 'accepted', false, { state: 'not_eligible', reason: 'provenance_not_reward_eligible' }, notReached, notReached),
+        row(1, 21002, 'eligible', true, done, { state: 'unknown', reason: 'block_not_found_in_scan_window' }, notReached),
+      ], window: { readings: 5, complete: true, scope: 'recent-observations' }, source: 'core4' });
     }
     if (/^\/api\/stations\/[^/]+\/compare$/.test(p)) {
       if (compareMode === 'off') return json(route, { error: { code: 'NOT_FOUND' } }, 404);

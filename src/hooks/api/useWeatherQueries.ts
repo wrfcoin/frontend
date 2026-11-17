@@ -5,6 +5,7 @@ import {
   calibrationService,
   earningsService,
   stationCompareService,
+  stationRewardTrailService,
   weatherService,
   type EarningsSummary,
   type StationObservation,
@@ -164,5 +165,19 @@ export function useStationCompare(stationId: string | undefined) {
     enabled: Boolean(stationId),
     retry: retryStationCalibration,
     staleTime: 120_000,
+  });
+}
+
+/**
+ * Reward trail: where each recent reading is on its way to the owner's wallet (backend
+ * GET /api/stations/<alias>/earnings `trail`). A 404 means the read is not live here.
+ */
+export function useStationRewardTrail(stationId: string | undefined) {
+  return useQuery({
+    queryKey: ['weather', 'reward-trail', stationId ?? ''] as const,
+    queryFn: () => stationRewardTrailService.getStationRewardTrail(stationId as string),
+    enabled: Boolean(stationId),
+    retry: retryStationCalibration,
+    staleTime: 60_000,
   });
 }
