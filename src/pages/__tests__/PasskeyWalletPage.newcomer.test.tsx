@@ -22,7 +22,7 @@ await jest.unstable_mockModule('../../services/walletCrypto/passkey', () => ({
   signPasskeyTransfer: async () => ({ fixture: true }),
 }));
 await jest.unstable_mockModule('../../hooks/usePublicTestnetStats', () => ({ default: () => stats }));
-await jest.unstable_mockModule('../../config/network', () => ({ WRFCOIN_CHAIN_ID: 777 }));
+await jest.unstable_mockModule('../../config/network', () => ({ WRFCOIN_CHAIN_ID: 777, explorerTxUrl: (h: string) => `/explore/tx/${h}` }));
 await jest.unstable_mockModule('../../services/walletCrypto/passkeySend', () => ({
   clearStoredPasskey: () => clearStoredPasskey(),
   getPasskeyNonce: async () => '0',
@@ -139,6 +139,19 @@ describe('passkey wallet: balance and send gating', () => {
     expect(await screen.findByText('Unavailable')).toBeInTheDocument();
     expect(screen.queryByText('5.00000000 WRF')).not.toBeInTheDocument();
     expect(getBalance).toHaveBeenCalledTimes(2);
+  });
+  it('links the sent reference to its transaction page, with a note that it takes about a minute', async () => {
+    const hash = '0x' + 'ab'.repeat(32);
+    getBalance.mockResolvedValue({ balance: '500000000' });
+    submitPasskeyTransfer.mockResolvedValue({ txHash: hash, status: 'submitted' });
+    render(<PasskeyWalletPage />);
+    expect(await screen.findByText('5.00000000 WRF')).toBeInTheDocument();
+    fill('1');
+    fireEvent.click(screen.getByRole('button', { name: 'Send with passkey' }));
+    const link = await screen.findByTestId('passkey-sent-link');
+    expect(link).toHaveAttribute('href', `/explore/tx/${hash}`);
+    expect(link).toHaveTextContent(hash);
+    expect(screen.getByTestId('passkey-sent')).toHaveTextContent('It can take about a minute to show in a block.');
   });
 });
 
