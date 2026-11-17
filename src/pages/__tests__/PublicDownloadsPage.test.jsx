@@ -237,8 +237,8 @@ it('shows the real testnet genesis hash on the command-line wallet card, never a
 // published file. The core4 source is public (published: true) but names no release tag or commit yet,
 // so the parser still shows no verifiable source release; every other entry stays unpublished.
 const fs = await import('node:fs');
-const APK_SHIPPED_SHA = '936761f44d176d970c790baca75b434fe2fd509660c310443d8a0b81397816e7';
-const APK_SHIPPED_URL = 'https://wrfcoin.com/downloads/wrfcoin-0.1.0-1-460ce1e9472b.apk';
+const APK_SHIPPED_SHA = 'd81b89e2145b91fdf812123d6d0f8981685628cc025bd8caafc104c595c8447d';
+const APK_SHIPPED_URL = 'https://wrfcoin.com/downloads/wrfcoin-0.1.3-5-cb9589f1f052.apk';
 const APK_SIGNER_CERT = 'dbd87b38345d8fe967e3e9db112cbfc354ae554de73e01b457799460e59f3578';
 const APK_SIGNED_BY = `WRFCoin release key (certificate SHA-256 ${APK_SIGNER_CERT})`;
 const SHIPPED = JSON.parse(fs.readFileSync(new URL('../../../public/downloads/manifest.json', import.meta.url), 'utf8'));
@@ -259,8 +259,8 @@ it('ships a manifest whose verifiable published files are the Windows node insta
   // The release APK: served by this site, named by its version and source commit, signed by the release key.
   const apk = SHIPPED.artifacts.find(a => a.id === 'android-apk');
   expect(apk).toEqual({
-    id: 'android-apk', kind: 'file', repo: 'wrfcoin/mobile', url: APK_SHIPPED_URL, size: 80002305, sha256: APK_SHIPPED_SHA,
-    commit: '460ce1e9472b9df8f7e9c0a2ca8b58b99902959d', signedBy: APK_SIGNED_BY, published: true,
+    id: 'android-apk', kind: 'file', repo: 'wrfcoin/mobile', url: APK_SHIPPED_URL, size: 80249269, sha256: APK_SHIPPED_SHA,
+    commit: 'cb9589f1f05215413b423ec1e8ae2d4b4244d3a8', signedBy: APK_SIGNED_BY, published: true,
   });
   expect(apk.url).toContain(`-${apk.commit.slice(0, 12)}.apk`);
   // A plain file name: no '+' (some clients send it as a space or %2B), so every link spelling reaches the file.
