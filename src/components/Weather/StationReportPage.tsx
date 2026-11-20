@@ -214,7 +214,7 @@ const StationReportPage: React.FC = () => {
   // The public build never asks for per-station earnings (the WRF amounts and totals below).
   const earningsStationId = publicProjection ? undefined : knownStationId;
   // Reading trail: per-reading stages from GET /api/stations/<alias>/reward-trail, in every build. That read
-  // carries stages and heights only, no amounts. A 404 means it is not live here (backend or edge): hidden.
+  // carries stages, heights and each reading's own amount (owner ruling 2026-11-19), never a total. A 404 means it is not live here (backend or edge): hidden.
   const rewardTrailQuery = useStationRewardTrail(knownStationId);
   const rewardTrailOff = rewardTrailQuery.error instanceof ApiError && rewardTrailQuery.error.status === 404;
   const observationsQuery = useLatestObservations(knownStationId);

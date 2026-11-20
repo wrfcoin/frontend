@@ -3,9 +3,10 @@
  * (backend station-detail-routes.ts rewardTrail()). Each recent reading reports the plain stages it has
  * reached: submitted, accepted, eligible, settled, in wallet.
  *
- * The server sends no amounts on this read and this parser reads only fixed enums, fixed reason codes,
- * heights and the reading's commit id: this view shows where each reading is, never one blended
- * "earned" sum. Anything this app cannot read becomes "unknown", never "done".
+ * This parser reads only fixed enums, fixed reason codes, heights, the reading's commit id and (owner
+ * ruling 2026-11-19) each reading's own reward amount on its eligible and settled steps. There is never
+ * one blended "earned" sum: no total is read or shown. Anything this app cannot read becomes "unknown",
+ * never "done", and an amount it cannot read is simply not shown.
  */
 
 export type TrailState = 'done' | 'pending' | 'not_eligible' | 'unknown' | 'not_reached';
@@ -15,6 +16,8 @@ export interface TrailStep {
   state: TrailState;
   height: number | null;
   reason: string | null;
+  /** This reading's reward in WRF (display string), only on a done eligible or settled step. */
+  amountWrf: string | null;
 }
 
 export interface TrailRow {
@@ -22,6 +25,10 @@ export interface TrailRow {
   readingHeight: number | null;
   unknown: boolean;
   steps: Record<TrailStageKey, TrailStep>;
+  /** This one reading's reward (settled amount when known, else the eligible amount), or null. */
+  amountWrf: string | null;
+  /** True when amountWrf comes from a settled step. */
+  amountSettled: boolean;
 }
 
 export type StationRewardTrailView =
@@ -42,6 +49,9 @@ export const STAGE_LABEL: Record<TrailStageKey, string> = {
 const STATES = new Set<string>(['done', 'pending', 'not_eligible', 'unknown', 'not_reached']);
 const HASH_RE = /^(0x)?[0-9a-fA-F]{8,128}$/;
 const CODE_RE = /^[a-z_]{1,64}$/;
+/** A positive WRF display amount: up to 8 decimals, no sign, no exponent. */
+const WRF_RE = /^(0|[1-9]\d{0,30})(\.\d{1,8})?$/;
+const AMOUNT_STAGES = new Set<TrailStageKey>(['eligible', 'settled']);
 
 /** Plain words for each reason code the backend can send. An unlisted code is shown as "unknown reason". */
 export const REASON_TEXT: Record<string, string> = {
@@ -67,14 +77,23 @@ export function reasonText(code: string | null): string | null {
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
 const height = (v: unknown): number | null => (typeof v === 'number' && Number.isSafeInteger(v) && v >= 0 ? v : null);
 
-function step(raw: unknown): TrailStep {
+function amount(stage: TrailStageKey, state: TrailState, raw: unknown): string | null {
+  if (!AMOUNT_STAGES.has(stage) || state !== 'done' || !isObj(raw)) return null;
+  const wrf = raw.wrf;
+  if (typeof wrf !== 'string' || !WRF_RE.test(wrf) || /^0(\.0+)?$/.test(wrf)) return null;
+  return wrf;
+}
+
+function step(stage: TrailStageKey, raw: unknown): TrailStep {
   if (!isObj(raw) || typeof raw.state !== 'string' || !STATES.has(raw.state)) {
-    return { state: 'unknown', height: null, reason: null };
+    return { state: 'unknown', height: null, reason: null, amountWrf: null };
   }
+  const state = raw.state as TrailState;
   return {
-    state: raw.state as TrailState,
+    state,
     height: height(raw.height),
     reason: typeof raw.reason === 'string' && CODE_RE.test(raw.reason) ? raw.reason : null,
+    amountWrf: amount(stage, state, raw.amount),
   };
 }
 
@@ -90,12 +109,14 @@ export function normalizeStationRewardTrail(raw: unknown): StationRewardTrailVie
     const commitId = typeof item.commitId === 'string' && HASH_RE.test(item.commitId) ? item.commitId : null;
     if (!commitId) continue;
     const trail = item.trail;
-    const steps = Object.fromEntries(TRAIL_STAGES.map((k) => [k, step(trail[k])])) as Record<TrailStageKey, TrailStep>;
+    const steps = Object.fromEntries(TRAIL_STAGES.map((k) => [k, step(k, trail[k])])) as Record<TrailStageKey, TrailStep>;
     rows.push({
       commitId,
       readingHeight: height(item.readingHeight),
       unknown: trail.unknown === true || TRAIL_STAGES.some((k) => steps[k].state === 'unknown'),
       steps,
+      amountWrf: steps.settled.amountWrf ?? steps.eligible.amountWrf,
+      amountSettled: steps.settled.amountWrf !== null,
     });
   }
   if (rows.length === 0) {
