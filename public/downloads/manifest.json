@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-20T04:10:13Z",
+  "generated": "2026-11-20T23:39:05Z",
   "release": null,
   "artifacts": [
     {
@@ -15,10 +15,10 @@
       "id": "android-apk",
       "kind": "file",
       "repo": "wrfcoin/mobile",
-      "url": "https://wrfcoin.com/downloads/wrfcoin-0.1.3-5-cb9589f1f052.apk",
+      "url": "https://wrfcoin.com/downloads/wrfcoin-0.1.3-6-e4fb17df3285.apk",
       "size": 80249269,
-      "sha256": "d81b89e2145b91fdf812123d6d0f8981685628cc025bd8caafc104c595c8447d",
-      "commit": "cb9589f1f05215413b423ec1e8ae2d4b4244d3a8",
+      "sha256": "ed44f1811b97e96910a91aff8752a96dee02b7b254e3481c145217998c10ea3a",
+      "commit": "e4fb17df32853bce9a5eb067f9dbf81203447c13",
       "signedBy": "WRFCoin release key (certificate SHA-256 dbd87b38345d8fe967e3e9db112cbfc354ae554de73e01b457799460e59f3578)",
       "published": true
     },
