@@ -546,15 +546,16 @@ export async function installRoutes(page, fx, options = {}) {
       const H = n => n.toString(16).padStart(64, 'a');
       const done = { state: 'done' };
       const notReached = { state: 'not_reached' };
+      const amt = (wrf, units) => ({ baseUnits: units, wrf });
       const row = (n, h, stage, unknown, eligible, settled, inWallet) => ({ commitId: H(n), readingHeight: h,
         trail: { stage, unknown, submitted: done, accepted: { state: 'done', height: h }, eligible, settled, inWallet } });
       return json(route, { readings: [
         row(5, 27412, 'accepted', false, { state: 'pending', reason: 'no_reward_record' }, notReached, notReached),
-        row(4, 27405, 'in_wallet', false, done, { state: 'done', height: 27407 }, done),
-        row(3, 27398, 'settled', true, done, { state: 'done', height: 27400 }, { state: 'unknown', reason: 'account_credit_short' }),
+        row(4, 27405, 'in_wallet', false, { ...done, amount: amt('0.42', '42000000') }, { state: 'done', height: 27407, amount: amt('0.42', '42000000') }, done),
+        row(3, 27398, 'settled', true, { ...done, amount: amt('0.42', '42000000') }, { state: 'done', height: 27400, amount: amt('0.42', '42000000') }, { state: 'unknown', reason: 'account_credit_short' }),
         row(2, 27391, 'accepted', false, { state: 'not_eligible', reason: 'provenance_not_reward_eligible' }, notReached, notReached),
-        row(1, 21002, 'eligible', true, done, { state: 'unknown', reason: 'block_not_found_in_scan_window' }, notReached),
-      ], window: { readings: 5, complete: true, scope: 'recent-observations' }, source: 'core4' });
+        row(1, 21002, 'eligible', true, { ...done, amount: amt('0.5', '50000000') }, { state: 'unknown', reason: 'block_not_found_in_scan_window' }, notReached),
+      ], window: { readings: 5, complete: true, scope: 'recent-observations' }, amountUnits: { denomination: 'WRF', baseUnitDecimals: 8 }, source: 'core4' });
     }
     if (/^\/api\/stations\/[^/]+\/compare$/.test(p)) {
       if (compareMode === 'off') return json(route, { error: { code: 'NOT_FOUND' } }, 404);

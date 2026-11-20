@@ -4,8 +4,8 @@ import { toStationAlias } from '../../utils/stationAlias';
 import { normalizeStationRewardTrail, type StationRewardTrailView } from '../../utils/stationRewardTrail';
 
 /**
- * Reward trail (GET /api/stations/<alias>/reward-trail, backend station-detail-routes.ts): stages only, no
- * amounts. Bare alias form (no query), counted in the edge's 30-a-minute public_read zone, so this read goes
+ * Reward trail (GET /api/stations/<alias>/reward-trail, backend station-detail-routes.ts): stages plus each
+ * reading's own amount (owner ruling 2026-11-19), never a total. Bare alias form (no query), counted in the edge's 30-a-minute public_read zone, so this read goes
  * out once: no automatic repeats of a 429 or server error. 404 means not live here, as ApiError.
  */
 export class StationRewardTrailService {

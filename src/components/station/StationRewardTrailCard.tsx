@@ -18,7 +18,9 @@ import { useIsDarkTheme } from '../../theme/ThemeProvider';
  * plain stages it has reached on its way to the owner's wallet, each backed by a chain record:
  * submitted (the reading's commit id), accepted (block height), eligible (or why not), settled (pay
  * block height) and in wallet. A read that failed or history out of reach shows as "unknown", never as
- * "not paid". No amounts and no single "earned" number: this card answers "where is my reading?".
+ * "not paid". Each reading shows its own WRF amount once it is eligible (owner ruling 2026-11-19), marked
+ * settled or not yet settled. There is no total and no single "earned" number: this card answers "where is
+ * my reading, and what did it earn?".
  */
 
 const text = 'var(--wrf-ds-text-primary, #F8FAFC)';
@@ -33,13 +35,13 @@ const TONE: Record<TrailState, { dark: string; light: string; mark: string; word
   not_reached: { dark: '#64748B', light: '#64748B', mark: '', word: 'not yet' },
 };
 
-function Step({ label, state, height }: { label: string; state: TrailState; height: number | null }) {
+function Step({ label, state, height, amountWrf }: { label: string; state: TrailState; height: number | null; amountWrf: string | null }) {
   const isDark = useIsDarkTheme();
   const tone = TONE[state];
   const color = isDark ? tone.dark : tone.light;
   const reached = state !== 'not_reached';
   return (
-    <Box sx={{ minWidth: 0, textAlign: 'center' }} aria-label={`${label}: ${tone.word}${height !== null ? `, block ${height}` : ''}`} role="listitem">
+    <Box sx={{ minWidth: 0, textAlign: 'center' }} aria-label={`${label}: ${tone.word}${height !== null ? `, block ${height}` : ''}${amountWrf !== null ? `, ${amountWrf} WRF` : ''}`} role="listitem">
       <Box
         aria-hidden
         sx={{
@@ -117,12 +119,19 @@ function Row({ row }: { row: TrailRow }) {
             label={STAGE_LABEL[k]}
             state={row.steps[k].state}
             height={k === 'accepted' || k === 'settled' ? row.steps[k].height : null}
+            amountWrf={row.steps[k].amountWrf}
           />
         ))}
       </Box>
       <Typography variant="body2" sx={{ mt: 1.25, color: isDark ? tone.dark : tone.light, fontSize: '0.82rem' }}>
         {s.line}
       </Typography>
+      {row.amountWrf !== null && (
+        <Typography variant="body2" data-testid="trail-reading-amount" sx={{ mt: 0.5, color: text, fontSize: '0.82rem' }}>
+          This reading: <Box component="span" sx={{ fontWeight: 700 }}>{row.amountWrf} WRF</Box>
+          <Box component="span" sx={{ color: textSecondary }}>{row.amountSettled ? ' (settled)' : ' (eligible, not settled yet)'}</Box>
+        </Typography>
+      )}
     </Box>
   );
 }
@@ -144,7 +153,8 @@ export default function StationRewardTrailCard({ view, unavailable, limit = 5 }:
         </Typography>
       </Stack>
       <Typography variant="body2" sx={{ color: textSecondary, mb: 2 }}>
-        Where this station’s newest readings are on their way to the owner’s wallet. Each step is a chain record.
+        Where this station’s newest readings are on their way to the owner’s wallet, and what each one earned.
+        Each step is a chain record. Amounts are per reading, not a total.
       </Typography>
 
       {unavailable ? (
