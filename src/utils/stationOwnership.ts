@@ -22,6 +22,14 @@ export interface StationOwnershipView {
   pendingRecovery: PendingRecoveryView | null;
   observedAtHeight: number;
   settledHeight: number;
+  /** The signed-in wallet is this station's owner (backend `isOwner`); false when absent. */
+  isOwner: boolean;
+  /**
+   * Owner actions can approve a submitter key right now: `features.stationSubmitterKey` AND
+   * `features.stationOwnerActions` are both reported `true`. Absent (every node before `station_submitter_key`
+   * is reported) reads as false, so the website never offers a signature the chain would ignore.
+   */
+  submitterKeyActive: boolean;
 }
 
 export type OwnershipStatus = 'active' | 'frozen' | 'deactivated';
@@ -85,6 +93,9 @@ export function normalizeStationOwnership(body: unknown): StationOwnershipView {
     pendingRecovery,
     observedAtHeight: body.observedAtHeight,
     settledHeight: body.settledHeight,
+    isOwner: body.isOwner === true,
+    submitterKeyActive: isRecord(body.features)
+      && body.features.stationSubmitterKey === true && body.features.stationOwnerActions === true,
   };
 }
 
