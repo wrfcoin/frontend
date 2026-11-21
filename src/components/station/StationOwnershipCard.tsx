@@ -7,6 +7,7 @@ import {
   recoveryBlocksRemaining,
   type StationOwnershipView,
 } from '../../utils/stationOwnership';
+import RelaySubmitterKeyControl from './RelaySubmitterKeyControl';
 
 export const OWNERSHIP_NOT_REGISTERED_MESSAGE = 'This station is not registered on chain yet, so it has no owner record.';
 export const OWNERSHIP_UNAVAILABLE_MESSAGE =
@@ -19,9 +20,10 @@ type View =
   | { kind: 'unavailable' };
 
 /**
- * Read-only station ownership status (S7; parity with the app's station ownership card). One GET, no
- * signing, no owner actions. An unregistered station (404) and an unreachable or malformed answer are
- * said plainly; nothing is defaulted to "active".
+ * Station ownership status (S7; parity with the app's station ownership card). One GET. An unregistered station
+ * (404) and an unreachable or malformed answer are said plainly; nothing is defaulted to "active". The only owner
+ * action offered is the Relay key (`set_submitter_key`), to the signed-in owner, and only once the ownership read
+ * reports `station_submitter_key` active (RelaySubmitterKeyControl).
  */
 export default function StationOwnershipCard({ stationId }: { stationId: string }) {
   const [view, setView] = useState<View>({ kind: 'loading' });
@@ -52,7 +54,12 @@ export default function StationOwnershipCard({ stationId }: { stationId: string 
       {view.kind === 'loading' && <p>Checking ownership…</p>}
       {view.kind === 'not_registered' && <p>{OWNERSHIP_NOT_REGISTERED_MESSAGE}</p>}
       {view.kind === 'unavailable' && <p role="status">{OWNERSHIP_UNAVAILABLE_MESSAGE}</p>}
-      {view.kind === 'ok' && <OwnershipDetails ownership={view.ownership} />}
+      {view.kind === 'ok' && (
+        <>
+          <OwnershipDetails ownership={view.ownership} />
+          <RelaySubmitterKeyControl stationId={stationId} ownership={view.ownership} />
+        </>
+      )}
     </section>
   );
 }

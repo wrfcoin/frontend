@@ -14,12 +14,24 @@ export interface TransferFields extends StationFields {
   transferNonce: bigint; expiresAtHeight: bigint;
 }
 export interface AcceptFields extends TransferFields { senderPublicKey: string; senderSignature: string }
+/** core4 `SubmitterClass` (transaction.rs): frozen discriminants Device = 1, Relay = 2. */
+export type SubmitterClass = 'device' | 'relay';
+/** `set_submitter_key` (`station_submitter_key`): approve one key of a class, or `null` to clear the station's key. */
+export interface SubmitterKeyFields extends StationFields {
+  ownerAddress: string; actionNonce: bigint; expiresAtHeight: bigint;
+  submitter: { pubkey: string; class: SubmitterClass } | null;
+}
 export interface S10Fields {
   vote: VoteFields; stationSecurity: SecurityFields; stationTransfer: TransferFields; stationAccept: AcceptFields;
+  /** The website signs Relay approvals and clears only; a Device key is approved from the phone. */
+  stationSubmitterKey: SubmitterKeyFields;
 }
 const encoder = new TextEncoder();
 const tags = { transfer: 'wrfcoin_station_owner_transfer_v1', accept: 'wrfcoin_station_owner_transfer_accept_v1', security: 'wrfcoin_station_owner_action_v1' };
 const actions: Record<OwnerAction, number> = { report_stolen: 1, unfreeze: 2, deactivate: 3, reactivate: 4 };
+/** core4 StationOwnerActionKind::SetSubmitterKey discriminant. */
+const SET_SUBMITTER_KEY = 5;
+const submitterClasses: Record<SubmitterClass, number> = { device: 1, relay: 2 };
 function fail(): never { throw new Error('Invalid typed S10 signing request'); }
 function concat(...parts: Uint8Array[]): Uint8Array {
   const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
@@ -63,6 +75,22 @@ export function stationSecurityMessage(f: SecurityFields): Uint8Array {
   if (typeof f.action !== 'string' || !Object.prototype.hasOwnProperty.call(actions, f.action)) fail();
   return concat(encoder.encode(tags.security), station(f), frame(f.ownerAddress), new Uint8Array([actions[f.action]]), u64(f.actionNonce), u64(f.expiresAtHeight));
 }
+/** core4 `is_canonical_submitter_pubkey`: 64 lowercase hex digits that decode to an ed25519 point. */
+export function isCanonicalSubmitterPubkey(key: unknown): key is string {
+  if (typeof key !== 'string' || !/^[0-9a-f]{64}$/.test(key)) return false;
+  try { ed25519.Point.fromHex(key); return true; } catch { return false; }
+}
+/** core4 `station_owner_set_submitter_message_with_domain` (shared-protocol transaction.rs): the owner-action
+ * preimage with discriminant 5, then 0 (clear) or 1 + length-prefixed lowercase-hex key + class byte. */
+export function stationSetSubmitterMessage(f: SubmitterKeyFields): Uint8Array {
+  rawAddress(f.ownerAddress);
+  const base = concat(encoder.encode(tags.security), station(f), frame(f.ownerAddress), new Uint8Array([SET_SUBMITTER_KEY]), u64(f.actionNonce), u64(f.expiresAtHeight));
+  if (f.submitter === null) return concat(base, new Uint8Array([0]));
+  const sub = f.submitter;
+  if (!sub || typeof sub !== 'object' || !isCanonicalSubmitterPubkey(sub.pubkey)
+    || typeof sub.class !== 'string' || !Object.prototype.hasOwnProperty.call(submitterClasses, sub.class)) fail();
+  return concat(base, new Uint8Array([1]), frame(sub.pubkey), new Uint8Array([submitterClasses[sub.class]]));
+}
 function transferBody(f: TransferFields): Uint8Array {
   if (rawAddress(f.fromOwnerAddress) === rawAddress(f.toOwnerAddress) || addressOf(unhex(f.toOwnerPubkey, 32)) !== rawAddress(f.toOwnerAddress)) fail();
   return concat(station(f), frame(f.fromOwnerAddress), frame(f.toOwnerAddress), frame(f.toOwnerPubkey), u64(f.transferNonce), u64(f.expiresAtHeight));
@@ -86,6 +114,13 @@ export function signTyped<K extends keyof S10Fields>(kind: K, fields: S10Fields[
     const f = fields as SecurityFields;
     if (rawAddress(f.ownerAddress) !== signer) fail();
     message = stationSecurityMessage(f); break;
+  }
+  case 'stationSubmitterKey': {
+    const f = fields as SubmitterKeyFields;
+    if (rawAddress(f.ownerAddress) !== signer) fail();
+    // Web scope: Relay approvals and clears only. The phone approves its own Device key.
+    if (f.submitter !== null && (!f.submitter || f.submitter.class !== 'relay')) fail();
+    message = stationSetSubmitterMessage(f); break;
   }
   case 'stationTransfer': {
     const f = fields as TransferFields;
