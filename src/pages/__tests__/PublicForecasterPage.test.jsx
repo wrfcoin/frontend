@@ -57,6 +57,7 @@ test('renders totals, recent decisions and the honest skill placeholders from th
   expect(screen.getAllByText('Not yet available').length).toBeGreaterThanOrEqual(3);
   expect(screen.getByText(/Skill by variable: not yet available/)).toBeInTheDocument();
   expect(screen.getByText(/Skill by lead time: not yet available/)).toBeInTheDocument();
+  expect(screen.getByText(/6 h and 12 h \(the leads skill pay will cover\) and the 1 h and 24 h practice leads/)).toBeInTheDocument();
   expect(screen.getByText(new RegExp(REASON.slice(0, 40)))).toBeInTheDocument();
   expect(screen.getByTestId('forecaster-series')).toBeInTheDocument();
   expect(document.body.textContent).not.toContain(FULL);

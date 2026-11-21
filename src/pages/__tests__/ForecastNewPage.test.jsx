@@ -124,7 +124,7 @@ it('lead labels: 6 h and 12 h can earn once skill pay is on, 1 h and 24 h are pr
   expect(screen.getByTestId('forecast-lead-pay')).toHaveTextContent('Practice: not paid');
   fireEvent.change(select, { target: { value: '1' } });
   expect(screen.getByTestId('forecast-lead-pay')).toHaveTextContent('Practice: not paid');
-  expect(screen.getByTestId('forecast-skill-pay-off')).toHaveTextContent("Skill pay isn't switched on yet. Today every forecast is practice and builds your record.");
+  expect(screen.getByTestId('forecast-skill-pay-off')).toHaveTextContent("Skill pay isn't switched on yet. Today every forecast is practice and builds your record. Once it is on, only 6 h and 12 h forecasts are paid; 1 h and 24 h stay practice.");
   // Honest: nothing on the form says a forecast earns today.
   const form = screen.getByRole('form', { name: 'New forecast' });
   expect(form.textContent).not.toMatch(/\bearns?\b(?! WRF once)|paid now|earning now/i);
