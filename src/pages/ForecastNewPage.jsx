@@ -54,7 +54,8 @@ export const failureLine = code => (typeof code === 'string' && code.startsWith(
  * Labels only: every lead stays selectable and what gets submitted does not change.
  */
 export const SKILL_PAY_LEADS = [6, 12];
-export const SKILL_PAY_OFF_NOTE = "Skill pay isn't switched on yet. Today every forecast is practice and builds your record.";
+export const SKILL_PAY_OFF_NOTE = "Skill pay isn't switched on yet. Today every forecast is practice and builds your record. "
+  + 'Once it is on, only 6 h and 12 h forecasts are paid; 1 h and 24 h stay practice.';
 export function leadPayLabel(hours) {
   return SKILL_PAY_LEADS.includes(hours) ? 'Can earn WRF once skill pay is on' : 'Practice: not paid';
 }

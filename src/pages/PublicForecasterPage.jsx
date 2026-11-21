@@ -162,7 +162,7 @@ export default function PublicForecasterPage() {
         </WrfCard>
         <WrfCard component="section" aria-label="Skill by variable and lead time" className="fc-section" header={<div className="fc-section-head"><h2>By variable and lead time</h2></div>} noPadding>
           <NotYet title="Skill by variable" reason="Temperature, pressure and humidity skill (RMSE, MAE, bias) will be listed per variable." />
-          <NotYet title="Skill by lead time" reason="Skill per forecast horizon (6 h, 24 h, 72 h …) will be listed here." />
+          <NotYet title="Skill by lead time" reason="Skill per lead time will be listed here: 6 h and 12 h (the leads skill pay will cover) and the 1 h and 24 h practice leads." />
         </WrfCard>
       </div>
 
