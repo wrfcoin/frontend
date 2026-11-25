@@ -1,9 +1,9 @@
 {
   "repository": "wrfcoin/wrfcomp",
-  "path": "results/gefs-station-corrected-v3/summary.json",
-  "commit": "600e9fcbfe95c09a26e17de3c2ec1657593114a9",
-  "pullRequest": 41,
-  "url": "https://raw.githubusercontent.com/wrfcoin/wrfcomp/600e9fcbfe95c09a26e17de3c2ec1657593114a9/results/gefs-station-corrected-v3/summary.json",
-  "sha256": "8c2359c80e0d7429e6c891d8c009115df02806192581f902206ecfbf53053a94",
-  "note": "summary.json is a byte-for-byte copy of the file at this commit, the merge commit of wrfcoin/wrfcomp pull request 41 on main. Never edit it by hand: to refresh, copy the file again at a newer commit and update commit, url and sha256 here together."
+  "path": "results/gefs-station-corrected-v4/summary.json",
+  "commit": "a047b9a0440ffe6eb62dc7c98b13717897b35daa",
+  "pullRequest": 46,
+  "url": "https://raw.githubusercontent.com/wrfcoin/wrfcomp/a047b9a0440ffe6eb62dc7c98b13717897b35daa/results/gefs-station-corrected-v4/summary.json",
+  "sha256": "5435ffd5193537fc1e2784b562188b2b9d8709c2fe6ee55c647c94b6e2eb5cce",
+  "note": "summary.json is a byte-for-byte copy of the file at this commit, the merge commit of wrfcoin/wrfcomp pull request 46 on main. Never edit it by hand: to refresh, copy the file again at a newer commit and update commit, url and sha256 here together."
 }
