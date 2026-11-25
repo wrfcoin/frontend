@@ -148,6 +148,11 @@ export const PUBLIC_READONLY_PATHS = new Set([
   //                  /api/forecasts/draft and /api/forecasts/submit and reads GET /api/forecasts/mine.
   // Exact entry: /forecast and /forecast/studio stay behind the /forecast operator-preview prefix.
   '/forecast/new',
+  // Owner ruling 2026-11-24: the published forecast-skill result (wrfcoin/wrfcomp).
+  //   /forecast-skill  reads nothing over the network: it formats src/data/forecastSkill/summary.json,
+  //                    a checksum-pinned copy of the wrfcomp results file bundled with the build.
+  // Exact entry.
+  '/forecast-skill',
 ]);
 
 // Owner ruling 2026-10-02 FULL WEB JOIN PATH, frontend#437: admit the exact

@@ -19,6 +19,7 @@ const PublicNetworkNodesPage = lazy(() => import('../pages/PublicNetworkNodesPag
 const PublicNetworkStatusPage = lazy(() => import('../pages/PublicNetworkStatusPage'));
 const PublicCompetitionsPage = lazy(() => import('../pages/PublicCompetitionsPage'));
 const PublicForecastCheckPage = lazy(() => import('../pages/PublicForecastCheckPage'));
+const PublicForecastSkillPage = lazy(() => import('../pages/PublicForecastSkillPage'));
 const FriendChallengesPage = lazy(() => import('../pages/FriendChallengesPage'));
 const FriendChallengeBoardPage = lazy(() => import('../pages/FriendChallengeBoardPage'));
 const ForecastDuelsPage = lazy(() => import('../pages/ForecastDuelsPage'));
@@ -84,6 +85,9 @@ export default function communityRoutes({ isFeatureEnabled = () => false } = {})
 
     {/* Forecast check: on-chain forecasts vs station readings and NOAA (demo item 7); the public route policy decides reachability */}
     <Route path="/forecast-check" element={<PageWrapper tabType="community"><PublicForecastCheckPage /></PageWrapper>} />
+
+    {/* Forecast skill: the published wrfcomp result for one candidate, from a vendored results file (no API read) */}
+    <Route path="/forecast-skill" element={<PageWrapper tabType="community"><PublicForecastSkillPage /></PageWrapper>} />
     {/* Friend challenges (backend#249, demo item 8): points only; the public route policy decides reachability */}
     <Route path="/challenges" element={<PageWrapper tabType="community"><FriendChallengesPage /></PageWrapper>} />
     <Route path="/challenges/:code" element={<PageWrapper tabType="community"><FriendChallengeBoardPage /></PageWrapper>} />

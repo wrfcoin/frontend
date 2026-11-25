@@ -1,0 +1,9 @@
+{
+  "repository": "wrfcoin/wrfcomp",
+  "path": "results/gefs-station-corrected-v3/summary.json",
+  "commit": "600e9fcbfe95c09a26e17de3c2ec1657593114a9",
+  "pullRequest": 41,
+  "url": "https://raw.githubusercontent.com/wrfcoin/wrfcomp/600e9fcbfe95c09a26e17de3c2ec1657593114a9/results/gefs-station-corrected-v3/summary.json",
+  "sha256": "8c2359c80e0d7429e6c891d8c009115df02806192581f902206ecfbf53053a94",
+  "note": "summary.json is a byte-for-byte copy of the file at this commit, the merge commit of wrfcoin/wrfcomp pull request 41 on main. Never edit it by hand: to refresh, copy the file again at a newer commit and update commit, url and sha256 here together."
+}

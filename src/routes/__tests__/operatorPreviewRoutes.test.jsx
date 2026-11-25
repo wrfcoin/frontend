@@ -50,6 +50,8 @@ const PUBLIC_ONBOARDING = [
   '/duels', '/duels/:id',
   // Website forecast (design 2026-11-05): a 12-word wallet makes a forecast.
   '/forecast/new',
+  // Forecast skill: the published wrfcomp result (static, no API read).
+  '/forecast-skill',
 ];
 
 // The baseline set for a flag combination, plus the onboarding loop when the

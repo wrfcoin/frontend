@@ -138,6 +138,7 @@ describe('PublicTestnetLandingPage', () => {
       '/governance/public',
       '/weather/forecast', '/forecast/new',
       '/forecast-check',
+      '/forecast-skill',
       '/wallet',
       '/connect-station',
       '/downloads',

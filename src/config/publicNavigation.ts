@@ -40,6 +40,7 @@ export const PUBLIC_NAV_ENTRIES: readonly PublicNavEntry[] = [
   { name: 'Forecast', path: '/weather/forecast', icon: 'bi-cloud-sun', group: 'main', description: 'Current conditions and a 7-day forecast for a place.' },
   { name: 'Make a forecast', path: '/forecast/new', icon: 'bi-pencil-square', group: 'main', description: 'Forecast the weather at a station from your 12-word wallet.' },
   { name: 'Forecast check', path: '/forecast-check', icon: 'bi-clipboard-check', group: 'main', description: 'How forecasts committed on chain scored against station readings.' },
+  { name: 'Forecast skill', path: '/forecast-skill', icon: 'bi-bar-chart-line', group: 'main', description: 'Did a station-corrected forecast beat NOAA? The published test result.' },
   { name: 'Wallet', path: '/wallet', icon: 'bi-wallet2', group: 'main', description: 'View your own testnet address and balance.' },
   { name: 'Connect a station', path: '/connect-station', icon: 'bi-broadcast-pin', group: 'main', description: 'Link your weather station to your wallet.' },
   { name: 'Downloads', path: '/downloads', icon: 'bi-download', group: 'main', description: 'What you can install, where it works, and how to verify it.' },
