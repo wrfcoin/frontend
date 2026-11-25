@@ -2,7 +2,7 @@
 /**
  * Forecast skill page (/forecast-skill; owner ruling 2026-11-24). The page formats a vendored copy of the
  * wrfcomp results file. These tests pin the copy to its recorded SHA-256 and check that what the page
- * shows is what the file says, including the quarter that did not pass.
+ * shows is what the file says.
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -53,10 +53,10 @@ describe('PublicForecastSkillPage', () => {
     for (const y of years) {
       expect(headline).toHaveTextContent(`${summary.years[y.year].quarters_passed} of ${Object.keys(summary.years[y.year].quarters).length} quarters of ${y.year}`);
     }
-    expect(headline).toHaveTextContent('3 of 4 quarters of 2024 and in 4 of 4 quarters of 2023, the year held back to confirm it');
+    expect(headline).toHaveTextContent('4 of 4 quarters of 2024 and in 4 of 4 quarters of 2023, the year held back to confirm it');
   });
 
-  it('lists every quarter with its verdict, and shows the one that did not pass and which reference it missed', () => {
+  it('lists every quarter with its verdict and the gates met against each reference', () => {
     renderPage();
     for (const [year, record] of Object.entries(summary.years)) {
       const rows = within(screen.getByTestId(`forecast-skill-${year}`)).getAllByTestId('forecast-skill-quarter');
@@ -74,11 +74,11 @@ describe('PublicForecastSkillPage', () => {
         }
       });
     }
-    const failed = within(screen.getByTestId('forecast-skill-2024')).getAllByTestId('forecast-skill-quarter')[3];
-    expect(failed).toHaveTextContent('2024 Q4');
-    expect(failed).toHaveTextContent('Not passed');
-    expect(failed).toHaveTextContent(/against raw NOAA GEFS\s*a gate was missed/);
-    expect(failed).toHaveTextContent(/against climatology\s*every gate met/);
+    const q4 = within(screen.getByTestId('forecast-skill-2024')).getAllByTestId('forecast-skill-quarter')[3];
+    expect(q4).toHaveTextContent('2024 Q4');
+    expect(q4).toHaveTextContent('Passed');
+    expect(q4).toHaveTextContent(/against raw NOAA GEFS\s*every gate met/);
+    expect(q4).toHaveTextContent(/against climatology\s*every gate met/);
   });
 
   it('formats skill as a signed percent and shows a dash for a missing figure', () => {
@@ -101,6 +101,27 @@ describe('PublicForecastSkillPage', () => {
     expect(screen.getByTestId('forecast-skill-results-link')).toHaveAttribute('href', `https://github.com/wrfcoin/wrfcomp/tree/${source.commit}/results/${summary.candidate}`);
     expect(screen.getByTestId('forecast-skill-source')).toHaveTextContent(source.commit.slice(0, 8));
     expect(screen.getByRole('region', { name: 'The rules' })).toHaveTextContent(`at least ${summary.years['2024'].quarters_required} of 4 quarters`);
+  });
+
+  it('describes the method of the candidate in the file: per-station correction plus the airport\'s own reading', () => {
+    renderPage();
+    expect(summary.candidate).toBe('gefs-station-corrected-v4');
+    const lede = screen.getByText(/We tested one candidate/);
+    expect(lede).toHaveTextContent('corrected for each station from its recent verified errors');
+    expect(lede).toHaveTextContent('For temperature and dewpoint 1 to 6 hours ahead, it also uses the airport station\'s own latest reading');
+    expect(lede).not.toHaveTextContent(/citizen/i);
+  });
+
+  it('shows a quarter that did not pass and which reference it missed', () => {
+    const changed = JSON.parse(JSON.stringify(summary));
+    changed.years['2024'].quarters['2024-Q4'].verdict = 'NOT PASSED';
+    changed.years['2024'].quarters['2024-Q4'].references['noaa-gefs'].all_gates_passed = false;
+    render(<MemoryRouter><ForecastSkillView summary={changed} source={source} /></MemoryRouter>);
+    const failed = within(screen.getByTestId('forecast-skill-2024')).getAllByTestId('forecast-skill-quarter')[3];
+    expect(failed).toHaveTextContent('2024 Q4');
+    expect(failed).toHaveTextContent('Not passed');
+    expect(failed).toHaveTextContent(/against raw NOAA GEFS\s*a gate was missed/);
+    expect(failed).toHaveTextContent(/against climatology\s*every gate met/);
   });
 
   it('follows the file, not a fixed claim: a year that is not promoted turns the headline into "Not passed"', () => {

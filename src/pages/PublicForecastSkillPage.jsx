@@ -165,9 +165,10 @@ export function ForecastSkillView({ summary, source }) {
         <div>
           <h1>Forecast skill</h1>
           <p className="fc-lede">
-            Can a forecast beat NOAA&apos;s own? We tested one candidate: NOAA&apos;s GEFS forecast, corrected station by station from
-            its recent verified errors. It was scored against weather station measurements, next to raw NOAA GEFS and climatology
-            (the usual weather for the place and season).
+            Can a forecast beat NOAA&apos;s own? We tested one candidate: NOAA&apos;s GEFS forecast, corrected for each station from
+            its recent verified errors. For temperature and dewpoint 1 to 6 hours ahead, it also uses the airport station&apos;s own
+            latest reading. It was scored against weather station measurements, next to raw NOAA GEFS and climatology (the usual
+            weather for the place and season).
           </p>
         </div>
       </header>
