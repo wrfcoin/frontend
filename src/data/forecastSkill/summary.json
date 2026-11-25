@@ -1,0 +1,391 @@
+{
+  "candidate": "gefs-station-corrected-v3",
+  "years": {
+    "2023": {
+      "decision": "PROMOTED",
+      "harness_version": {
+        "scores": "2.7.0",
+        "wrfcomp": "0.1.0"
+      },
+      "promotion_rule_version": 2,
+      "quarters": {
+        "2023-Q1": {
+          "references": {
+            "climatology": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.860170146,
+                "t2m": 0.6592140313,
+                "td2m": 0.67826569,
+                "u10": 0.4053916171,
+                "v10": 0.4690956918
+              },
+              "n_init_times": 180,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2023/promotion_2023-Q1_869eb3987f271f32/candidate_vs_climatology.json",
+              "spread_skill_ratio": {
+                "msl": 1.036748047,
+                "t2m": 1.005222503,
+                "td2m": 1.012942238,
+                "u10": 1.009817034,
+                "v10": 1.009179824
+              }
+            },
+            "noaa-gefs": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.309066596,
+                "t2m": 0.2668455455,
+                "td2m": 0.2104707027,
+                "u10": 0.2215497076,
+                "v10": 0.221414415
+              },
+              "n_init_times": 180,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2023/promotion_2023-Q1_869eb3987f271f32/candidate_vs_noaa-gefs.json",
+              "spread_skill_ratio": {
+                "msl": 1.038606985,
+                "t2m": 1.00685274,
+                "td2m": 1.015888373,
+                "u10": 1.022231774,
+                "v10": 1.020640342
+              }
+            }
+          },
+          "verdict": "PASSED"
+        },
+        "2023-Q2": {
+          "references": {
+            "climatology": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.8417322934,
+                "t2m": 0.5954380863,
+                "td2m": 0.574290236,
+                "u10": 0.3815970728,
+                "v10": 0.4145577015
+              },
+              "n_init_times": 182,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2023/promotion_2023-Q2_598a5c0c0cd00c45/candidate_vs_climatology.json",
+              "spread_skill_ratio": {
+                "msl": 0.9807246961,
+                "t2m": 1.036776831,
+                "td2m": 0.9541232105,
+                "u10": 0.974870923,
+                "v10": 0.9830816503
+              }
+            },
+            "noaa-gefs": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.3416174692,
+                "t2m": 0.3624121583,
+                "td2m": 0.2637359445,
+                "u10": 0.226243032,
+                "v10": 0.2238114854
+              },
+              "n_init_times": 182,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2023/promotion_2023-Q2_598a5c0c0cd00c45/candidate_vs_noaa-gefs.json",
+              "spread_skill_ratio": {
+                "msl": 0.9811219769,
+                "t2m": 1.038542246,
+                "td2m": 0.9549968938,
+                "u10": 0.9795206086,
+                "v10": 0.9867918495
+              }
+            }
+          },
+          "verdict": "PASSED"
+        },
+        "2023-Q3": {
+          "references": {
+            "climatology": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.7979287343,
+                "t2m": 0.5084580582,
+                "td2m": 0.4716825999,
+                "u10": 0.2636943385,
+                "v10": 0.3307554069
+              },
+              "n_init_times": 184,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2023/promotion_2023-Q3_f392e26b43c8b345/candidate_vs_climatology.json",
+              "spread_skill_ratio": {
+                "msl": 0.9892953488,
+                "t2m": 0.9635577124,
+                "td2m": 0.9165797213,
+                "u10": 1.028953653,
+                "v10": 1.03689921
+              }
+            },
+            "noaa-gefs": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.4860305206,
+                "t2m": 0.3770784041,
+                "td2m": 0.4447299436,
+                "u10": 0.2529408849,
+                "v10": 0.2467094404
+              },
+              "n_init_times": 184,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2023/promotion_2023-Q3_f392e26b43c8b345/candidate_vs_noaa-gefs.json",
+              "spread_skill_ratio": {
+                "msl": 0.9880451585,
+                "t2m": 0.9641872888,
+                "td2m": 0.9139086562,
+                "u10": 1.028671321,
+                "v10": 1.037627353
+              }
+            }
+          },
+          "verdict": "PASSED"
+        },
+        "2023-Q4": {
+          "references": {
+            "climatology": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.8630911106,
+                "t2m": 0.614675656,
+                "td2m": 0.6554589644,
+                "u10": 0.3866655514,
+                "v10": 0.4582534627
+              },
+              "n_init_times": 152,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2023/promotion_2023-Q4_a0406585bbe02bba/candidate_vs_climatology.json",
+              "spread_skill_ratio": {
+                "msl": 1.003600248,
+                "t2m": 0.9318027479,
+                "td2m": 0.9385938317,
+                "u10": 0.9832980387,
+                "v10": 0.9866205808
+              }
+            },
+            "noaa-gefs": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.3155816399,
+                "t2m": 0.3417630118,
+                "td2m": 0.2688412836,
+                "u10": 0.2985597264,
+                "v10": 0.3063955191
+              },
+              "n_init_times": 152,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2023/promotion_2023-Q4_a0406585bbe02bba/candidate_vs_noaa-gefs.json",
+              "spread_skill_ratio": {
+                "msl": 1.003957343,
+                "t2m": 0.9304898704,
+                "td2m": 0.9360565246,
+                "u10": 0.9833270123,
+                "v10": 0.9869999609
+              }
+            }
+          },
+          "verdict": "PASSED"
+        }
+      },
+      "quarters_passed": 4,
+      "quarters_required": 3,
+      "source": "results/gefs-station-corrected-v3/2023/promotion_2023_435b89755ff3e2f4/decision.json"
+    },
+    "2024": {
+      "decision": "PROMOTED",
+      "harness_version": {
+        "scores": "2.7.0",
+        "wrfcomp": "0.1.0"
+      },
+      "promotion_rule_version": 2,
+      "quarters": {
+        "2024-Q1": {
+          "references": {
+            "climatology": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.8575403519,
+                "t2m": 0.6734648691,
+                "td2m": 0.7126209212,
+                "u10": 0.4148144934,
+                "v10": 0.4604829918
+              },
+              "n_init_times": 182,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2024/promotion_2024-Q1_f08e67d5e910725b/candidate_vs_climatology.json",
+              "spread_skill_ratio": {
+                "msl": 1.045431287,
+                "t2m": 0.9930902116,
+                "td2m": 1.021883587,
+                "u10": 1.040612199,
+                "v10": 1.033645092
+              }
+            },
+            "noaa-gefs": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.2627934463,
+                "t2m": 0.2758658544,
+                "td2m": 0.2153808986,
+                "u10": 0.2219476141,
+                "v10": 0.2197526995
+              },
+              "n_init_times": 182,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2024/promotion_2024-Q1_f08e67d5e910725b/candidate_vs_noaa-gefs.json",
+              "spread_skill_ratio": {
+                "msl": 1.046070844,
+                "t2m": 0.9961449818,
+                "td2m": 1.026103326,
+                "u10": 1.055857104,
+                "v10": 1.047824197
+              }
+            }
+          },
+          "verdict": "PASSED"
+        },
+        "2024-Q2": {
+          "references": {
+            "climatology": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.8494556991,
+                "t2m": 0.5752290619,
+                "td2m": 0.5818496645,
+                "u10": 0.4038312611,
+                "v10": 0.4204840612
+              },
+              "n_init_times": 182,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2024/promotion_2024-Q2_dbd1f8cfca9dd927/candidate_vs_climatology.json",
+              "spread_skill_ratio": {
+                "msl": 0.9940540565,
+                "t2m": 1.024085906,
+                "td2m": 0.954296892,
+                "u10": 0.9645533912,
+                "v10": 0.967028047
+              }
+            },
+            "noaa-gefs": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.3600345612,
+                "t2m": 0.3875408759,
+                "td2m": 0.2573911223,
+                "u10": 0.2209495978,
+                "v10": 0.227709858
+              },
+              "n_init_times": 182,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2024/promotion_2024-Q2_dbd1f8cfca9dd927/candidate_vs_noaa-gefs.json",
+              "spread_skill_ratio": {
+                "msl": 0.994057174,
+                "t2m": 1.025449523,
+                "td2m": 0.9551348857,
+                "u10": 0.9682411277,
+                "v10": 0.9698220101
+              }
+            }
+          },
+          "verdict": "PASSED"
+        },
+        "2024-Q3": {
+          "references": {
+            "climatology": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.8291174964,
+                "t2m": 0.5096941478,
+                "td2m": 0.5131969554,
+                "u10": 0.2841412643,
+                "v10": 0.3617938287
+              },
+              "n_init_times": 184,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2024/promotion_2024-Q3_40d3991da4191763/candidate_vs_climatology.json",
+              "spread_skill_ratio": {
+                "msl": 0.9954481223,
+                "t2m": 0.967949646,
+                "td2m": 0.939304656,
+                "u10": 1.033766941,
+                "v10": 1.042726595
+              }
+            },
+            "noaa-gefs": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.5074237287,
+                "t2m": 0.3955432597,
+                "td2m": 0.4503981221,
+                "u10": 0.25857398,
+                "v10": 0.2555283714
+              },
+              "n_init_times": 184,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2024/promotion_2024-Q3_40d3991da4191763/candidate_vs_noaa-gefs.json",
+              "spread_skill_ratio": {
+                "msl": 0.9948173326,
+                "t2m": 0.969983462,
+                "td2m": 0.9370432442,
+                "u10": 1.035899019,
+                "v10": 1.043560562
+              }
+            }
+          },
+          "verdict": "PASSED"
+        },
+        "2024-Q4": {
+          "references": {
+            "climatology": {
+              "all_gates_passed": true,
+              "crpss_vs_baseline": {
+                "msl": 0.8579153145,
+                "t2m": 0.6216024241,
+                "td2m": 0.6593728581,
+                "u10": 0.4041197407,
+                "v10": 0.4576486139
+              },
+              "n_init_times": 156,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2024/promotion_2024-Q4_88965bbb48bcad5a/candidate_vs_climatology.json",
+              "spread_skill_ratio": {
+                "msl": 0.9999616501,
+                "t2m": 0.9187998764,
+                "td2m": 0.9204020824,
+                "u10": 0.9662964586,
+                "v10": 0.9565240501
+              }
+            },
+            "noaa-gefs": {
+              "all_gates_passed": false,
+              "crpss_vs_baseline": {
+                "msl": 0.3247602594,
+                "t2m": 0.3422993873,
+                "td2m": 0.3023052643,
+                "u10": 0.2976880837,
+                "v10": 0.3056785779
+              },
+              "n_init_times": 156,
+              "n_stations": 500,
+              "source": "results/gefs-station-corrected-v3/2024/promotion_2024-Q4_88965bbb48bcad5a/candidate_vs_noaa-gefs.json",
+              "spread_skill_ratio": {
+                "msl": 1.000196037,
+                "t2m": 0.9166055102,
+                "td2m": 0.9175010744,
+                "u10": 0.9656455789,
+                "v10": 0.9560947969
+              }
+            }
+          },
+          "verdict": "NOT PASSED"
+        }
+      },
+      "quarters_passed": 3,
+      "quarters_required": 3,
+      "source": "results/gefs-station-corrected-v3/2024/promotion_2024_9704194d64369530/decision.json"
+    }
+  }
+}

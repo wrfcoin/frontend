@@ -35,6 +35,7 @@ export const ROUTES = [
   { name: 'nodes', route: '/nodes' },
   { name: 'status', route: '/status' },
   { name: 'forecast-check', route: '/forecast-check' },
+  { name: 'forecast-skill', route: '/forecast-skill' },
   { name: 'challenges', route: '/challenges' },
   { name: 'challenge-board', route: '/challenges/RAIN-7K2Q' },
   { name: 'duels', route: '/duels' },

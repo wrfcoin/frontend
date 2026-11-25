@@ -27,6 +27,7 @@ The public build includes the pages below. Live values depend on the configured 
 | `/governance/public`, `/governance/public/:proposalId` | Testnet proposals. Advisory propose and vote controls appear once the build flag is on and the node reports `advisory_governance` active; otherwise the page is read-only. It shows no treasury. |
 | `/weather/forecast` | Current conditions and forecast display with source/availability labels. |
 | `/forecast/new` | Browser practice forecast, signed with a 12-word wallet when the backend reports forecasts open. Practice score only; nothing is paid. |
+| `/forecast-skill` | Published forecast-skill test result for one candidate (station-corrected NOAA GEFS), formatted from a checksum-pinned copy of the `wrfcoin/wrfcomp` results file. Static; payouts are a paper ledger only. |
 | `/connect-station` | Station connection flow; `/earn` is an alias. |
 | `/downloads` | Software catalog (`public/downloads/manifest.json`): the Android APK, the Windows node preview and source, with checksums and verification guidance. |
 | `/terms`, `/privacy`, `/api-terms`, `/security` | Public policies and reporting information. |
