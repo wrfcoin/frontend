@@ -96,7 +96,7 @@ describe('PublicForecastSkillPage', () => {
   it('says payouts are paper only, what comes next, and links the public repository and the results at the pinned commit', () => {
     renderPage();
     expect(screen.getByTestId('forecast-skill-ledger')).toHaveTextContent('Payouts are a paper ledger only. Nothing pays out.');
-    expect(screen.getByTestId('forecast-skill-next')).toHaveTextContent('citizen weather stations improve the forecast. In progress; no result yet.');
+    expect(screen.getByTestId('forecast-skill-next')).toHaveTextContent('Next: testing whether citizen weather stations improve this forecast. In progress, no result yet.');
     expect(screen.getByRole('link', { name: 'github.com/wrfcoin/wrfcomp' })).toHaveAttribute('href', 'https://github.com/wrfcoin/wrfcomp');
     expect(screen.getByTestId('forecast-skill-results-link')).toHaveAttribute('href', `https://github.com/wrfcoin/wrfcomp/tree/${source.commit}/results/${summary.candidate}`);
     expect(screen.getByTestId('forecast-skill-source')).toHaveTextContent(source.commit.slice(0, 8));

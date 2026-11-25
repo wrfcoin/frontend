@@ -219,7 +219,7 @@ export function ForecastSkillView({ summary, source }) {
       </div>
 
       <p className="fs-next" role="note" data-testid="forecast-skill-next">
-        <strong>Next:</strong> testing whether citizen weather stations improve the forecast. In progress; no result yet.
+        <strong>Next:</strong> testing whether citizen weather stations improve this forecast. In progress, no result yet.
       </p>
     </div>
   );
